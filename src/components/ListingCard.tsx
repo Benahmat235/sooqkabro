@@ -1,10 +1,7 @@
 import { Link } from "react-router-dom";
-import { MapPin, Clock } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Heart, MapPin } from "lucide-react";
 import { Listing, formatPrice } from "@/data/mockListings";
 import { getCityById } from "@/data/cities";
-import { getCategoryById } from "@/data/categories";
 
 interface ListingCardProps {
   listing: Listing;
@@ -12,48 +9,46 @@ interface ListingCardProps {
 
 const ListingCard = ({ listing }: ListingCardProps) => {
   const city = getCityById(listing.cityId);
-  const category = getCategoryById(listing.categoryId);
-
-  const daysAgo = Math.floor(
-    (Date.now() - new Date(listing.createdAt).getTime()) / (1000 * 60 * 60 * 24)
-  );
-  const timeLabel = daysAgo === 0 ? "Aujourd'hui" : daysAgo === 1 ? "Hier" : `Il y a ${daysAgo}j`;
 
   return (
-    <Link to={`/annonce/${listing.id}`}>
-      <Card className="overflow-hidden hover:shadow-lg transition-shadow group h-full">
-        <div className="relative aspect-[4/3] bg-muted overflow-hidden">
+    <Link to={`/annonce/${listing.id}`} className="block group">
+      <div className="relative rounded-xl overflow-hidden bg-card border shadow-sm hover:shadow-md transition-shadow">
+        {/* Image */}
+        <div className="relative aspect-square bg-muted overflow-hidden">
           <img
             src={listing.images[0]}
             alt={listing.title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             loading="lazy"
           />
-          {listing.featured && (
-            <Badge className="absolute top-2 left-2 bg-secondary text-secondary-foreground text-xs font-bold">
-              ⭐ À la une
-            </Badge>
-          )}
-        </div>
-        <div className="p-3">
-          <h3 className="font-semibold text-sm line-clamp-2 mb-1 group-hover:text-primary transition-colors">
-            {listing.title}
-          </h3>
-          <p className="text-base font-bold text-primary mb-2">
-            {formatPrice(listing.price)}
-          </p>
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" />
-              {city?.name || listing.cityId}
-            </span>
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {timeLabel}
+          {/* Price badge */}
+          <div className="absolute bottom-2 left-2">
+            <span className="bg-foreground/80 text-card px-2 py-0.5 rounded text-xs font-bold">
+              {formatPrice(listing.price)}
             </span>
           </div>
+          {/* Favorite */}
+          <button
+            className="absolute top-2 right-2 bg-card/80 backdrop-blur-sm rounded-full p-1.5 hover:bg-card transition-colors"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          >
+            <Heart className="h-4 w-4 text-muted-foreground" />
+          </button>
         </div>
-      </Card>
+        {/* Info */}
+        <div className="p-2.5">
+          <div className="flex items-center gap-1 text-[11px] text-muted-foreground mb-1">
+            <MapPin className="h-3 w-3 shrink-0" />
+            <span className="truncate">
+              {city?.name || listing.cityId}
+              {listing.quartier ? ` · ${listing.quartier}` : ""}
+            </span>
+          </div>
+          <p className="text-xs text-foreground/80 line-clamp-2 leading-relaxed">
+            {listing.title}
+          </p>
+        </div>
+      </div>
     </Link>
   );
 };

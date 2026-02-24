@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ImagePlus } from "lucide-react";
-import Header from "@/components/Header";
+import { ArrowLeft, ImagePlus, ChevronLeft } from "lucide-react";
+import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,7 +12,6 @@ import { cities, getCityById } from "@/data/cities";
 import { useToast } from "@/hooks/use-toast";
 
 const PublishListing = () => {
-  const [selectedCity, setSelectedCity] = useState("all");
   const [categoryId, setCategoryId] = useState("");
   const [subcategoryId, setSubcategoryId] = useState("");
   const [cityId, setCityId] = useState("ndjamena");
@@ -30,41 +29,43 @@ const PublishListing = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!categoryId || !subcategoryId || !title || !description || !cityId || !phone) {
-      toast({ title: "Erreur", description: "Veuillez remplir tous les champs obligatoires.", variant: "destructive" });
+      toast({ title: "Erreur", description: "Remplissez tous les champs obligatoires.", variant: "destructive" });
       return;
     }
     if (!validatePhone(phone)) {
-      toast({ title: "Erreur", description: "Le numéro doit contenir exactement 8 chiffres.", variant: "destructive" });
+      toast({ title: "Erreur", description: "Le numéro doit contenir 8 chiffres.", variant: "destructive" });
       return;
     }
-
-    toast({ title: "✅ Annonce publiée !", description: "Votre annonce sera visible après vérification." });
+    toast({ title: "✅ Annonce publiée !", description: "Visible après vérification." });
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header selectedCity={selectedCity} onCityChange={setSelectedCity} />
+    <div className="min-h-screen bg-background pb-20">
+      {/* Top bar */}
+      <div className="sticky top-0 z-50 bg-card border-b px-4 py-3 flex items-center gap-3">
+        <Link to="/">
+          <ChevronLeft className="h-5 w-5 text-foreground" />
+        </Link>
+        <h1 className="text-lg font-bold">Publier une annonce</h1>
+      </div>
+
       <main className="container mx-auto px-4 py-4 max-w-2xl">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-          <Link to="/" className="hover:text-primary flex items-center gap-1">
-            <ArrowLeft className="h-4 w-4" /> Accueil
-          </Link>
-          <span>/</span>
-          <span className="text-foreground font-medium">Publier une annonce</span>
-        </div>
-
-        <h1 className="text-2xl font-bold mb-6" style={{ fontFamily: 'Nunito, sans-serif' }}>
-          Publier une annonce
-        </h1>
-
-        <form onSubmit={handleSubmit} className="space-y-5 bg-card rounded-xl border p-5">
-          {/* Category */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Photos */}
           <div className="space-y-2">
-            <Label>Catégorie *</Label>
+            <Label className="font-semibold">Photos (jusqu'à 5)</Label>
+            <div className="border-2 border-dashed rounded-xl p-6 text-center text-muted-foreground bg-card">
+              <ImagePlus className="h-8 w-8 mx-auto mb-2 opacity-40" />
+              <p className="text-sm">Appuyez pour ajouter des photos</p>
+            </div>
+          </div>
+
+          {/* Category */}
+          <div className="space-y-1.5">
+            <Label className="font-semibold">Catégorie *</Label>
             <Select value={categoryId} onValueChange={(v) => { setCategoryId(v); setSubcategoryId(""); }}>
-              <SelectTrigger><SelectValue placeholder="Choisir une catégorie" /></SelectTrigger>
+              <SelectTrigger className="rounded-xl"><SelectValue placeholder="Choisir" /></SelectTrigger>
               <SelectContent>
                 {categories.map((c) => (
                   <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
@@ -74,10 +75,10 @@ const PublishListing = () => {
           </div>
 
           {selectedCategory && (
-            <div className="space-y-2">
-              <Label>Sous-catégorie *</Label>
+            <div className="space-y-1.5">
+              <Label className="font-semibold">Sous-catégorie *</Label>
               <Select value={subcategoryId} onValueChange={setSubcategoryId}>
-                <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                <SelectTrigger className="rounded-xl"><SelectValue placeholder="Choisir" /></SelectTrigger>
                 <SelectContent>
                   {selectedCategory.subcategories.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
@@ -87,30 +88,26 @@ const PublishListing = () => {
             </div>
           )}
 
-          {/* Title */}
-          <div className="space-y-2">
-            <Label>Titre de l'annonce *</Label>
-            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Toyota Hilux 2020 en bon état" maxLength={100} />
+          <div className="space-y-1.5">
+            <Label className="font-semibold">Titre *</Label>
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Toyota Hilux 2020" maxLength={100} className="rounded-xl" />
           </div>
 
-          {/* Description */}
-          <div className="space-y-2">
-            <Label>Description *</Label>
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Décrivez votre article en détail..." rows={5} maxLength={2000} />
+          <div className="space-y-1.5">
+            <Label className="font-semibold">Description *</Label>
+            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Décrivez votre article..." rows={4} maxLength={2000} className="rounded-xl" />
           </div>
 
-          {/* Price */}
-          <div className="space-y-2">
-            <Label>Prix (FCFA)</Label>
-            <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0 = Gratuit / À négocier" min={0} />
+          <div className="space-y-1.5">
+            <Label className="font-semibold">Prix (FCFA)</Label>
+            <Input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0 = Gratuit" min={0} className="rounded-xl" />
           </div>
 
-          {/* Location */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Ville *</Label>
+            <div className="space-y-1.5">
+              <Label className="font-semibold">Ville *</Label>
               <Select value={cityId} onValueChange={(v) => { setCityId(v); setQuartierId(""); }}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {cities.map((c) => (
                     <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
@@ -119,10 +116,10 @@ const PublishListing = () => {
               </Select>
             </div>
             {selectedCityData?.quartiers && (
-              <div className="space-y-2">
-                <Label>Quartier</Label>
+              <div className="space-y-1.5">
+                <Label className="font-semibold">Quartier</Label>
                 <Select value={quartierId} onValueChange={setQuartierId}>
-                  <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                  <SelectTrigger className="rounded-xl"><SelectValue placeholder="Choisir" /></SelectTrigger>
                   <SelectContent>
                     {selectedCityData.quartiers.map((q) => (
                       <SelectItem key={q} value={q}>{q}</SelectItem>
@@ -133,30 +130,21 @@ const PublishListing = () => {
             )}
           </div>
 
-          {/* Phone */}
-          <div className="space-y-2">
-            <Label>Numéro de téléphone *</Label>
+          <div className="space-y-1.5">
+            <Label className="font-semibold">Téléphone *</Label>
             <div className="flex gap-2 items-center">
-              <span className="text-sm font-semibold text-muted-foreground bg-muted px-3 py-2 rounded-md">+235</span>
-              <Input value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 8))} placeholder="66 XX XX XX" maxLength={8} />
-            </div>
-            <p className="text-xs text-muted-foreground">8 chiffres, sans l'indicatif</p>
-          </div>
-
-          {/* Photos placeholder */}
-          <div className="space-y-2">
-            <Label>Photos (jusqu'à 5)</Label>
-            <div className="border-2 border-dashed rounded-lg p-8 text-center text-muted-foreground">
-              <ImagePlus className="h-10 w-10 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Upload de photos disponible prochainement</p>
+              <span className="text-sm font-semibold text-muted-foreground bg-muted px-3 py-2.5 rounded-xl">+235</span>
+              <Input value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 8))} placeholder="66 XX XX XX" maxLength={8} className="rounded-xl" />
             </div>
           </div>
 
-          <Button type="submit" className="w-full h-12 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-bold text-base">
+          <Button type="submit" className="w-full h-12 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-bold text-base rounded-xl">
             Publier l'annonce
           </Button>
         </form>
       </main>
+
+      <BottomNav />
     </div>
   );
 };

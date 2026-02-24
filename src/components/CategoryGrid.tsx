@@ -1,30 +1,47 @@
 import { Link } from "react-router-dom";
 import { categories } from "@/data/categories";
+import {
+  Car, Home, Smartphone, Briefcase, Wrench, PawPrint,
+  Shirt, Sofa, Monitor, UtensilsCrossed
+} from "lucide-react";
+
+const categoryImages: Record<string, string> = {
+  vehicules: "🚗",
+  immobilier: "🏠",
+  telephones: "📱",
+  emploi: "💼",
+  services: "🔧",
+  animaux: "🐄",
+  mode: "👗",
+  maison: "🛋️",
+  electronique: "💻",
+  alimentation: "🍽️",
+};
 
 const CategoryGrid = () => {
   return (
-    <section className="py-6">
-      <h2 className="text-xl font-bold mb-4" style={{ fontFamily: 'Nunito, sans-serif' }}>
-        Catégories
-      </h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-        {categories.map((cat) => {
-          const Icon = cat.icon;
-          return (
-            <Link
-              key={cat.id}
-              to={`/categorie/${cat.id}`}
-              className={`${cat.bgColor} rounded-xl p-4 flex flex-col items-center gap-2 hover:shadow-md transition-shadow text-center group`}
-            >
-              <div className={`p-3 rounded-full bg-white/70 ${cat.color} group-hover:scale-110 transition-transform`}>
-                <Icon className="h-6 w-6" />
-              </div>
-              <span className="text-xs font-semibold text-foreground leading-tight">
-                {cat.name}
-              </span>
-            </Link>
-          );
-        })}
+    <section className="py-4">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-lg font-bold">Catégories</h2>
+        <Link to="/categories" className="text-primary text-sm font-semibold flex items-center gap-1">
+          Voir tout →
+        </Link>
+      </div>
+      <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+        {categories.map((cat) => (
+          <Link
+            key={cat.id}
+            to={`/categorie/${cat.id}`}
+            className="flex flex-col items-center gap-1.5 group"
+          >
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-card border shadow-sm flex items-center justify-center text-3xl group-hover:shadow-md transition-shadow group-hover:border-primary/30">
+              {categoryImages[cat.id] || "📦"}
+            </div>
+            <span className="text-[11px] sm:text-xs font-medium text-foreground text-center leading-tight line-clamp-2">
+              {cat.name}
+            </span>
+          </Link>
+        ))}
       </div>
     </section>
   );
