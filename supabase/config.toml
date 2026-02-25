@@ -1,1 +1,4 @@
 project_id = "bwvtfosrbbkawieanrjd"
+
+[functions.whatsapp-otp]
+verify_jwt = false
