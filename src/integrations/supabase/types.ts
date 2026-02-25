@@ -14,16 +14,130 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      listing_images: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          listing_id: string
+          position: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          listing_id: string
+          position?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          listing_id?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_images_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listings: {
+        Row: {
+          category_id: string
+          city_id: string
+          created_at: string
+          description: string
+          id: string
+          phone: string
+          price: number
+          quartier: string | null
+          status: Database["public"]["Enums"]["listing_status"]
+          subcategory_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          city_id: string
+          created_at?: string
+          description: string
+          id?: string
+          phone: string
+          price?: number
+          quartier?: string | null
+          status?: Database["public"]["Enums"]["listing_status"]
+          subcategory_id: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          city_id?: string
+          created_at?: string
+          description?: string
+          id?: string
+          phone?: string
+          price?: number
+          quartier?: string | null
+          status?: Database["public"]["Enums"]["listing_status"]
+          subcategory_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+          phone: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_listing_owner: { Args: { _listing_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      listing_status: "draft" | "published" | "archived"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +264,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      listing_status: ["draft", "published", "archived"],
+    },
   },
 } as const
