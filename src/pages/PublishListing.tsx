@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Link, Navigate } from "react-router-dom";
-import { ArrowLeft, ImagePlus, ChevronLeft } from "lucide-react";
+import { useState, useRef } from "react";
+import { Link, Navigate, useNavigate } from "react-router-dom";
+import { ImagePlus, ChevronLeft, X } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { categories } from "@/data/categories";
 import { cities, getCityById } from "@/data/cities";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+const MAX_PHOTOS = 5;
 
 const PublishListing = () => {
   const { user, loading } = useAuth();
+  const navigate = useNavigate();
   const [categoryId, setCategoryId] = useState("");
   const [subcategoryId, setSubcategoryId] = useState("");
   const [cityId, setCityId] = useState("ndjamena");
@@ -22,6 +26,10 @@ const PublishListing = () => {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [phone, setPhone] = useState("");
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
@@ -32,7 +40,26 @@ const PublishListing = () => {
   if (loading) return null;
   if (!user) return <Navigate to="/auth" replace />;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handlePhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const remaining = MAX_PHOTOS - photos.length;
+    const toAdd = files.slice(0, remaining);
+    setPhotos((prev) => [...prev, ...toAdd]);
+    toAdd.forEach((f) => {
+      const reader = new FileReader();
+      reader.onloadend = () => setPreviews((prev) => [...prev, reader.result as string]);
+      reader.readAsDataURL(f);
+    });
+    // Reset input so same file can be re-selected
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removePhoto = (index: number) => {
+    setPhotos((prev) => prev.filter((_, i) => i !== index));
+    setPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!categoryId || !subcategoryId || !title || !description || !cityId || !phone) {
       toast({ title: "Erreur", description: "Remplissez tous les champs obligatoires.", variant: "destructive" });
@@ -42,12 +69,67 @@ const PublishListing = () => {
       toast({ title: "Erreur", description: "Le numéro doit contenir 8 chiffres.", variant: "destructive" });
       return;
     }
-    toast({ title: "✅ Annonce publiée !", description: "Visible après vérification." });
+
+    setSubmitting(true);
+    try {
+      // 1. Insert listing
+      const { data: listing, error: listingError } = await supabase
+        .from("listings")
+        .insert({
+          user_id: user.id,
+          title,
+          description,
+          category_id: categoryId,
+          subcategory_id: subcategoryId,
+          city_id: cityId,
+          quartier: quartierId || null,
+          price: parseInt(price) || 0,
+          phone: `+235${phone}`,
+          status: "published",
+        })
+        .select("id")
+        .single();
+
+      if (listingError) throw listingError;
+
+      // 2. Upload photos & insert image records
+      for (let i = 0; i < photos.length; i++) {
+        const file = photos[i];
+        const ext = file.name.split(".").pop() || "jpg";
+        const filePath = `${user.id}/${listing.id}/${i}.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("listing-photos")
+          .upload(filePath, file, { upsert: true });
+
+        if (uploadError) {
+          console.error("Upload error:", uploadError);
+          continue;
+        }
+
+        const { data: urlData } = supabase.storage
+          .from("listing-photos")
+          .getPublicUrl(filePath);
+
+        await supabase.from("listing_images").insert({
+          listing_id: listing.id,
+          image_url: urlData.publicUrl,
+          position: i,
+        });
+      }
+
+      toast({ title: "✅ Annonce publiée !", description: "Votre annonce est maintenant visible." });
+      navigate(`/annonce/${listing.id}`);
+    } catch (err: any) {
+      console.error("Publish error:", err);
+      toast({ title: "Erreur", description: err.message || "Impossible de publier.", variant: "destructive" });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Top bar */}
       <div className="sticky top-0 z-50 bg-card border-b px-4 py-3 flex items-center gap-3">
         <Link to="/">
           <ChevronLeft className="h-5 w-5 text-foreground" />
@@ -59,11 +141,39 @@ const PublishListing = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Photos */}
           <div className="space-y-2">
-            <Label className="font-semibold">Photos (jusqu'à 5)</Label>
-            <div className="border-2 border-dashed rounded-xl p-6 text-center text-muted-foreground bg-card">
-              <ImagePlus className="h-8 w-8 mx-auto mb-2 opacity-40" />
-              <p className="text-sm">Appuyez pour ajouter des photos</p>
+            <Label className="font-semibold">Photos (jusqu'à {MAX_PHOTOS})</Label>
+            <div className="flex gap-2 flex-wrap">
+              {previews.map((src, i) => (
+                <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border">
+                  <img src={src} alt="" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(i)}
+                    className="absolute top-0.5 right-0.5 bg-black/60 rounded-full p-0.5"
+                  >
+                    <X className="h-3 w-3 text-white" />
+                  </button>
+                </div>
+              ))}
+              {photos.length < MAX_PHOTOS && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-20 h-20 border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground bg-card"
+                >
+                  <ImagePlus className="h-5 w-5 opacity-40" />
+                  <span className="text-[10px] mt-1">Ajouter</span>
+                </button>
+              )}
             </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handlePhotos}
+            />
           </div>
 
           {/* Category */}
@@ -143,8 +253,12 @@ const PublishListing = () => {
             </div>
           </div>
 
-          <Button type="submit" className="w-full h-12 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-bold text-base rounded-xl">
-            Publier l'annonce
+          <Button
+            type="submit"
+            disabled={submitting}
+            className="w-full h-12 bg-secondary text-secondary-foreground hover:bg-secondary/90 font-bold text-base rounded-xl"
+          >
+            {submitting ? "Publication en cours..." : "Publier l'annonce"}
           </Button>
         </form>
       </main>
