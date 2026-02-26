@@ -13,14 +13,22 @@ Deno.serve(async (req) => {
   try {
     const { action, phone, code, display_name } = await req.json()
 
-    const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')
-    const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')
-    const TWILIO_WHATSAPP_FROM = Deno.env.get('TWILIO_WHATSAPP_FROM')
+    const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')?.trim()
+    const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')?.trim()
+    const TWILIO_WHATSAPP_FROM = Deno.env.get('TWILIO_WHATSAPP_FROM')?.trim()
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
     if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM) {
       throw new Error('Twilio credentials not configured')
+    }
+
+    if (!TWILIO_ACCOUNT_SID.startsWith('AC')) {
+      throw new Error('Invalid TWILIO_ACCOUNT_SID: must start with AC')
+    }
+
+    if (TWILIO_AUTH_TOKEN.length < 10) {
+      throw new Error('Invalid TWILIO_AUTH_TOKEN: token looks too short')
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
