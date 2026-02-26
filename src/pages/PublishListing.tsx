@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { ArrowLeft, ImagePlus, ChevronLeft } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +13,7 @@ import { cities, getCityById } from "@/data/cities";
 import { useToast } from "@/hooks/use-toast";
 
 const PublishListing = () => {
+  const { user, loading } = useAuth();
   const [categoryId, setCategoryId] = useState("");
   const [subcategoryId, setSubcategoryId] = useState("");
   const [cityId, setCityId] = useState("ndjamena");
@@ -26,6 +28,9 @@ const PublishListing = () => {
   const selectedCityData = getCityById(cityId);
 
   const validatePhone = (p: string) => /^\d{8}$/.test(p);
+
+  if (loading) return null;
+  if (!user) return <Navigate to="/auth" replace />;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
