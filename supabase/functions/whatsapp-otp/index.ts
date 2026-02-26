@@ -19,10 +19,7 @@ Deno.serve(async (req) => {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
-    // Debug: log first/last chars of credentials
-    console.log('SID preview:', TWILIO_ACCOUNT_SID?.substring(0, 6) + '...' + TWILIO_ACCOUNT_SID?.slice(-4))
-    console.log('Token length:', TWILIO_AUTH_TOKEN?.length)
-    console.log('From:', TWILIO_WHATSAPP_FROM)
+
 
     if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM) {
       throw new Error('Twilio credentials not configured')
