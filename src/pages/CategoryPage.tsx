@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, SlidersHorizontal } from "lucide-react";
 import Header from "@/components/Header";
@@ -7,9 +7,10 @@ import ListingCard from "@/components/ListingCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { getCategoryById } from "@/data/categories";
 import { cities } from "@/data/cities";
-import { mockListings } from "@/data/mockListings";
+import { useListings } from "@/hooks/useListings";
 
 const CategoryPage = () => {
   const { categoryId, subId } = useParams();
@@ -20,23 +21,26 @@ const CategoryPage = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   const category = categoryId ? getCategoryById(categoryId) : undefined;
+  const { data: allListings = [], isLoading } = useListings(selectedCity);
 
-  let listings = mockListings.filter((l) => l.categoryId === categoryId);
-  if (subId) listings = listings.filter((l) => l.subcategoryId === subId);
-  if (selectedCity !== "all") listings = listings.filter((l) => l.cityId === selectedCity);
-  if (minPrice) listings = listings.filter((l) => l.price >= Number(minPrice));
-  if (maxPrice) listings = listings.filter((l) => l.price <= Number(maxPrice));
+  const listings = useMemo(() => {
+    let filtered = allListings.filter((l) => l.category_id === categoryId);
+    if (subId) filtered = filtered.filter((l) => l.subcategory_id === subId);
+    if (minPrice) filtered = filtered.filter((l) => l.price >= Number(minPrice));
+    if (maxPrice) filtered = filtered.filter((l) => l.price <= Number(maxPrice));
 
-  if (sortBy === "price-asc") listings.sort((a, b) => a.price - b.price);
-  else if (sortBy === "price-desc") listings.sort((a, b) => b.price - a.price);
-  else listings.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    if (sortBy === "price-asc") filtered.sort((a, b) => a.price - b.price);
+    else if (sortBy === "price-desc") filtered.sort((a, b) => b.price - a.price);
+    else filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    return filtered;
+  }, [allListings, categoryId, subId, minPrice, maxPrice, sortBy]);
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header selectedCity={selectedCity} onCityChange={setSelectedCity} />
 
       <main className="container mx-auto px-4 py-3">
-        {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
           <Link to="/" className="hover:text-primary flex items-center gap-1">
             <ArrowLeft className="h-4 w-4" /> Accueil
@@ -45,7 +49,6 @@ const CategoryPage = () => {
           <span className="text-foreground font-medium">{category?.name || categoryId}</span>
         </div>
 
-        {/* Subcategories */}
         {category && !subId && (
           <div className="flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-none">
             {category.subcategories.map((sub) => (
@@ -58,7 +61,6 @@ const CategoryPage = () => {
           </div>
         )}
 
-        {/* Toolbar */}
         <div className="flex items-center justify-between mb-3 gap-2">
           <p className="text-sm text-muted-foreground">
             {listings.length} annonce{listings.length !== 1 ? "s" : ""}
@@ -81,7 +83,6 @@ const CategoryPage = () => {
           </div>
         </div>
 
-        {/* Filters */}
         {showFilters && (
           <div className="flex flex-wrap gap-2 mb-3 p-3 bg-card rounded-xl border">
             <Select value={selectedCity} onValueChange={setSelectedCity}>
@@ -100,8 +101,13 @@ const CategoryPage = () => {
           </div>
         )}
 
-        {/* Listings */}
-        {listings.length === 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-3 gap-2.5">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="aspect-square rounded-xl" />
+            ))}
+          </div>
+        ) : listings.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
             <p className="text-lg font-semibold">Aucune annonce</p>
             <p className="text-sm mt-1">Modifiez vos filtres</p>

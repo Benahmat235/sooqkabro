@@ -1,14 +1,15 @@
 import { Link } from "react-router-dom";
 import { Heart, MapPin } from "lucide-react";
-import { Listing, formatPrice } from "@/data/mockListings";
+import { formatPrice } from "@/data/mockListings";
 import { getCityById } from "@/data/cities";
+import type { ListingWithImages } from "@/hooks/useListings";
 
 interface ListingCardProps {
-  listing: Listing;
+  listing: ListingWithImages;
 }
 
 const ListingCard = ({ listing }: ListingCardProps) => {
-  const city = getCityById(listing.cityId);
+  const city = getCityById(listing.city_id);
 
   return (
     <Link to={`/annonce/${listing.id}`} className="block group">
@@ -40,7 +41,7 @@ const ListingCard = ({ listing }: ListingCardProps) => {
           <div className="flex items-center gap-1 text-[11px] text-muted-foreground mb-1">
             <MapPin className="h-3 w-3 shrink-0" />
             <span className="truncate">
-              {city?.name || listing.cityId}
+              {city?.name || listing.city_id}
               {listing.quartier ? ` · ${listing.quartier}` : ""}
             </span>
           </div>
