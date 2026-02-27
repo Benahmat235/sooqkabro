@@ -11,38 +11,157 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { action, phone, code, display_name } = await req.json()
+    const body = await req.json()
+    const { action } = body
 
-    const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')?.trim()
-    const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')?.trim()
-    const TWILIO_WHATSAPP_FROM = Deno.env.get('TWILIO_WHATSAPP_FROM')?.trim()
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-
-
-
-    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM) {
-      throw new Error('Twilio credentials not configured')
-    }
-
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
+    // ─── USERNAME + PASSWORD AUTH ───
+    if (action === 'register') {
+      const { username, password, display_name } = body
+      if (!username || !password) {
+        return new Response(JSON.stringify({ success: false, message: 'Username et mot de passe requis' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      // Check if username already taken
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', username)
+        .maybeSingle()
+
+      if (existing) {
+        return new Response(JSON.stringify({ success: false, message: 'Ce nom d\'utilisateur est déjà pris' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      const email = `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@user.tchadmarket.local`
+
+      const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { display_name: display_name || username, username },
+      })
+
+      if (createError) {
+        if (createError.message?.includes('already been registered')) {
+          return new Response(JSON.stringify({ success: false, message: 'Ce nom d\'utilisateur est déjà pris' }), {
+            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        }
+        throw createError
+      }
+
+      // Update profile with username
+      await supabase.from('profiles').update({ 
+        username, 
+        display_name: display_name || username 
+      }).eq('id', newUser.user.id)
+
+      // Sign in the new user
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (signInError) throw signInError
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        session: signInData.session,
+        user: signInData.user,
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    if (action === 'login') {
+      const { username, password } = body
+      if (!username || !password) {
+        return new Response(JSON.stringify({ success: false, message: 'Username et mot de passe requis' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      // Find user by username
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('username', username)
+        .maybeSingle()
+
+      if (!profile) {
+        return new Response(JSON.stringify({ success: false, message: 'Utilisateur non trouvé' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      // Get user email from auth
+      const { data: userData } = await supabase.auth.admin.getUserById(profile.id)
+      if (!userData?.user?.email) {
+        return new Response(JSON.stringify({ success: false, message: 'Compte introuvable' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: userData.user.email,
+        password,
+      })
+
+      if (signInError) {
+        return new Response(JSON.stringify({ success: false, message: 'Mot de passe incorrect' }), {
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      return new Response(JSON.stringify({ 
+        success: true, 
+        session: signInData.session,
+        user: signInData.user,
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // ─── OTP AUTH (WhatsApp or SMS) ───
     if (action === 'send') {
-      // Generate 6-digit code
+      const { phone, channel = 'whatsapp' } = body
+
+      const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')?.trim()
+      const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')?.trim()
+      const TWILIO_WHATSAPP_FROM = Deno.env.get('TWILIO_WHATSAPP_FROM')?.trim()
+
+      if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_WHATSAPP_FROM) {
+        throw new Error('Twilio credentials not configured')
+      }
+
       const otpCode = Math.floor(100000 + Math.random() * 900000).toString()
 
-      // Store OTP
       const { error: insertError } = await supabase
         .from('otp_codes')
         .insert({ phone, code: otpCode })
-
       if (insertError) throw insertError
 
-      // Send via Twilio WhatsApp
       const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`
-      const body = new URLSearchParams({
-        From: `whatsapp:${TWILIO_WHATSAPP_FROM}`,
-        To: `whatsapp:${phone}`,
+      
+      const fromNumber = channel === 'sms' 
+        ? TWILIO_WHATSAPP_FROM 
+        : `whatsapp:${TWILIO_WHATSAPP_FROM}`
+      
+      const toNumber = channel === 'sms' 
+        ? phone 
+        : `whatsapp:${phone}`
+
+      const msgBody = new URLSearchParams({
+        From: fromNumber,
+        To: toNumber,
         Body: `Votre code de vérification TchadMarket est : ${otpCode}. Il expire dans 5 minutes.`,
       })
 
@@ -52,13 +171,13 @@ Deno.serve(async (req) => {
           'Authorization': 'Basic ' + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: body.toString(),
+        body: msgBody.toString(),
       })
 
       if (!twilioRes.ok) {
         const errData = await twilioRes.text()
         console.error('Twilio error:', errData)
-        throw new Error(`Failed to send WhatsApp message: ${twilioRes.status}`)
+        throw new Error(`Échec de l'envoi du message: ${twilioRes.status}`)
       }
 
       return new Response(JSON.stringify({ success: true, message: 'OTP sent' }), {
@@ -67,7 +186,8 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'verify') {
-      // Check OTP
+      const { phone, code, display_name } = body
+
       const { data: otpData, error: otpError } = await supabase
         .from('otp_codes')
         .select('*')
@@ -81,53 +201,27 @@ Deno.serve(async (req) => {
 
       if (otpError || !otpData) {
         return new Response(JSON.stringify({ success: false, message: 'Code invalide ou expiré' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
       }
 
-      // Mark as verified
       await supabase.from('otp_codes').update({ verified: true }).eq('id', otpData.id)
 
-      // Check if user exists with this phone
+      // Find or create user
+      const email = `${phone.replace(/[^0-9]/g, '')}@phone.tchadmarket.local`
+      const password = crypto.randomUUID()
+
       const { data: existingUsers } = await supabase.auth.admin.listUsers()
-      const existingUser = existingUsers?.users?.find(u => u.phone === phone)
+      const existingUser = existingUsers?.users?.find(u => u.phone === phone || u.email === email)
 
       let session = null
 
       if (existingUser) {
-        // Sign in existing user - generate a session
-        const { data, error } = await supabase.auth.admin.generateLink({
-          type: 'magiclink',
-          email: `${phone.replace(/\+/g, '')}@phone.tchadmarket.local`,
-        })
-        
-        // Use signInWithPassword with a deterministic password based on the phone
-        // Actually, better approach: use admin to update and then sign in
-        const { data: signInData, error: signInError } = await supabase.auth.admin.generateLink({
-          type: 'magiclink', 
-          email: existingUser.email!,
-        })
-
-        // Create a custom session token
-        const { data: sessionData, error: sessionError } = await supabase.auth.admin.createUser({
-          email: existingUser.email,
-          email_confirm: true,
-        }).catch(() => ({ data: null, error: null }))
-
-        // Better: just return a signed token
-        // Use the admin API to get a session for the user
-        const { data: tokenData, error: tokenError } = await (supabase.auth.admin as any).generateLink({
-          type: 'magiclink',
-          email: existingUser.email!,
-        })
-
-        session = { user: existingUser, token: tokenData }
+        // Reset password and sign in
+        await supabase.auth.admin.updateUser(existingUser.id, { password })
+        const { data: signInData } = await supabase.auth.signInWithPassword({ email: existingUser.email!, password })
+        session = signInData?.session
       } else {
-        // Create new user
-        const email = `${phone.replace(/[^0-9]/g, '')}@phone.tchadmarket.local`
-        const password = crypto.randomUUID()
-        
         const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
           email,
           phone,
@@ -136,32 +230,28 @@ Deno.serve(async (req) => {
           phone_confirm: true,
           user_metadata: { display_name: display_name || '', phone },
         })
-
         if (createError) throw createError
 
-        // Generate session for new user
-        const { data: signInData, error: signInError } = await supabase.auth.admin.generateLink({
-          type: 'magiclink',
-          email,
-        })
-
-        session = { user: newUser.user, token: signInData }
+        const { data: signInData } = await supabase.auth.signInWithPassword({ email, password })
+        session = signInData?.session
       }
 
-      return new Response(JSON.stringify({ success: true, session }), {
+      return new Response(JSON.stringify({ 
+        success: true, 
+        session,
+        needsName: !existingUser,
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
     return new Response(JSON.stringify({ error: 'Invalid action' }), {
-      status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   } catch (error) {
     console.error('Error:', error)
     return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
 })
