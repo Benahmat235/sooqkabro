@@ -3,18 +3,14 @@ import Header from "@/components/Header";
 import CategoryGrid from "@/components/CategoryGrid";
 import ListingCard from "@/components/ListingCard";
 import BottomNav from "@/components/BottomNav";
-import { mockListings } from "@/data/mockListings";
+import { useListings } from "@/hooks/useListings";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Index = () => {
   const [selectedCity, setSelectedCity] = useState("all");
+  const { data: listings = [], isLoading } = useListings(selectedCity);
 
-  const filteredListings =
-    selectedCity === "all"
-      ? mockListings
-      : mockListings.filter((l) => l.cityId === selectedCity);
-
-  const featuredListings = filteredListings.filter((l) => l.featured);
-  const recentListings = filteredListings.slice(0, 9);
+  const recentListings = listings.slice(0, 9);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -23,32 +19,30 @@ const Index = () => {
       <main className="container mx-auto px-4">
         <CategoryGrid />
 
-        {/* Featured */}
-        {featuredListings.length > 0 && (
-          <section className="py-3">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold">⭐ Annonces à la une</h2>
-              <span className="text-primary text-sm font-semibold cursor-pointer">Voir tout →</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2.5">
-              {featuredListings.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* Recent */}
         <section className="py-3">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-bold">Annonces récentes</h2>
-            <span className="text-primary text-sm font-semibold cursor-pointer">Voir tout →</span>
           </div>
-          <div className="grid grid-cols-3 gap-2.5">
-            {recentListings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
-            ))}
-          </div>
+
+          {isLoading ? (
+            <div className="grid grid-cols-3 gap-2.5">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="aspect-square rounded-xl" />
+              ))}
+            </div>
+          ) : recentListings.length === 0 ? (
+            <div className="text-center py-16 text-muted-foreground">
+              <p className="text-lg font-semibold">Aucune annonce</p>
+              <p className="text-sm mt-1">Soyez le premier à publier !</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2.5">
+              {recentListings.map((listing) => (
+                <ListingCard key={listing.id} listing={listing} />
+              ))}
+            </div>
+          )}
         </section>
       </main>
 

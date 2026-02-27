@@ -4,7 +4,8 @@ import { ArrowLeft } from "lucide-react";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import ListingCard from "@/components/ListingCard";
-import { mockListings } from "@/data/mockListings";
+import { useSearchListings } from "@/hooks/useListings";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const SearchPage = () => {
   const [searchParams] = useSearchParams();
@@ -12,12 +13,7 @@ const SearchPage = () => {
   const cityParam = searchParams.get("city") || "all";
   const [selectedCity, setSelectedCity] = useState(cityParam);
 
-  const results = mockListings.filter((l) => {
-    const matchQuery = l.title.toLowerCase().includes(query.toLowerCase()) ||
-      l.description.toLowerCase().includes(query.toLowerCase());
-    const matchCity = selectedCity === "all" || l.cityId === selectedCity;
-    return matchQuery && matchCity;
-  });
+  const { data: results = [], isLoading } = useSearchListings(query, selectedCity);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -35,7 +31,13 @@ const SearchPage = () => {
           {results.length} résultat{results.length !== 1 ? "s" : ""}
         </p>
 
-        {results.length === 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-3 gap-2.5">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="aspect-square rounded-xl" />
+            ))}
+          </div>
+        ) : results.length === 0 ? (
           <div className="text-center py-20 text-muted-foreground">
             <p className="text-lg font-semibold">Aucun résultat</p>
             <p className="text-sm mt-1">Essayez d'autres mots-clés</p>
