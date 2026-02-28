@@ -18,16 +18,13 @@ Deno.serve(async (req) => {
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 
-    // ─── USERNAME + PASSWORD AUTH ───
+    // ─── REGISTER (username + password, phone stored) ───
     if (action === 'register') {
-      const { username, password, display_name } = body
+      const { username, password, display_name, phone } = body
       if (!username || !password) {
-        return new Response(JSON.stringify({ success: false, message: 'Username et mot de passe requis' }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
+        return jsonRes({ success: false, message: 'Username et mot de passe requis' }, 400)
       }
 
-      // Check if username already taken
       const { data: existing } = await supabase
         .from('profiles')
         .select('id')
@@ -35,9 +32,7 @@ Deno.serve(async (req) => {
         .maybeSingle()
 
       if (existing) {
-        return new Response(JSON.stringify({ success: false, message: 'Ce nom d\'utilisateur est déjà pris' }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
+        return jsonRes({ success: false, message: "Ce nom d'utilisateur est déjà pris" }, 400)
       }
 
       const email = `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@user.tchadmarket.local`
@@ -46,50 +41,35 @@ Deno.serve(async (req) => {
         email,
         password,
         email_confirm: true,
-        user_metadata: { display_name: display_name || username, username },
+        user_metadata: { display_name: display_name || username, username, phone: phone || '' },
       })
 
       if (createError) {
         if (createError.message?.includes('already been registered')) {
-          return new Response(JSON.stringify({ success: false, message: 'Ce nom d\'utilisateur est déjà pris' }), {
-            status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          })
+          return jsonRes({ success: false, message: "Ce nom d'utilisateur est déjà pris" }, 400)
         }
         throw createError
       }
 
-      // Update profile with username
-      await supabase.from('profiles').update({ 
-        username, 
-        display_name: display_name || username 
+      await supabase.from('profiles').update({
+        username,
+        display_name: display_name || username,
+        phone: phone || '',
       }).eq('id', newUser.user.id)
 
-      // Sign in the new user
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
       if (signInError) throw signInError
 
-      return new Response(JSON.stringify({ 
-        success: true, 
-        session: signInData.session,
-        user: signInData.user,
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return jsonRes({ success: true, session: signInData.session, user: signInData.user })
     }
 
+    // ─── LOGIN (username + password) ───
     if (action === 'login') {
       const { username, password } = body
       if (!username || !password) {
-        return new Response(JSON.stringify({ success: false, message: 'Username et mot de passe requis' }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
+        return jsonRes({ success: false, message: 'Username et mot de passe requis' }, 400)
       }
 
-      // Find user by username
       const { data: profile } = await supabase
         .from('profiles')
         .select('id')
@@ -97,17 +77,12 @@ Deno.serve(async (req) => {
         .maybeSingle()
 
       if (!profile) {
-        return new Response(JSON.stringify({ success: false, message: 'Utilisateur non trouvé' }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
+        return jsonRes({ success: false, message: 'Utilisateur non trouvé' }, 400)
       }
 
-      // Get user email from auth
       const { data: userData } = await supabase.auth.admin.getUserById(profile.id)
       if (!userData?.user?.email) {
-        return new Response(JSON.stringify({ success: false, message: 'Compte introuvable' }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
+        return jsonRes({ success: false, message: 'Compte introuvable' }, 400)
       }
 
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
@@ -116,23 +91,15 @@ Deno.serve(async (req) => {
       })
 
       if (signInError) {
-        return new Response(JSON.stringify({ success: false, message: 'Mot de passe incorrect' }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
+        return jsonRes({ success: false, message: 'Mot de passe incorrect' }, 400)
       }
 
-      return new Response(JSON.stringify({ 
-        success: true, 
-        session: signInData.session,
-        user: signInData.user,
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return jsonRes({ success: true, session: signInData.session, user: signInData.user })
     }
 
-    // ─── OTP AUTH (WhatsApp or SMS) ───
+    // ─── SEND OTP (WhatsApp only) ───
     if (action === 'send') {
-      const { phone, channel = 'whatsapp' } = body
+      const { phone } = body
 
       const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')?.trim()
       const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')?.trim()
@@ -144,24 +111,14 @@ Deno.serve(async (req) => {
 
       const otpCode = Math.floor(100000 + Math.random() * 900000).toString()
 
-      const { error: insertError } = await supabase
-        .from('otp_codes')
-        .insert({ phone, code: otpCode })
+      const { error: insertError } = await supabase.from('otp_codes').insert({ phone, code: otpCode })
       if (insertError) throw insertError
 
       const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`
-      
-      const fromNumber = channel === 'sms' 
-        ? TWILIO_WHATSAPP_FROM 
-        : `whatsapp:${TWILIO_WHATSAPP_FROM}`
-      
-      const toNumber = channel === 'sms' 
-        ? phone 
-        : `whatsapp:${phone}`
 
       const msgBody = new URLSearchParams({
-        From: fromNumber,
-        To: toNumber,
+        From: `whatsapp:${TWILIO_WHATSAPP_FROM}`,
+        To: `whatsapp:${phone}`,
         Body: `Votre code de vérification TchadMarket est : ${otpCode}. Il expire dans 5 minutes.`,
       })
 
@@ -180,13 +137,12 @@ Deno.serve(async (req) => {
         throw new Error(`Échec de l'envoi du message: ${twilioRes.status}`)
       }
 
-      return new Response(JSON.stringify({ success: true, message: 'OTP sent' }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return jsonRes({ success: true, message: 'OTP sent via WhatsApp' })
     }
 
-    if (action === 'verify') {
-      const { phone, code, display_name } = body
+    // ─── VERIFY OTP ONLY (no account creation) ───
+    if (action === 'verify_only') {
+      const { phone, code } = body
 
       const { data: otpData, error: otpError } = await supabase
         .from('otp_codes')
@@ -200,54 +156,77 @@ Deno.serve(async (req) => {
         .single()
 
       if (otpError || !otpData) {
-        return new Response(JSON.stringify({ success: false, message: 'Code invalide ou expiré' }), {
-          status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
+        return jsonRes({ success: false, message: 'Code invalide ou expiré' }, 400)
       }
 
       await supabase.from('otp_codes').update({ verified: true }).eq('id', otpData.id)
 
-      // Find or create user
-      const email = `${phone.replace(/[^0-9]/g, '')}@phone.tchadmarket.local`
-      const password = crypto.randomUUID()
-
-      const { data: existingUsers } = await supabase.auth.admin.listUsers()
-      const existingUser = existingUsers?.users?.find(u => u.phone === phone || u.email === email)
-
-      let session = null
-
-      if (existingUser) {
-        // Reset password and sign in
-        await supabase.auth.admin.updateUser(existingUser.id, { password })
-        const { data: signInData } = await supabase.auth.signInWithPassword({ email: existingUser.email!, password })
-        session = signInData?.session
-      } else {
-        const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
-          email,
-          phone,
-          password,
-          email_confirm: true,
-          phone_confirm: true,
-          user_metadata: { display_name: display_name || '', phone },
-        })
-        if (createError) throw createError
-
-        const { data: signInData } = await supabase.auth.signInWithPassword({ email, password })
-        session = signInData?.session
-      }
-
-      return new Response(JSON.stringify({ 
-        success: true, 
-        session,
-        needsName: !existingUser,
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return jsonRes({ success: true })
     }
 
-    return new Response(JSON.stringify({ error: 'Invalid action' }), {
-      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    // ─── RESET PASSWORD (verify OTP + update password) ───
+    if (action === 'reset_password') {
+      const { phone, code, username, new_password } = body
+
+      if (!username || !new_password || !phone || !code) {
+        return jsonRes({ success: false, message: 'Tous les champs sont requis' }, 400)
+      }
+
+      // Verify OTP
+      const { data: otpData, error: otpError } = await supabase
+        .from('otp_codes')
+        .select('*')
+        .eq('phone', phone)
+        .eq('code', code)
+        .eq('verified', false)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (otpError || !otpData) {
+        return jsonRes({ success: false, message: 'Code invalide ou expiré' }, 400)
+      }
+
+      await supabase.from('otp_codes').update({ verified: true }).eq('id', otpData.id)
+
+      // Find user by username
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, phone')
+        .eq('username', username)
+        .maybeSingle()
+
+      if (!profile) {
+        return jsonRes({ success: false, message: 'Utilisateur non trouvé' }, 400)
+      }
+
+      // Verify phone matches the profile
+      if (profile.phone !== phone) {
+        return jsonRes({ success: false, message: 'Le numéro ne correspond pas au compte' }, 400)
+      }
+
+      // Update password
+      const { error: updateError } = await supabase.auth.admin.updateUser(profile.id, { password: new_password })
+      if (updateError) throw updateError
+
+      // Sign in
+      const { data: userData } = await supabase.auth.admin.getUserById(profile.id)
+      if (!userData?.user?.email) {
+        return jsonRes({ success: false, message: 'Compte introuvable' }, 400)
+      }
+
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: userData.user.email,
+        password: new_password,
+      })
+
+      if (signInError) throw signInError
+
+      return jsonRes({ success: true, session: signInData.session })
+    }
+
+    return jsonRes({ error: 'Invalid action' }, 400)
   } catch (error) {
     console.error('Error:', error)
     return new Response(JSON.stringify({ error: error.message }), {
@@ -255,3 +234,10 @@ Deno.serve(async (req) => {
     })
   }
 })
+
+function jsonRes(data: unknown, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
+}
