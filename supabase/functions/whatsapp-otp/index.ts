@@ -28,7 +28,7 @@ Deno.serve(async (req) => {
       const { data: existing } = await supabase
         .from('profiles')
         .select('id')
-        .eq('username', username)
+        .ilike('username', username)
         .maybeSingle()
 
       if (existing) {
@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
       const { data: profile } = await supabase
         .from('profiles')
         .select('id')
-        .eq('username', username)
+        .ilike('username', username)
         .maybeSingle()
 
       if (!profile) {
@@ -194,7 +194,7 @@ Deno.serve(async (req) => {
       const { data: profile } = await supabase
         .from('profiles')
         .select('id, phone')
-        .eq('username', username)
+        .ilike('username', username)
         .maybeSingle()
 
       if (!profile) {
