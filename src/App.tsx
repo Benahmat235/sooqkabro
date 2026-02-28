@@ -12,6 +12,8 @@ import PublishListing from "./pages/PublishListing";
 import AuthPage from "./pages/AuthPage";
 import AccountPage from "./pages/AccountPage";
 import MyListings from "./pages/MyListings";
+import EditListing from "./pages/EditListing";
+import FavoritesPage from "./pages/FavoritesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +35,8 @@ const App = () => (
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/compte" element={<AccountPage />} />
             <Route path="/mes-annonces" element={<MyListings />} />
+            <Route path="/modifier/:id" element={<EditListing />} />
+            <Route path="/favoris" element={<FavoritesPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

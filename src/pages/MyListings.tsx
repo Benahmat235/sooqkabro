@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, Navigate } from "react-router-dom";
-import { ArrowLeft, Plus, Archive, Trash2, MoreVertical, RotateCcw } from "lucide-react";
+import { Link, Navigate, useNavigate } from "react-router-dom";
+import { ArrowLeft, Plus, Archive, Trash2, MoreVertical, RotateCcw, Pencil } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
@@ -34,6 +34,7 @@ const statusLabels: Record<string, { label: string; variant: "default" | "second
 
 const MyListings = () => {
   const { user, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<Listing | null>(null);
@@ -169,6 +170,9 @@ const MyListings = () => {
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => navigate(`/modifier/${listing.id}`)}>
+                      <Pencil className="h-4 w-4 mr-2" />Modifier
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => archiveListing(listing)}>
                       {listing.status === "archived" ? (
                         <><RotateCcw className="h-4 w-4 mr-2" />Republier</>

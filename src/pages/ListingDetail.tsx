@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { MapPin, Phone, MessageCircle, Clock, Share2, Heart, ChevronLeft } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
@@ -8,12 +9,29 @@ import { formatPrice } from "@/data/mockListings";
 import { getCityById } from "@/data/cities";
 import { getCategoryById, getSubcategoryName } from "@/data/categories";
 import { useListings } from "@/hooks/useListings";
+import { useFavorites, useToggleFavorite } from "@/hooks/useFavorites";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 const ListingDetail = () => {
   const { id } = useParams();
   const { data: allListings = [], isLoading } = useListings();
+  const { user } = useAuth();
+  const { favoriteIds } = useFavorites();
+  const toggleFav = useToggleFavorite();
 
   const listing = allListings.find((l) => l.id === id);
+  const isFav = listing ? favoriteIds.includes(listing.id) : false;
+
+  // Track view
+  useEffect(() => {
+    if (!id) return;
+    supabase.from("listing_views").insert({
+      listing_id: id,
+      viewer_id: user?.id || null,
+    }).then(() => {});
+  }, [id, user?.id]);
 
   if (isLoading) {
     return (
@@ -107,7 +125,14 @@ const ListingDetail = () => {
         </div>
         <div className="grid grid-cols-2 gap-2.5 mb-6">
           <Button variant="outline" className="gap-2 rounded-xl h-11"><Share2 className="h-4 w-4" />Partager</Button>
-          <Button variant="outline" className="gap-2 rounded-xl h-11"><Heart className="h-4 w-4" />Sauvegarder</Button>
+          <Button
+            variant="outline"
+            className={cn("gap-2 rounded-xl h-11", isFav && "border-destructive text-destructive")}
+            onClick={() => toggleFav.mutate({ listingId: listing.id, isFav })}
+          >
+            <Heart className={cn("h-4 w-4", isFav && "fill-destructive")} />
+            {isFav ? "Sauvegardé" : "Sauvegarder"}
+          </Button>
         </div>
       </div>
 
