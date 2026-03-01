@@ -2,3 +2,6 @@ project_id = "bwvtfosrbbkawieanrjd"
 
 [functions.whatsapp-otp]
 verify_jwt = false
+
+[functions.getPersonalizedFeed]
+verify_jwt = false
