@@ -222,6 +222,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_seller_phone: { Args: { _user_id: string }; Returns: string }
       is_listing_owner: { Args: { _listing_id: string }; Returns: boolean }
     }
     Enums: {
