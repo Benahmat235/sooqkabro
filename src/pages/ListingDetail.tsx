@@ -55,11 +55,23 @@ const ListingDetail = () => {
   const city = getCityById(listing.city_id);
   const category = getCategoryById(listing.category_id);
   const subcategoryName = getSubcategoryName(listing.category_id, listing.subcategory_id);
-  const whatsappLink = `https://wa.me/235${listing.phone}?text=${encodeURIComponent(`Bonjour, je suis intéressé par votre annonce "${listing.title}" sur TchadMarket.`)}`;
-  const callLink = `tel:+235${listing.phone}`;
-  const phoneFormatted = listing.phone.length >= 8
-    ? `+235 ${listing.phone.slice(0, 2)} ${listing.phone.slice(2, 4)} ${listing.phone.slice(4, 6)} ${listing.phone.slice(6)}`
+  const cleanPhone = listing.phone.replace(/\D/g, "");
+  const whatsappLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Bonjour, je suis intéressé par votre annonce "${listing.title}" sur TchadMarket.`)}`;
+  const callLink = `tel:+${cleanPhone}`;
+  const phoneFormatted = cleanPhone.length >= 11
+    ? `+${cleanPhone.slice(0, 3)} ${cleanPhone.slice(3, 5)} ${cleanPhone.slice(5, 7)} ${cleanPhone.slice(7, 9)} ${cleanPhone.slice(9)}`
     : listing.phone;
+
+  const listingUrl = `${window.location.origin}/annonce/${listing.id}`;
+  const handleShare = async () => {
+    const shareData = { title: listing.title, text: `${listing.title} - ${formatPrice(listing.price)}`, url: listingUrl };
+    if (navigator.share) {
+      try { await navigator.share(shareData); } catch {}
+    } else {
+      await navigator.clipboard.writeText(listingUrl);
+      alert("Lien copié !");
+    }
+  };
 
   const images = listing.images.length > 0 ? listing.images : ["/placeholder.svg"];
 
@@ -124,7 +136,7 @@ const ListingDetail = () => {
           </a>
         </div>
         <div className="grid grid-cols-2 gap-2.5 mb-6">
-          <Button variant="outline" className="gap-2 rounded-xl h-11"><Share2 className="h-4 w-4" />Partager</Button>
+          <Button variant="outline" className="gap-2 rounded-xl h-11" onClick={handleShare}><Share2 className="h-4 w-4" />Partager</Button>
           <Button
             variant="outline"
             className={cn("gap-2 rounded-xl h-11", isFav && "border-destructive text-destructive")}
@@ -133,6 +145,20 @@ const ListingDetail = () => {
             <Heart className={cn("h-4 w-4", isFav && "fill-destructive")} />
             {isFav ? "Sauvegardé" : "Sauvegarder"}
           </Button>
+        </div>
+      </div>
+
+      {/* Safety tips */}
+      <div className="px-4 pb-4">
+        <div className="bg-accent/50 border border-border rounded-xl p-4">
+          <h3 className="font-bold text-sm mb-2 flex items-center gap-1.5">🛡️ Conseils de sécurité</h3>
+          <ul className="text-xs text-muted-foreground space-y-1.5 list-disc pl-4">
+            <li>Ne payez jamais à l'avance avant d'avoir vu l'article</li>
+            <li>Rencontrez le vendeur dans un lieu public et fréquenté</li>
+            <li>Vérifiez l'article avant de payer</li>
+            <li>Méfiez-vous des prix anormalement bas</li>
+            <li>Ne partagez jamais vos informations bancaires</li>
+          </ul>
         </div>
       </div>
 
