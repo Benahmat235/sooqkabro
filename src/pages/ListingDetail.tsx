@@ -26,11 +26,11 @@ const ListingDetail = () => {
 
   const [sellerPhone, setSellerPhone] = useState<string | null>(null);
 
-  // Fetch seller's verified WhatsApp phone from profile
+  // Fetch seller's verified WhatsApp phone via secure RPC
   useEffect(() => {
     if (!listing?.user_id) return;
-    supabase.from("profiles").select("phone").eq("id", listing.user_id).maybeSingle()
-      .then(({ data }) => { if (data?.phone) setSellerPhone(data.phone); });
+    supabase.rpc("get_seller_phone", { _user_id: listing.user_id })
+      .then(({ data }) => { if (data) setSellerPhone(data); });
   }, [listing?.user_id]);
 
   // Track view
