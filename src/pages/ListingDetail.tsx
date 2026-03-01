@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { MapPin, Phone, MessageCircle, Clock, Share2, Heart, ChevronLeft } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
@@ -23,6 +23,15 @@ const ListingDetail = () => {
 
   const listing = allListings.find((l) => l.id === id);
   const isFav = listing ? favoriteIds.includes(listing.id) : false;
+
+  const [sellerPhone, setSellerPhone] = useState<string | null>(null);
+
+  // Fetch seller's verified WhatsApp phone from profile
+  useEffect(() => {
+    if (!listing?.user_id) return;
+    supabase.from("profiles").select("phone").eq("id", listing.user_id).maybeSingle()
+      .then(({ data }) => { if (data?.phone) setSellerPhone(data.phone); });
+  }, [listing?.user_id]);
 
   // Track view
   useEffect(() => {
@@ -56,7 +65,8 @@ const ListingDetail = () => {
   const category = getCategoryById(listing.category_id);
   const subcategoryName = getSubcategoryName(listing.category_id, listing.subcategory_id);
   const cleanPhone = listing.phone.replace(/\D/g, "");
-  const whatsappLink = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(`Bonjour, je suis intéressé par votre annonce "${listing.title}" sur TchadMarket.`)}`;
+  const whatsappPhone = (sellerPhone || listing.phone).replace(/\D/g, "");
+  const whatsappLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(`Bonjour, je suis intéressé par votre annonce "${listing.title}" sur TchadMarket.`)}`;
   const callLink = `tel:+${cleanPhone}`;
   const phoneFormatted = cleanPhone.length >= 11
     ? `+${cleanPhone.slice(0, 3)} ${cleanPhone.slice(3, 5)} ${cleanPhone.slice(5, 7)} ${cleanPhone.slice(7, 9)} ${cleanPhone.slice(9)}`
