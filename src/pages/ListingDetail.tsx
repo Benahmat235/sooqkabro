@@ -63,15 +63,8 @@ const ListingDetail = () => {
     : listing.phone;
 
   const listingUrl = `${window.location.origin}/annonce/${listing.id}`;
-  const handleShare = async () => {
-    const shareData = { title: listing.title, text: `${listing.title} - ${formatPrice(listing.price)}`, url: listingUrl };
-    if (navigator.share) {
-      try { await navigator.share(shareData); } catch {}
-    } else {
-      await navigator.clipboard.writeText(listingUrl);
-      alert("Lien copié !");
-    }
-  };
+  const shareText = `${listing.title} - ${formatPrice(listing.price)}\n📍 ${city?.name || ""}\n👉 ${listingUrl}`;
+  const shareWhatsappLink = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
 
   const images = listing.images.length > 0 ? listing.images : ["/placeholder.svg"];
 
@@ -136,7 +129,7 @@ const ListingDetail = () => {
           </a>
         </div>
         <div className="grid grid-cols-2 gap-2.5 mb-6">
-          <Button variant="outline" className="gap-2 rounded-xl h-11" onClick={handleShare}><Share2 className="h-4 w-4" />Partager</Button>
+          <a href={shareWhatsappLink} target="_blank" rel="noopener noreferrer"><Button variant="outline" className="gap-2 rounded-xl h-11 w-full"><Share2 className="h-4 w-4" />Partager</Button></a>
           <Button
             variant="outline"
             className={cn("gap-2 rounded-xl h-11", isFav && "border-destructive text-destructive")}
