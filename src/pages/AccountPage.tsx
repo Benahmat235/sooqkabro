@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { User, LogOut, Phone, ChevronRight, Eye, FileText, Heart, Pencil, Check, X } from "lucide-react";
+import { User, LogOut, Phone, ChevronRight, Eye, FileText, Heart, Pencil, Check, X, Camera } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
 
@@ -18,6 +18,7 @@ interface Profile {
   display_name: string | null;
   phone: string;
   username: string | null;
+  avatar_url: string | null;
 }
 
 const AccountPage = () => {
@@ -29,12 +30,13 @@ const AccountPage = () => {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ display_name: "", phone: "", username: "" });
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!user) return;
 
-    // Fetch profile
-    supabase.from("profiles").select("display_name, phone, username").eq("id", user.id).single()
+    supabase.from("profiles").select("display_name, phone, username, avatar_url").eq("id", user.id).single()
       .then(({ data }) => {
         if (data) {
           setProfile(data);
@@ -46,7 +48,6 @@ const AccountPage = () => {
         }
       });
 
-    // Fetch stats
     const fetchStats = async () => {
       const { count: listingCount } = await supabase
         .from("listings")
@@ -80,6 +81,38 @@ const AccountPage = () => {
     fetchStats();
   }, [user]);
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${user.id}/avatar.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("listing-photos")
+      .upload(path, file, { upsert: true });
+
+    if (uploadError) {
+      toast({ title: "Erreur", description: uploadError.message, variant: "destructive" });
+      setUploading(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage.from("listing-photos").getPublicUrl(path);
+    const avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+    const { error: updateError } = await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", user.id);
+
+    if (updateError) {
+      toast({ title: "Erreur", description: updateError.message, variant: "destructive" });
+    } else {
+      setProfile((prev) => prev ? { ...prev, avatar_url: avatarUrl } : prev);
+      toast({ title: "Photo de profil mise à jour" });
+    }
+    setUploading(false);
+  };
+
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
@@ -92,7 +125,7 @@ const AccountPage = () => {
     if (error) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } else {
-      setProfile({ display_name: form.display_name, phone: form.phone, username: form.username });
+      setProfile((prev) => prev ? { ...prev, display_name: form.display_name, phone: form.phone, username: form.username } : prev);
       setEditing(false);
       toast({ title: "Profil mis à jour" });
     }
@@ -134,12 +167,36 @@ const AccountPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleAvatarUpload}
+      />
+
       {/* Profile header */}
       <div className="bg-primary p-6 text-primary-foreground">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-primary-foreground/20 flex items-center justify-center">
-            <User className="h-8 w-8" />
-          </div>
+          <button
+            className="relative w-16 h-16 rounded-full bg-primary-foreground/20 flex items-center justify-center overflow-hidden group"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <User className="h-8 w-8" />
+            )}
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <Camera className="h-5 w-5 text-white" />
+            </div>
+            {uploading && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+              </div>
+            )}
+          </button>
           <div className="flex-1">
             <h2 className="text-lg font-bold">{displayName}</h2>
             <p className="text-sm opacity-80 flex items-center gap-1">
@@ -161,27 +218,15 @@ const AccountPage = () => {
           <h3 className="font-bold text-sm text-foreground">Modifier le profil</h3>
           <div>
             <label className="text-xs text-muted-foreground">Nom d'affichage</label>
-            <Input
-              value={form.display_name}
-              onChange={(e) => setForm({ ...form, display_name: e.target.value })}
-              placeholder="Votre nom"
-            />
+            <Input value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} placeholder="Votre nom" />
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Téléphone</label>
-            <Input
-              value={form.phone}
-              onChange={(e) => setForm({ ...form, phone: e.target.value })}
-              placeholder="+235..."
-            />
+            <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+235..." />
           </div>
           <div>
             <label className="text-xs text-muted-foreground">Nom d'utilisateur</label>
-            <Input
-              value={form.username}
-              onChange={(e) => setForm({ ...form, username: e.target.value })}
-              placeholder="@username"
-            />
+            <Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="@username" />
           </div>
           <div className="flex gap-2">
             <Button onClick={handleSave} disabled={saving} className="flex-1 gap-1">
@@ -216,29 +261,18 @@ const AccountPage = () => {
 
       {/* Menu items */}
       <div className="p-4 pt-0 space-y-2">
-        <button
-          onClick={() => navigate("/mes-annonces")}
-          className="w-full flex items-center justify-between p-4 bg-card rounded-lg border"
-        >
+        <button onClick={() => navigate("/mes-annonces")} className="w-full flex items-center justify-between p-4 bg-card rounded-lg border">
           <span className="font-medium text-foreground">Mes annonces</span>
           <ChevronRight className="h-5 w-5 text-muted-foreground" />
         </button>
-
-        <button
-          onClick={() => navigate("/favoris")}
-          className="w-full flex items-center justify-between p-4 bg-card rounded-lg border"
-        >
+        <button onClick={() => navigate("/favoris")} className="w-full flex items-center justify-between p-4 bg-card rounded-lg border">
           <span className="font-medium text-foreground">Mes favoris</span>
           <ChevronRight className="h-5 w-5 text-muted-foreground" />
         </button>
-
         <Button
           variant="ghost"
           className="w-full justify-start text-destructive hover:text-destructive"
-          onClick={async () => {
-            await signOut();
-            navigate("/");
-          }}
+          onClick={async () => { await signOut(); navigate("/"); }}
         >
           <LogOut className="h-5 w-5 mr-2" />
           Déconnexion
