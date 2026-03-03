@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { User, LogOut, Phone, ChevronRight, Eye, FileText, Heart } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { User, LogOut, Phone, ChevronRight, Eye, FileText, Heart, Pencil, Check, X } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import { useToast } from "@/hooks/use-toast";
 
 interface Stats {
   totalListings: number;
@@ -12,28 +14,51 @@ interface Stats {
   totalFavorites: number;
 }
 
+interface Profile {
+  display_name: string | null;
+  phone: string;
+  username: string | null;
+}
+
 const AccountPage = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [stats, setStats] = useState<Stats>({ totalListings: 0, totalViews: 0, totalFavorites: 0 });
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState({ display_name: "", phone: "", username: "" });
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!user) return;
+
+    // Fetch profile
+    supabase.from("profiles").select("display_name, phone, username").eq("id", user.id).single()
+      .then(({ data }) => {
+        if (data) {
+          setProfile(data);
+          setForm({
+            display_name: data.display_name || "",
+            phone: data.phone || "",
+            username: data.username || "",
+          });
+        }
+      });
+
+    // Fetch stats
     const fetchStats = async () => {
-      // Count listings
       const { count: listingCount } = await supabase
         .from("listings")
         .select("id", { count: "exact", head: true })
         .eq("user_id", user.id);
 
-      // Get user's listing ids for views/favs count
       const { data: userListings } = await supabase
         .from("listings")
         .select("id")
         .eq("user_id", user.id);
 
       const ids = (userListings || []).map((l: any) => l.id);
-
       let totalViews = 0;
       let totalFavorites = 0;
 
@@ -42,24 +67,37 @@ const AccountPage = () => {
           .from("listing_views")
           .select("id", { count: "exact", head: true })
           .in("listing_id", ids);
-
         const { count: favCount } = await supabase
           .from("favorites")
           .select("id", { count: "exact", head: true })
           .in("listing_id", ids);
-
         totalViews = viewCount || 0;
         totalFavorites = favCount || 0;
       }
 
-      setStats({
-        totalListings: listingCount || 0,
-        totalViews,
-        totalFavorites,
-      });
+      setStats({ totalListings: listingCount || 0, totalViews, totalFavorites });
     };
     fetchStats();
   }, [user]);
+
+  const handleSave = async () => {
+    if (!user) return;
+    setSaving(true);
+    const { error } = await supabase.from("profiles").update({
+      display_name: form.display_name || null,
+      phone: form.phone,
+      username: form.username || null,
+    }).eq("id", user.id);
+
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    } else {
+      setProfile({ display_name: form.display_name, phone: form.phone, username: form.username });
+      setEditing(false);
+      toast({ title: "Profil mis à jour" });
+    }
+    setSaving(false);
+  };
 
   if (loading) {
     return (
@@ -91,6 +129,9 @@ const AccountPage = () => {
     );
   }
 
+  const displayName = profile?.display_name || user.user_metadata?.display_name || "Utilisateur";
+  const displayPhone = profile?.phone || user.phone || user.user_metadata?.phone || "";
+
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Profile header */}
@@ -99,17 +140,60 @@ const AccountPage = () => {
           <div className="w-16 h-16 rounded-full bg-primary-foreground/20 flex items-center justify-center">
             <User className="h-8 w-8" />
           </div>
-          <div>
-            <h2 className="text-lg font-bold">
-              {user.user_metadata?.display_name || "Utilisateur"}
-            </h2>
+          <div className="flex-1">
+            <h2 className="text-lg font-bold">{displayName}</h2>
             <p className="text-sm opacity-80 flex items-center gap-1">
               <Phone className="h-3 w-3" />
-              {user.phone || user.user_metadata?.phone}
+              {displayPhone}
             </p>
           </div>
+          {!editing && (
+            <button onClick={() => setEditing(true)} className="bg-primary-foreground/20 rounded-full p-2">
+              <Pencil className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Edit profile form */}
+      {editing && (
+        <div className="p-4 bg-card border-b space-y-3">
+          <h3 className="font-bold text-sm text-foreground">Modifier le profil</h3>
+          <div>
+            <label className="text-xs text-muted-foreground">Nom d'affichage</label>
+            <Input
+              value={form.display_name}
+              onChange={(e) => setForm({ ...form, display_name: e.target.value })}
+              placeholder="Votre nom"
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Téléphone</label>
+            <Input
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              placeholder="+235..."
+            />
+          </div>
+          <div>
+            <label className="text-xs text-muted-foreground">Nom d'utilisateur</label>
+            <Input
+              value={form.username}
+              onChange={(e) => setForm({ ...form, username: e.target.value })}
+              placeholder="@username"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={handleSave} disabled={saving} className="flex-1 gap-1">
+              <Check className="h-4 w-4" />
+              {saving ? "..." : "Enregistrer"}
+            </Button>
+            <Button variant="outline" onClick={() => { setEditing(false); if (profile) setForm({ display_name: profile.display_name || "", phone: profile.phone, username: profile.username || "" }); }}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 p-4">
