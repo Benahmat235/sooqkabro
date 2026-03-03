@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
-import { MapPin, Phone, MessageCircle, Clock, Share2, Heart, ChevronLeft } from "lucide-react";
+import { MapPin, Phone, MessageCircle, Clock, Share2, Heart, ChevronLeft, ChevronRight as ChevronRightIcon, X } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import ListingCard from "@/components/ListingCard";
 import { Button } from "@/components/ui/button";
@@ -20,11 +20,19 @@ const ListingDetail = () => {
   const { user } = useAuth();
   const { favoriteIds } = useFavorites();
   const toggleFav = useToggleFavorite();
+  const [sellerPhone, setSellerPhone] = useState<string | null>(null);
+  const [currentImg, setCurrentImg] = useState(0);
+  const [fullscreen, setFullscreen] = useState(false);
 
   const listing = allListings.find((l) => l.id === id);
   const isFav = listing ? favoriteIds.includes(listing.id) : false;
+  const images = listing && listing.images.length > 0 ? listing.images : ["/placeholder.svg"];
 
-  const [sellerPhone, setSellerPhone] = useState<string | null>(null);
+  const nextImg = useCallback(() => setCurrentImg((p) => (p + 1) % images.length), [images.length]);
+  const prevImg = useCallback(() => setCurrentImg((p) => (p - 1 + images.length) % images.length), [images.length]);
+
+  // Reset image index when listing changes
+  useEffect(() => { setCurrentImg(0); }, [id]);
 
   // Fetch seller's verified WhatsApp phone via secure RPC
   useEffect(() => {
@@ -71,12 +79,9 @@ const ListingDetail = () => {
   const phoneFormatted = cleanPhone.length >= 11
     ? `+${cleanPhone.slice(0, 3)} ${cleanPhone.slice(3, 5)} ${cleanPhone.slice(5, 7)} ${cleanPhone.slice(7, 9)} ${cleanPhone.slice(9)}`
     : listing.phone;
-
   const listingUrl = `${window.location.origin}/annonce/${listing.id}`;
   const shareText = `${listing.title} - ${formatPrice(listing.price)}\n📍 ${city?.name || ""}\n👉 ${listingUrl}`;
   const shareWhatsappLink = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
-
-  const images = listing.images.length > 0 ? listing.images : ["/placeholder.svg"];
 
   const similarListings = allListings
     .filter((l) => l.category_id === listing.category_id && l.id !== listing.id)
@@ -84,10 +89,39 @@ const ListingDetail = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="relative">
-        <div className="aspect-[4/3] bg-muted">
-          <img src={images[0]} alt={listing.title} className="w-full h-full object-cover" />
+      {/* Fullscreen gallery */}
+      {fullscreen && (
+        <div className="fixed inset-0 z-50 bg-black flex flex-col">
+          <button onClick={() => setFullscreen(false)} className="absolute top-4 right-4 z-10 bg-white/20 rounded-full p-2">
+            <X className="h-6 w-6 text-white" />
+          </button>
+          <div className="flex-1 flex items-center justify-center relative">
+            {images.length > 1 && (
+              <>
+                <button onClick={prevImg} className="absolute left-2 bg-white/20 rounded-full p-2 z-10"><ChevronLeft className="h-6 w-6 text-white" /></button>
+                <button onClick={nextImg} className="absolute right-2 bg-white/20 rounded-full p-2 z-10"><ChevronRightIcon className="h-6 w-6 text-white" /></button>
+              </>
+            )}
+            <img src={images[currentImg]} alt={listing.title} className="max-w-full max-h-full object-contain" />
+          </div>
+          <div className="py-3 flex justify-center gap-1.5">
+            {images.map((_, i) => (
+              <button key={i} onClick={() => setCurrentImg(i)} className={`w-2.5 h-2.5 rounded-full ${i === currentImg ? 'bg-white' : 'bg-white/40'}`} />
+            ))}
+          </div>
         </div>
+      )}
+
+      <div className="relative">
+        <div className="aspect-[4/3] bg-muted cursor-pointer" onClick={() => setFullscreen(true)}>
+          <img src={images[currentImg]} alt={listing.title} className="w-full h-full object-cover" />
+        </div>
+        {images.length > 1 && (
+          <>
+            <button onClick={(e) => { e.stopPropagation(); prevImg(); }} className="absolute left-2 top-1/2 -translate-y-1/2 bg-card/70 backdrop-blur-sm rounded-full p-1.5 shadow"><ChevronLeft className="h-5 w-5 text-foreground" /></button>
+            <button onClick={(e) => { e.stopPropagation(); nextImg(); }} className="absolute right-2 top-1/2 -translate-y-1/2 bg-card/70 backdrop-blur-sm rounded-full p-1.5 shadow"><ChevronRightIcon className="h-5 w-5 text-foreground" /></button>
+          </>
+        )}
         <Link to="/" className="absolute top-4 left-4 bg-card/80 backdrop-blur-sm rounded-full p-2 shadow">
           <ChevronLeft className="h-5 w-5 text-foreground" />
         </Link>
@@ -96,7 +130,7 @@ const ListingDetail = () => {
         </div>
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
           {images.map((_, i) => (
-            <div key={i} className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-card' : 'bg-card/50'}`} />
+            <button key={i} onClick={(e) => { e.stopPropagation(); setCurrentImg(i); }} className={`w-2 h-2 rounded-full ${i === currentImg ? 'bg-card' : 'bg-card/50'}`} />
           ))}
         </div>
       </div>
