@@ -41,13 +41,22 @@ const ListingDetail = () => {
       .then(({ data }) => { if (data) setSellerPhone(data); });
   }, [listing?.user_id]);
 
-  // Track view
+  // Track view (deduplicated for logged-in users via unique index)
   useEffect(() => {
     if (!id) return;
-    supabase.from("listing_views").insert({
-      listing_id: id,
-      viewer_id: user?.id || null,
-    }).then(() => {});
+    const viewerId = user?.id || null;
+    if (viewerId) {
+      // Use upsert with unique constraint to avoid duplicates
+      supabase.from("listing_views").upsert(
+        { listing_id: id, viewer_id: viewerId },
+        { onConflict: "listing_id,viewer_id" }
+      ).then(() => {});
+    } else {
+      supabase.from("listing_views").insert({
+        listing_id: id,
+        viewer_id: null,
+      }).then(() => {});
+    }
   }, [id, user?.id]);
 
   if (isLoading) {
@@ -95,7 +104,22 @@ const ListingDetail = () => {
           <button onClick={() => setFullscreen(false)} className="absolute top-4 right-4 z-10 bg-white/20 rounded-full p-2">
             <X className="h-6 w-6 text-white" />
           </button>
-          <div className="flex-1 flex items-center justify-center relative">
+          <div
+            className="flex-1 flex items-center justify-center relative"
+            onTouchStart={(e) => {
+              (e.currentTarget as any)._touchStartX = e.touches[0].clientX;
+            }}
+            onTouchEnd={(e) => {
+              const startX = (e.currentTarget as any)._touchStartX;
+              if (startX === undefined) return;
+              const diff = startX - e.changedTouches[0].clientX;
+              if (Math.abs(diff) > 50) {
+                if (diff > 0) nextImg();
+                else prevImg();
+              }
+              delete (e.currentTarget as any)._touchStartX;
+            }}
+          >
             {images.length > 1 && (
               <>
                 <button onClick={prevImg} className="absolute left-2 bg-white/20 rounded-full p-2 z-10"><ChevronLeft className="h-6 w-6 text-white" /></button>
@@ -113,7 +137,25 @@ const ListingDetail = () => {
       )}
 
       <div className="relative">
-        <div className="aspect-[4/3] bg-muted cursor-pointer" onClick={() => setFullscreen(true)}>
+        <div
+          className="aspect-[4/3] bg-muted cursor-pointer overflow-hidden"
+          onClick={() => setFullscreen(true)}
+          onTouchStart={(e) => {
+            const touch = e.touches[0];
+            (e.currentTarget as any)._touchStartX = touch.clientX;
+          }}
+          onTouchEnd={(e) => {
+            const startX = (e.currentTarget as any)._touchStartX;
+            if (startX === undefined) return;
+            const endX = e.changedTouches[0].clientX;
+            const diff = startX - endX;
+            if (Math.abs(diff) > 50) {
+              if (diff > 0) nextImg();
+              else prevImg();
+            }
+            delete (e.currentTarget as any)._touchStartX;
+          }}
+        >
           <img src={images[currentImg]} alt={listing.title} className="w-full h-full object-cover" />
         </div>
         {images.length > 1 && (
