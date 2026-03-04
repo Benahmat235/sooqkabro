@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { User, LogOut, Phone, ChevronRight, Eye, FileText, Heart, Pencil, Check, X, Camera } from "lucide-react";
+import { User, LogOut, Phone, ChevronRight, Eye, FileText, Heart, Pencil, Check, X, Camera, Settings } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
 
@@ -50,32 +50,17 @@ const AccountPage = () => {
 
     const fetchStats = async () => {
       const { count: listingCount } = await supabase
-        .from("listings")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user.id);
-
-      const { data: userListings } = await supabase
-        .from("listings")
-        .select("id")
-        .eq("user_id", user.id);
-
+        .from("listings").select("id", { count: "exact", head: true }).eq("user_id", user.id);
+      const { data: userListings } = await supabase.from("listings").select("id").eq("user_id", user.id);
       const ids = (userListings || []).map((l: any) => l.id);
       let totalViews = 0;
       let totalFavorites = 0;
-
       if (ids.length > 0) {
-        const { count: viewCount } = await supabase
-          .from("listing_views")
-          .select("id", { count: "exact", head: true })
-          .in("listing_id", ids);
-        const { count: favCount } = await supabase
-          .from("favorites")
-          .select("id", { count: "exact", head: true })
-          .in("listing_id", ids);
+        const { count: viewCount } = await supabase.from("listing_views").select("id", { count: "exact", head: true }).in("listing_id", ids);
+        const { count: favCount } = await supabase.from("favorites").select("id", { count: "exact", head: true }).in("listing_id", ids);
         totalViews = viewCount || 0;
         totalFavorites = favCount || 0;
       }
-
       setStats({ totalListings: listingCount || 0, totalViews, totalFavorites });
     };
     fetchStats();
@@ -84,26 +69,18 @@ const AccountPage = () => {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-
     setUploading(true);
     const ext = file.name.split(".").pop();
     const path = `${user.id}/avatar.${ext}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from("listing-photos")
-      .upload(path, file, { upsert: true });
-
+    const { error: uploadError } = await supabase.storage.from("listing-photos").upload(path, file, { upsert: true });
     if (uploadError) {
       toast({ title: "Erreur", description: uploadError.message, variant: "destructive" });
       setUploading(false);
       return;
     }
-
     const { data: urlData } = supabase.storage.from("listing-photos").getPublicUrl(path);
     const avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
-
     const { error: updateError } = await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", user.id);
-
     if (updateError) {
       toast({ title: "Erreur", description: updateError.message, variant: "destructive" });
     } else {
@@ -121,7 +98,6 @@ const AccountPage = () => {
       phone: form.phone,
       username: form.username || null,
     }).eq("id", user.id);
-
     if (error) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     } else {
@@ -135,7 +111,7 @@ const AccountPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -143,17 +119,17 @@ const AccountPage = () => {
   if (!user) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        <div className="flex-1 flex flex-col items-center justify-center p-6 gap-6">
-          <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center">
-            <User className="h-10 w-10 text-muted-foreground" />
+        <div className="flex-1 flex flex-col items-center justify-center p-6 gap-6 animate-fade-in">
+          <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-primary/10 to-accent flex items-center justify-center">
+            <User className="h-11 w-11 text-primary" />
           </div>
           <div className="text-center space-y-2">
-            <h2 className="text-xl font-bold text-foreground">Connectez-vous</h2>
-            <p className="text-sm text-muted-foreground">
-              Pour publier des annonces et gérer votre compte
+            <h2 className="text-2xl font-extrabold text-foreground">Bienvenue</h2>
+            <p className="text-sm text-muted-foreground max-w-xs">
+              Connectez-vous pour publier des annonces et gérer votre compte
             </p>
           </div>
-          <Button onClick={() => navigate("/auth")} className="w-full max-w-xs h-12 text-base">
+          <Button onClick={() => navigate("/auth")} size="lg" className="w-full max-w-xs h-12 text-base rounded-xl font-bold">
             Se connecter
           </Button>
         </div>
@@ -167,19 +143,18 @@ const AccountPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleAvatarUpload}
-      />
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
 
       {/* Profile header */}
-      <div className="bg-primary p-6 text-primary-foreground">
-        <div className="flex items-center gap-4">
+      <div className="bg-gradient-to-br from-primary via-primary to-chad-blue p-6 pt-8 text-primary-foreground relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 right-0 w-40 h-40 bg-chad-yellow rounded-full -translate-y-1/2 translate-x-1/4" />
+          <div className="absolute bottom-0 left-0 w-32 h-32 bg-primary-foreground rounded-full translate-y-1/2 -translate-x-1/4" />
+        </div>
+        <div className="relative flex items-center gap-4">
           <button
-            className="relative w-16 h-16 rounded-full bg-primary-foreground/20 flex items-center justify-center overflow-hidden group"
+            className="relative w-18 h-18 rounded-2xl bg-primary-foreground/20 flex items-center justify-center overflow-hidden group shadow-lg"
+            style={{ width: '72px', height: '72px' }}
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
           >
@@ -188,24 +163,24 @@ const AccountPage = () => {
             ) : (
               <User className="h-8 w-8" />
             )}
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <Camera className="h-5 w-5 text-white" />
+            <div className="absolute inset-0 bg-foreground/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl">
+              <Camera className="h-5 w-5 text-primary-foreground" />
             </div>
             {uploading && (
-              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
+              <div className="absolute inset-0 bg-foreground/50 flex items-center justify-center rounded-2xl">
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary-foreground border-t-transparent" />
               </div>
             )}
           </button>
-          <div className="flex-1">
-            <h2 className="text-lg font-bold">{displayName}</h2>
-            <p className="text-sm opacity-80 flex items-center gap-1">
-              <Phone className="h-3 w-3" />
-              {displayPhone}
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg font-extrabold truncate">{displayName}</h2>
+            <p className="text-sm opacity-80 flex items-center gap-1.5 mt-0.5">
+              <Phone className="h-3 w-3 shrink-0" />
+              <span className="truncate">{displayPhone}</span>
             </p>
           </div>
           {!editing && (
-            <button onClick={() => setEditing(true)} className="bg-primary-foreground/20 rounded-full p-2">
+            <button onClick={() => setEditing(true)} className="bg-primary-foreground/20 rounded-xl p-2.5 hover:bg-primary-foreground/30 transition-colors">
               <Pencil className="h-4 w-4" />
             </button>
           )}
@@ -214,26 +189,28 @@ const AccountPage = () => {
 
       {/* Edit profile form */}
       {editing && (
-        <div className="p-4 bg-card border-b space-y-3">
-          <h3 className="font-bold text-sm text-foreground">Modifier le profil</h3>
-          <div>
-            <label className="text-xs text-muted-foreground">Nom d'affichage</label>
-            <Input value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} placeholder="Votre nom" />
+        <div className="p-4 bg-card border-b space-y-3 animate-fade-in">
+          <h3 className="font-extrabold text-sm text-foreground">Modifier le profil</h3>
+          <div className="space-y-2.5">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Nom d'affichage</label>
+              <Input value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} placeholder="Votre nom" className="h-11 rounded-xl bg-muted/50 border-0" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Téléphone</label>
+              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+235..." className="h-11 rounded-xl bg-muted/50 border-0" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Nom d'utilisateur</label>
+              <Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="@username" className="h-11 rounded-xl bg-muted/50 border-0" />
+            </div>
           </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Téléphone</label>
-            <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="+235..." />
-          </div>
-          <div>
-            <label className="text-xs text-muted-foreground">Nom d'utilisateur</label>
-            <Input value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} placeholder="@username" />
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={handleSave} disabled={saving} className="flex-1 gap-1">
+          <div className="flex gap-2 pt-1">
+            <Button onClick={handleSave} disabled={saving} className="flex-1 gap-1.5 h-11 rounded-xl font-bold">
               <Check className="h-4 w-4" />
               {saving ? "..." : "Enregistrer"}
             </Button>
-            <Button variant="outline" onClick={() => { setEditing(false); if (profile) setForm({ display_name: profile.display_name || "", phone: profile.phone, username: profile.username || "" }); }}>
+            <Button variant="outline" className="h-11 rounded-xl" onClick={() => { setEditing(false); if (profile) setForm({ display_name: profile.display_name || "", phone: profile.phone, username: profile.username || "" }); }}>
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -242,41 +219,48 @@ const AccountPage = () => {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 p-4">
-        <div className="bg-card border rounded-xl p-3 text-center">
-          <FileText className="h-5 w-5 text-primary mx-auto mb-1" />
-          <p className="text-xl font-bold text-foreground">{stats.totalListings}</p>
-          <p className="text-[11px] text-muted-foreground">Annonces</p>
-        </div>
-        <div className="bg-card border rounded-xl p-3 text-center">
-          <Eye className="h-5 w-5 text-primary mx-auto mb-1" />
-          <p className="text-xl font-bold text-foreground">{stats.totalViews}</p>
-          <p className="text-[11px] text-muted-foreground">Vues</p>
-        </div>
-        <div className="bg-card border rounded-xl p-3 text-center">
-          <Heart className="h-5 w-5 text-primary mx-auto mb-1" />
-          <p className="text-xl font-bold text-foreground">{stats.totalFavorites}</p>
-          <p className="text-[11px] text-muted-foreground">Favoris</p>
-        </div>
+        {[
+          { icon: FileText, value: stats.totalListings, label: "Annonces", color: "text-primary" },
+          { icon: Eye, value: stats.totalViews, label: "Vues", color: "text-chad-yellow" },
+          { icon: Heart, value: stats.totalFavorites, label: "Favoris", color: "text-chad-red" },
+        ].map((stat) => (
+          <div key={stat.label} className="bg-card rounded-2xl p-3.5 text-center shadow-card">
+            <stat.icon className={`h-5 w-5 mx-auto mb-1.5 ${stat.color}`} />
+            <p className="text-xl font-extrabold text-foreground">{stat.value}</p>
+            <p className="text-[10px] font-medium text-muted-foreground">{stat.label}</p>
+          </div>
+        ))}
       </div>
 
       {/* Menu items */}
-      <div className="p-4 pt-0 space-y-2">
-        <button onClick={() => navigate("/mes-annonces")} className="w-full flex items-center justify-between p-4 bg-card rounded-lg border">
-          <span className="font-medium text-foreground">Mes annonces</span>
-          <ChevronRight className="h-5 w-5 text-muted-foreground" />
-        </button>
-        <button onClick={() => navigate("/favoris")} className="w-full flex items-center justify-between p-4 bg-card rounded-lg border">
-          <span className="font-medium text-foreground">Mes favoris</span>
-          <ChevronRight className="h-5 w-5 text-muted-foreground" />
-        </button>
-        <Button
-          variant="ghost"
-          className="w-full justify-start text-destructive hover:text-destructive"
-          onClick={async () => { await signOut(); navigate("/"); }}
-        >
-          <LogOut className="h-5 w-5 mr-2" />
-          Déconnexion
-        </Button>
+      <div className="px-4 space-y-2">
+        {[
+          { label: "Mes annonces", icon: FileText, path: "/mes-annonces" },
+          { label: "Mes favoris", icon: Heart, path: "/favoris" },
+        ].map((item) => (
+          <button
+            key={item.path}
+            onClick={() => navigate(item.path)}
+            className="w-full flex items-center gap-3 p-4 bg-card rounded-2xl shadow-card hover:shadow-card-hover transition-all active:scale-[0.98]"
+          >
+            <div className="p-2 rounded-xl bg-accent">
+              <item.icon className="h-4 w-4 text-accent-foreground" />
+            </div>
+            <span className="font-semibold text-foreground flex-1 text-left">{item.label}</span>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </button>
+        ))}
+
+        <div className="pt-4">
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/5 rounded-2xl h-12"
+            onClick={async () => { await signOut(); navigate("/"); }}
+          >
+            <LogOut className="h-5 w-5 mr-2" />
+            Déconnexion
+          </Button>
+        </div>
       </div>
 
       <BottomNav />
