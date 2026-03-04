@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, SlidersHorizontal, PackageSearch } from "lucide-react";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import ListingCard from "@/components/ListingCard";
@@ -42,18 +42,18 @@ const CategoryPage = () => {
 
       <main className="container mx-auto px-4 py-3">
         <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-          <Link to="/" className="hover:text-primary flex items-center gap-1">
+          <Link to="/" className="hover:text-primary flex items-center gap-1 transition-colors">
             <ArrowLeft className="h-4 w-4" /> Accueil
           </Link>
-          <span>/</span>
-          <span className="text-foreground font-medium">{category?.name || categoryId}</span>
+          <span className="text-border">/</span>
+          <span className="text-foreground font-semibold">{category?.name || categoryId}</span>
         </div>
 
         {category && !subId && (
           <div className="flex gap-2 overflow-x-auto pb-2 mb-3 scrollbar-none">
             {category.subcategories.map((sub) => (
               <Link key={sub.id} to={`/categorie/${categoryId}/${sub.id}`}>
-                <Button variant="outline" size="sm" className="text-xs whitespace-nowrap rounded-full">
+                <Button variant="outline" size="sm" className="text-xs whitespace-nowrap rounded-full border-border/50 hover:border-primary hover:text-primary transition-colors">
                   {sub.name}
                 </Button>
               </Link>
@@ -63,15 +63,15 @@ const CategoryPage = () => {
 
         <div className="flex items-center justify-between mb-3 gap-2">
           <p className="text-sm text-muted-foreground">
-            {listings.length} annonce{listings.length !== 1 ? "s" : ""}
+            <span className="font-semibold text-foreground">{listings.length}</span> annonce{listings.length !== 1 ? "s" : ""}
           </p>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="rounded-full text-xs gap-1" onClick={() => setShowFilters(!showFilters)}>
+            <Button variant="outline" size="sm" className="rounded-full text-xs gap-1.5 border-border/50" onClick={() => setShowFilters(!showFilters)}>
               <SlidersHorizontal className="h-3.5 w-3.5" />
               Filtres
             </Button>
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-32 h-8 text-xs rounded-full">
+              <SelectTrigger className="w-32 h-8 text-xs rounded-full border-border/50">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -84,9 +84,9 @@ const CategoryPage = () => {
         </div>
 
         {showFilters && (
-          <div className="flex flex-wrap gap-2 mb-3 p-3 bg-card rounded-xl border">
+          <div className="flex flex-wrap gap-2 mb-3 p-3 bg-card rounded-2xl shadow-card animate-fade-in">
             <Select value={selectedCity} onValueChange={setSelectedCity}>
-              <SelectTrigger className="w-36 h-9 text-xs rounded-full">
+              <SelectTrigger className="w-36 h-9 text-xs rounded-full border-border/50">
                 <SelectValue placeholder="Ville" />
               </SelectTrigger>
               <SelectContent>
@@ -96,26 +96,41 @@ const CategoryPage = () => {
                 ))}
               </SelectContent>
             </Select>
-            <Input placeholder="Min FCFA" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} className="w-28 h-9 text-xs rounded-full" type="number" />
-            <Input placeholder="Max FCFA" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} className="w-28 h-9 text-xs rounded-full" type="number" />
+            <Input placeholder="Min FCFA" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} className="w-28 h-9 text-xs rounded-full bg-muted/50 border-0" type="number" />
+            <Input placeholder="Max FCFA" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} className="w-28 h-9 text-xs rounded-full bg-muted/50 border-0" type="number" />
           </div>
         )}
 
         {isLoading ? (
-          <div className="grid grid-cols-3 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="aspect-square rounded-xl" />
+              <div key={i} className="rounded-2xl overflow-hidden">
+                <Skeleton className="aspect-square w-full" />
+                <div className="p-2.5 space-y-2">
+                  <Skeleton className="h-3 w-3/4" />
+                  <Skeleton className="h-2.5 w-1/2" />
+                </div>
+              </div>
             ))}
           </div>
         ) : listings.length === 0 ? (
-          <div className="text-center py-20 text-muted-foreground">
-            <p className="text-lg font-semibold">Aucune annonce</p>
-            <p className="text-sm mt-1">Modifiez vos filtres</p>
+          <div className="text-center py-20 animate-fade-in">
+            <div className="w-20 h-20 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
+              <PackageSearch className="h-9 w-9 text-muted-foreground" />
+            </div>
+            <p className="text-lg font-bold text-foreground">Aucune annonce</p>
+            <p className="text-sm text-muted-foreground mt-1">Modifiez vos filtres ou revenez plus tard</p>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-2.5">
-            {listings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {listings.map((listing, i) => (
+              <div
+                key={listing.id}
+                className="animate-fade-in"
+                style={{ animationDelay: `${i * 50}ms`, animationFillMode: "both" }}
+              >
+                <ListingCard listing={listing} />
+              </div>
             ))}
           </div>
         )}
