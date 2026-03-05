@@ -1,21 +1,28 @@
 import { useEffect, useState, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
-import { MapPin, Phone, MessageCircle, Clock, Share2, Heart, ChevronLeft, ChevronRight as ChevronRightIcon, X } from "lucide-react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { MapPin, Phone, MessageCircle, Clock, Share2, Heart, ChevronLeft, ChevronRight as ChevronRightIcon, X, BadgeCheck, Star, Send } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import ListingCard from "@/components/ListingCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { formatPrice } from "@/data/mockListings";
 import { getCityById } from "@/data/cities";
 import { getCategoryById, getSubcategoryName } from "@/data/categories";
 import { useListings } from "@/hooks/useListings";
 import { useFavorites, useToggleFavorite } from "@/hooks/useFavorites";
 import { useAuth } from "@/hooks/useAuth";
+import { useSellerReviews, useSellerRating, useSubmitReview } from "@/hooks/useSellerReviews";
+import { useStartConversation } from "@/hooks/useConversations";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
+import { fr } from "date-fns/locale";
 
 const ListingDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { data: allListings = [], isLoading } = useListings();
   const { user } = useAuth();
   const { favoriteIds } = useFavorites();
@@ -23,10 +30,19 @@ const ListingDetail = () => {
   const [sellerPhone, setSellerPhone] = useState<string | null>(null);
   const [currentImg, setCurrentImg] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
+  const [sellerProfile, setSellerProfile] = useState<any>(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [showReviewForm, setShowReviewForm] = useState(false);
 
   const listing = allListings.find((l) => l.id === id);
   const isFav = listing ? favoriteIds.includes(listing.id) : false;
   const images = listing && listing.images.length > 0 ? listing.images : ["/placeholder.svg"];
+
+  const { data: reviews = [] } = useSellerReviews(listing?.user_id);
+  const { avg: sellerAvg, count: reviewCount } = useSellerRating(listing?.user_id);
+  const submitReview = useSubmitReview();
+  const startConversation = useStartConversation();
 
   const nextImg = useCallback(() => setCurrentImg((p) => (p + 1) % images.length), [images.length]);
   const prevImg = useCallback(() => setCurrentImg((p) => (p - 1 + images.length) % images.length), [images.length]);
@@ -37,6 +53,9 @@ const ListingDetail = () => {
     if (!listing?.user_id) return;
     supabase.rpc("get_seller_phone", { _user_id: listing.user_id })
       .then(({ data }) => { if (data) setSellerPhone(data); });
+    supabase.from("profiles").select("display_name, avatar_url, is_verified, created_at")
+      .eq("id", listing.user_id).maybeSingle()
+      .then(({ data }) => { if (data) setSellerProfile(data); });
   }, [listing?.user_id]);
 
   useEffect(() => {
@@ -51,6 +70,33 @@ const ListingDetail = () => {
       supabase.from("listing_views").insert({ listing_id: id, viewer_id: null }).then(() => {});
     }
   }, [id, user?.id]);
+
+  const handleStartChat = async () => {
+    if (!user || !listing) return;
+    if (user.id === listing.user_id) return;
+    try {
+      const convoId = await startConversation.mutateAsync({
+        listingId: listing.id,
+        buyerId: user.id,
+        sellerId: listing.user_id,
+      });
+      navigate("/messages");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleSubmitReview = () => {
+    if (!user || !listing) return;
+    submitReview.mutate({
+      sellerId: listing.user_id,
+      reviewerId: user.id,
+      rating: reviewRating,
+      comment: reviewComment,
+    });
+    setShowReviewForm(false);
+    setReviewComment("");
+  };
 
   if (isLoading) {
     return (
@@ -92,10 +138,13 @@ const ListingDetail = () => {
   const listingUrl = `${window.location.origin}/annonce/${listing.id}`;
   const shareText = `${listing.title} - ${formatPrice(listing.price)}\n📍 ${city?.name || ""}\n👉 ${listingUrl}`;
   const shareWhatsappLink = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+  const timeAgo = formatDistanceToNow(new Date(listing.created_at), { addSuffix: true, locale: fr });
 
   const similarListings = allListings
     .filter((l) => l.category_id === listing.category_id && l.id !== listing.id)
     .slice(0, 6);
+
+  const isOwner = user?.id === listing.user_id;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -187,13 +236,43 @@ const ListingDetail = () => {
           </span>
           <span className="flex items-center gap-1.5">
             <Clock className="h-4 w-4" />
-            {listing.created_at?.slice(0, 10)}
+            {timeAgo}
           </span>
         </div>
 
         <div className="border-t border-border/50 my-4" />
         
         <p className="text-sm text-foreground/80 leading-relaxed mb-6">{listing.description}</p>
+
+        {/* Seller profile card */}
+        {sellerProfile && (
+          <div className="bg-card border rounded-2xl p-4 mb-5">
+            <div className="flex items-center gap-3">
+              <img
+                src={sellerProfile.avatar_url || "/placeholder.svg"}
+                alt=""
+                className="w-12 h-12 rounded-full object-cover bg-muted"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-sm text-foreground">{sellerProfile.display_name || "Vendeur"}</span>
+                  {sellerProfile.is_verified && (
+                    <BadgeCheck className="h-4 w-4 text-primary" />
+                  )}
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                  {reviewCount > 0 && (
+                    <span className="flex items-center gap-0.5">
+                      <Star className="h-3 w-3 fill-chad-yellow text-chad-yellow" />
+                      {sellerAvg} ({reviewCount})
+                    </span>
+                  )}
+                  <span>Membre {formatDistanceToNow(new Date(sellerProfile.created_at), { addSuffix: true, locale: fr })}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* CTA buttons */}
         <div className="space-y-3 mb-5">
@@ -202,11 +281,23 @@ const ListingDetail = () => {
               <Phone className="h-5 w-5" />{phoneFormatted}
             </Button>
           </a>
-          <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="block">
-            <Button variant="outline" className="w-full gap-2.5 h-13 font-bold text-base rounded-2xl border-2 border-success text-success hover:bg-success/5">
-              <MessageCircle className="h-5 w-5" />WhatsApp
-            </Button>
-          </a>
+          <div className="grid grid-cols-2 gap-3">
+            <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="block">
+              <Button variant="outline" className="w-full gap-2 h-12 font-bold text-sm rounded-2xl border-2 border-success text-success hover:bg-success/5">
+                <MessageCircle className="h-4 w-4" />WhatsApp
+              </Button>
+            </a>
+            {!isOwner && user && (
+              <Button
+                variant="outline"
+                className="gap-2 h-12 font-bold text-sm rounded-2xl border-2 border-primary text-primary hover:bg-primary/5"
+                onClick={handleStartChat}
+                disabled={startConversation.isPending}
+              >
+                <Send className="h-4 w-4" />Chat
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-6">
@@ -224,6 +315,65 @@ const ListingDetail = () => {
             {isFav ? "Sauvegardé" : "Sauvegarder"}
           </Button>
         </div>
+      </div>
+
+      {/* Seller reviews section */}
+      <div className="px-4 pb-5">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base font-extrabold text-foreground">Avis sur le vendeur</h2>
+          {user && !isOwner && (
+            <button
+              onClick={() => setShowReviewForm(!showReviewForm)}
+              className="text-xs text-primary font-semibold hover:underline"
+            >
+              {showReviewForm ? "Annuler" : "Donner un avis"}
+            </button>
+          )}
+        </div>
+
+        {showReviewForm && (
+          <div className="bg-card border rounded-2xl p-4 mb-3 animate-fade-in">
+            <div className="flex items-center gap-1 mb-3">
+              {[1, 2, 3, 4, 5].map((s) => (
+                <button key={s} onClick={() => setReviewRating(s)}>
+                  <Star className={cn("h-6 w-6 transition-colors", s <= reviewRating ? "fill-chad-yellow text-chad-yellow" : "text-muted-foreground")} />
+                </button>
+              ))}
+            </div>
+            <Textarea
+              value={reviewComment}
+              onChange={(e) => setReviewComment(e.target.value)}
+              placeholder="Votre commentaire (optionnel)..."
+              rows={2}
+              className="rounded-xl mb-2"
+              maxLength={500}
+            />
+            <Button onClick={handleSubmitReview} size="sm" className="rounded-xl" disabled={submitReview.isPending}>
+              Publier l'avis
+            </Button>
+          </div>
+        )}
+
+        {reviews.length === 0 ? (
+          <p className="text-xs text-muted-foreground">Aucun avis pour ce vendeur</p>
+        ) : (
+          <div className="space-y-3">
+            {reviews.slice(0, 5).map((r) => (
+              <div key={r.id} className="bg-card border rounded-xl p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <img src={r.reviewer_avatar || "/placeholder.svg"} alt="" className="w-6 h-6 rounded-full object-cover bg-muted" />
+                  <span className="text-xs font-bold text-foreground">{r.reviewer_name}</span>
+                  <div className="flex items-center gap-0.5 ml-auto">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className={cn("h-2.5 w-2.5", i < r.rating ? "fill-chad-yellow text-chad-yellow" : "text-muted-foreground/30")} />
+                    ))}
+                  </div>
+                </div>
+                {r.comment && <p className="text-xs text-muted-foreground">{r.comment}</p>}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Safety tips */}
