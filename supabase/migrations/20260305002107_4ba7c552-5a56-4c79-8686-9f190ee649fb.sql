@@ -1,0 +1,14 @@
+
+CREATE OR REPLACE FUNCTION public.get_seller_phone(_user_id uuid)
+ RETURNS text
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public'
+AS $$
+  SELECT phone FROM public.profiles 
+  WHERE id = _user_id 
+    AND EXISTS (
+      SELECT 1 FROM public.listings 
+      WHERE user_id = _user_id AND status = 'published'
+    );
+$$;

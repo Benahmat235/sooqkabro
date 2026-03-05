@@ -14,6 +14,12 @@ Deno.serve(async (req) => {
     const body = await req.json()
     const { action } = body
 
+    // ─── Input validation helpers ───
+    const isValidUsername = (u: string) => typeof u === 'string' && /^[a-zA-Z0-9_]{3,30}$/.test(u)
+    const isValidPhone = (p: string) => typeof p === 'string' && /^\+?235?\d{8}$/.test(p.replace(/\s/g, ''))
+    const isValidOTP = (c: string) => typeof c === 'string' && /^\d{6}$/.test(c)
+    const isValidPassword = (p: string) => typeof p === 'string' && p.length >= 6 && p.length <= 128
+
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
@@ -23,6 +29,15 @@ Deno.serve(async (req) => {
       const { username, password, display_name, phone } = body
       if (!username || !password) {
         return jsonRes({ success: false, message: 'Username et mot de passe requis' }, 400)
+      }
+      if (!isValidUsername(username)) {
+        return jsonRes({ success: false, message: "Nom d'utilisateur invalide (3-30 caractères, lettres/chiffres/_)" }, 400)
+      }
+      if (!isValidPassword(password)) {
+        return jsonRes({ success: false, message: 'Mot de passe invalide (6-128 caractères)' }, 400)
+      }
+      if (phone && !isValidPhone(phone)) {
+        return jsonRes({ success: false, message: 'Numéro de téléphone invalide' }, 400)
       }
 
       const { data: existing } = await supabase
@@ -69,6 +84,9 @@ Deno.serve(async (req) => {
       if (!username || !password) {
         return jsonRes({ success: false, message: 'Username et mot de passe requis' }, 400)
       }
+      if (!isValidUsername(username)) {
+        return jsonRes({ success: false, message: "Nom d'utilisateur invalide" }, 400)
+      }
 
       const { data: profile } = await supabase
         .from('profiles')
@@ -100,6 +118,9 @@ Deno.serve(async (req) => {
     // ─── SEND OTP (WhatsApp only) ───
     if (action === 'send') {
       const { phone } = body
+      if (!phone || !isValidPhone(phone)) {
+        return jsonRes({ success: false, message: 'Numéro de téléphone invalide' }, 400)
+      }
 
       const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')?.trim()
       const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')?.trim()
@@ -143,6 +164,9 @@ Deno.serve(async (req) => {
     // ─── VERIFY OTP ONLY (no account creation) ───
     if (action === 'verify_only') {
       const { phone, code } = body
+      if (!phone || !isValidPhone(phone) || !code || !isValidOTP(code)) {
+        return jsonRes({ success: false, message: 'Téléphone ou code invalide' }, 400)
+      }
 
       const { data: otpData, error: otpError } = await supabase
         .from('otp_codes')
@@ -170,6 +194,9 @@ Deno.serve(async (req) => {
 
       if (!username || !new_password || !phone || !code) {
         return jsonRes({ success: false, message: 'Tous les champs sont requis' }, 400)
+      }
+      if (!isValidUsername(username) || !isValidPhone(phone) || !isValidOTP(code) || !isValidPassword(new_password)) {
+        return jsonRes({ success: false, message: 'Données invalides' }, 400)
       }
 
       // Verify OTP
