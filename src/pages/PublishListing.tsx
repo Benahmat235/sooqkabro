@@ -43,7 +43,18 @@ const PublishListing = () => {
   const handlePhotos = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const remaining = MAX_PHOTOS - photos.length;
-    const toAdd = files.slice(0, remaining);
+    const validFiles = files.filter((f) => {
+      if (!f.type.startsWith("image/")) {
+        toast({ title: "Erreur", description: "Seules les images sont acceptées.", variant: "destructive" });
+        return false;
+      }
+      if (f.size > 5 * 1024 * 1024) {
+        toast({ title: "Erreur", description: "Fichier trop volumineux (max 5 Mo).", variant: "destructive" });
+        return false;
+      }
+      return true;
+    });
+    const toAdd = validFiles.slice(0, remaining);
     setPhotos((prev) => [...prev, ...toAdd]);
     toAdd.forEach((f) => {
       const reader = new FileReader();

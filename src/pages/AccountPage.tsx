@@ -69,6 +69,14 @@ const AccountPage = () => {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+    if (!file.type.startsWith("image/")) {
+      toast({ title: "Erreur", description: "Seules les images sont acceptées.", variant: "destructive" });
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Erreur", description: "Fichier trop volumineux (max 5 Mo).", variant: "destructive" });
+      return;
+    }
     setUploading(true);
     const ext = file.name.split(".").pop();
     const path = `${user.id}/avatar.${ext}`;
