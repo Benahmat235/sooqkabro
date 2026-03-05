@@ -15,6 +15,9 @@ export interface ListingWithImages {
   created_at: string;
   user_id: string;
   images: string[];
+  badge?: string | null;
+  view_count?: number;
+  is_verified?: boolean;
 }
 
 async function fetchListings(cityId?: string): Promise<ListingWithImages[]> {
@@ -31,12 +34,40 @@ async function fetchListings(cityId?: string): Promise<ListingWithImages[]> {
   const { data, error } = await query;
   if (error) throw error;
 
-  return (data || []).map((l: any) => ({
+  const listings = (data || []).map((l: any) => ({
     ...l,
     images: (l.listing_images || [])
       .sort((a: any, b: any) => a.position - b.position)
       .map((img: any) => img.image_url),
   }));
+
+  // Fetch view counts and verified status in batch
+  if (listings.length > 0) {
+    const ids = listings.map((l: any) => l.id);
+    const userIds = [...new Set(listings.map((l: any) => l.user_id))];
+
+    // View counts
+    const viewPromises = ids.map((id: string) =>
+      supabase.from("listing_views").select("id", { count: "exact", head: true }).eq("listing_id", id)
+    );
+    const viewResults = await Promise.all(viewPromises);
+
+    // Verified status
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, is_verified")
+      .in("id", userIds);
+
+    const verifiedMap = new Map((profiles || []).map((p: any) => [p.id, p.is_verified]));
+
+    return listings.map((l: any, i: number) => ({
+      ...l,
+      view_count: viewResults[i]?.count || 0,
+      is_verified: verifiedMap.get(l.user_id) || false,
+    }));
+  }
+
+  return listings;
 }
 
 export function useListings(cityId?: string) {

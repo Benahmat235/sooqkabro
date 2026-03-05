@@ -14,6 +14,7 @@ import AccountPage from "./pages/AccountPage";
 import MyListings from "./pages/MyListings";
 import EditListing from "./pages/EditListing";
 import FavoritesPage from "./pages/FavoritesPage";
+import MessagesPage from "./pages/MessagesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/mes-annonces" element={<MyListings />} />
             <Route path="/modifier/:id" element={<EditListing />} />
             <Route path="/favoris" element={<FavoritesPage />} />
+            <Route path="/messages" element={<MessagesPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

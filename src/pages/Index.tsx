@@ -1,6 +1,8 @@
 import { useState } from "react";
 import Header from "@/components/Header";
 import CategoryGrid from "@/components/CategoryGrid";
+import CategoryNav from "@/components/CategoryNav";
+import PublishCTA from "@/components/PublishCTA";
 import ListingCard from "@/components/ListingCard";
 import BottomNav from "@/components/BottomNav";
 import { usePersonalizedFeed } from "@/hooks/usePersonalizedFeed";
@@ -28,7 +30,15 @@ const Index = () => {
       <Header selectedCity={selectedCity} onCityChange={setSelectedCity} />
 
       <main className="container mx-auto px-4">
+        {/* Secondary category nav */}
+        <CategoryNav />
+
         <CategoryGrid />
+
+        {/* CTA Banner */}
+        <div className="py-3">
+          <PublishCTA />
+        </div>
 
         <section className="py-3">
           <div className="flex items-center gap-2 mb-4">
