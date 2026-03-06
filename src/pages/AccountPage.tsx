@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { User, LogOut, Phone, ChevronRight, Eye, FileText, Heart, Pencil, Check, X, Camera, Settings } from "lucide-react";
+import { User, LogOut, Phone, ChevronRight, Eye, FileText, Heart, Pencil, Check, X, Camera, ShieldCheck } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
 
@@ -23,6 +24,7 @@ interface Profile {
 
 const AccountPage = () => {
   const { user, loading, signOut } = useAuth();
+  const { data: isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [stats, setStats] = useState<Stats>({ totalListings: 0, totalViews: 0, totalFavorites: 0 });
@@ -245,6 +247,7 @@ const AccountPage = () => {
         {[
           { label: "Mes annonces", icon: FileText, path: "/mes-annonces" },
           { label: "Mes favoris", icon: Heart, path: "/favoris" },
+          ...(isAdmin ? [{ label: "Administration", icon: ShieldCheck, path: "/admin" }] : []),
         ].map((item) => (
           <button
             key={item.path}
