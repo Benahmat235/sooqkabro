@@ -26,9 +26,9 @@ Deno.serve(async (req) => {
 
     // ─── REGISTER (username + password, phone stored) ───
     if (action === 'register') {
-      const { username, password, display_name, phone } = body
-      if (!username || !password) {
-        return jsonRes({ success: false, message: 'Username et mot de passe requis' }, 400)
+      const { username, password, display_name, phone, code } = body
+      if (!username || !password || !phone || !code) {
+        return jsonRes({ success: false, message: 'Tous les champs sont requis (username, password, phone, code)' }, 400)
       }
       if (!isValidUsername(username)) {
         return jsonRes({ success: false, message: "Nom d'utilisateur invalide (3-30 caractères, lettres/chiffres/_)" }, 400)
@@ -36,9 +36,30 @@ Deno.serve(async (req) => {
       if (!isValidPassword(password)) {
         return jsonRes({ success: false, message: 'Mot de passe invalide (6-128 caractères)' }, 400)
       }
-      if (phone && !isValidPhone(phone)) {
+      if (!isValidPhone(phone)) {
         return jsonRes({ success: false, message: 'Numéro de téléphone invalide' }, 400)
       }
+      if (!isValidOTP(code)) {
+        return jsonRes({ success: false, message: 'Code OTP invalide' }, 400)
+      }
+
+      // Server-side OTP verification gate: must have a verified OTP for this phone
+      const { data: otpData } = await supabase
+        .from('otp_codes')
+        .select('id')
+        .eq('phone', phone)
+        .eq('code', code)
+        .eq('verified', true)
+        .gt('expires_at', new Date().toISOString())
+        .limit(1)
+        .maybeSingle()
+
+      if (!otpData) {
+        return jsonRes({ success: false, message: 'Vérification du téléphone requise. Code invalide ou expiré.' }, 400)
+      }
+
+      // Delete used OTP to prevent reuse
+      await supabase.from('otp_codes').delete().eq('id', otpData.id)
 
       const { data: existing } = await supabase
         .from('profiles')
