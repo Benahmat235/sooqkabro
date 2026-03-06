@@ -267,7 +267,7 @@ Deno.serve(async (req) => {
     return jsonRes({ error: 'Invalid action' }, 400)
   } catch (error) {
     console.error('Error:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: 'Une erreur est survenue. Veuillez réessayer.' }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }

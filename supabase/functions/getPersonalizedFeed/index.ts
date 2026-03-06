@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("getPersonalizedFeed error:", err);
     return new Response(
-      JSON.stringify({ error: err.message || "Internal error" }),
+      JSON.stringify({ error: "An error occurred. Please try again." }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
