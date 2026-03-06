@@ -274,30 +274,63 @@ const ListingDetail = () => {
           </div>
         )}
 
-        {/* CTA buttons */}
-        <div className="space-y-3 mb-5">
-          <a href={callLink} className="block">
-            <Button className="w-full gap-2.5 h-13 font-bold text-base rounded-2xl shadow-warm">
-              <Phone className="h-5 w-5" />{phoneFormatted}
-            </Button>
-          </a>
-          <div className="grid grid-cols-2 gap-3">
-            <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="block">
-              <Button variant="outline" className="w-full gap-2 h-12 font-bold text-sm rounded-2xl border-2 border-success text-success hover:bg-success/5">
-                <MessageCircle className="h-4 w-4" />WhatsApp
-              </Button>
-            </a>
-            {!isOwner && user && (
-              <Button
-                variant="outline"
-                className="gap-2 h-12 font-bold text-sm rounded-2xl border-2 border-primary text-primary hover:bg-primary/5"
-                onClick={handleStartChat}
-                disabled={startConversation.isPending}
-              >
-                <Send className="h-4 w-4" />Chat
-              </Button>
-            )}
-          </div>
+        {/* CTA buttons - dynamic based on seller verification */}
+        <div className="mb-5">
+          {sellerProfile?.is_verified ? (
+            /* Verified seller: Call + WhatsApp + Message */
+            <div className="grid grid-cols-3 gap-3">
+              <a href={callLink} className="block">
+                <Button className="w-full gap-1.5 h-12 font-bold text-sm rounded-2xl shadow-warm flex-col py-2 sm:flex-row">
+                  <Phone className="h-5 w-5" />
+                  <span>Appeler</span>
+                </Button>
+              </a>
+              <a href={whatsappLink} target="_blank" rel="noopener noreferrer" className="block">
+                <Button variant="outline" className="w-full gap-1.5 h-12 font-bold text-sm rounded-2xl border-2 border-success text-success hover:bg-success/5 flex-col py-2 sm:flex-row">
+                  <MessageCircle className="h-5 w-5" />
+                  <span>WhatsApp</span>
+                </Button>
+              </a>
+              {!isOwner && user && (
+                <Button
+                  variant="outline"
+                  className="w-full gap-1.5 h-12 font-bold text-sm rounded-2xl border-2 border-muted-foreground/30 text-muted-foreground hover:bg-accent flex-col py-2 sm:flex-row"
+                  onClick={handleStartChat}
+                  disabled={startConversation.isPending}
+                >
+                  <Send className="h-5 w-5" />
+                  <span>Message</span>
+                </Button>
+              )}
+            </div>
+          ) : (
+            /* Non-verified seller: Call + Message (no WhatsApp) */
+            <div className="grid grid-cols-2 gap-3">
+              <a href={callLink} className="block">
+                <Button className="w-full gap-2 h-12 font-bold text-sm rounded-2xl shadow-warm">
+                  <Phone className="h-5 w-5" />
+                  <span>Appeler</span>
+                </Button>
+              </a>
+              {!isOwner && user ? (
+                <Button
+                  className="w-full gap-2 h-12 font-bold text-sm rounded-2xl bg-success text-white hover:bg-success/90"
+                  onClick={handleStartChat}
+                  disabled={startConversation.isPending}
+                >
+                  <Send className="h-5 w-5" />
+                  <span>Message</span>
+                </Button>
+              ) : (
+                <a href={callLink} className="block">
+                  <Button variant="outline" className="w-full gap-2 h-12 font-bold text-sm rounded-2xl border-2 border-muted-foreground/30 text-muted-foreground">
+                    <Phone className="h-5 w-5" />
+                    <span>{phoneFormatted}</span>
+                  </Button>
+                </a>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-6">
