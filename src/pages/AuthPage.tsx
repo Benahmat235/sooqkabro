@@ -98,6 +98,7 @@ const AuthPage = () => {
           password,
           display_name: displayName.trim() || username.trim(),
           phone,
+          code: otp,
         },
       });
       if (error) throw error;
