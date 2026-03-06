@@ -122,6 +122,17 @@ Deno.serve(async (req) => {
         return jsonRes({ success: false, message: 'Numéro de téléphone invalide' }, 400)
       }
 
+      // Rate limiting: max 3 OTPs per phone per 5 minutes
+      const { count } = await supabase
+        .from('otp_codes')
+        .select('id', { count: 'exact', head: true })
+        .eq('phone', phone)
+        .gt('created_at', new Date(Date.now() - 5 * 60_000).toISOString())
+
+      if ((count ?? 0) >= 3) {
+        return jsonRes({ success: false, message: 'Trop de tentatives. Réessayez dans 5 minutes.' }, 429)
+      }
+
       const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')?.trim()
       const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')?.trim()
       const TWILIO_WHATSAPP_FROM = Deno.env.get('TWILIO_WHATSAPP_FROM')?.trim()
