@@ -80,8 +80,12 @@ const PublishListing = () => {
       toast({ title: "Erreur", description: "Remplissez tous les champs obligatoires.", variant: "destructive" });
       return;
     }
-    if (!validatePhone(phone)) {
+    if (!isPhoneFormatValid(phone)) {
       toast({ title: "Erreur", description: "Le numéro doit contenir 8 chiffres.", variant: "destructive" });
+      return;
+    }
+    if (phoneValid === false) {
+      toast({ title: "Erreur", description: "Le numéro de téléphone est invalide.", variant: "destructive" });
       return;
     }
 
