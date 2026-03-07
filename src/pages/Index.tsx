@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import CategoryGrid from "@/components/CategoryGrid";
 import CategoryNav from "@/components/CategoryNav";
@@ -10,9 +10,17 @@ import { useListings } from "@/hooks/useListings";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, Clock } from "lucide-react";
+import { useGeoLocation } from "@/hooks/useGeoLocation";
 
 const Index = () => {
   const [selectedCity, setSelectedCity] = useState("all");
+  const { detectedCity } = useGeoLocation();
+
+  useEffect(() => {
+    if (detectedCity && selectedCity === "all") {
+      setSelectedCity(detectedCity);
+    }
+  }, [detectedCity]);
   const { user } = useAuth();
 
   const personalizedQuery = usePersonalizedFeed(selectedCity);
