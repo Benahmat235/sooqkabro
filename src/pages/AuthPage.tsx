@@ -6,6 +6,8 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { ArrowLeft, MessageSquare, User, KeyRound, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { usePhoneValidation } from "@/hooks/usePhoneValidation";
+import { PhoneValidationIndicator } from "@/components/PhoneValidationIndicator";
 
 type AuthView = "login" | "register" | "forgot" | "otp" | "name";
 
@@ -20,6 +22,7 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { phoneValid, validating, validatePhone, resetValidation } = usePhoneValidation();
 
   // ─── Login by username + password ───
   const handleLogin = async () => {
