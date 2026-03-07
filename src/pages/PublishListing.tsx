@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { ImagePlus, ChevronLeft, X } from "lucide-react";
+import { ImagePlus, ChevronLeft, X, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import { categories } from "@/data/categories";
 import { cities, getCityById } from "@/data/cities";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { usePhoneValidation } from "@/hooks/usePhoneValidation";
+import { PhoneValidationIndicator } from "@/components/PhoneValidationIndicator";
 
 const MAX_PHOTOS = 5;
 
@@ -28,14 +30,16 @@ const PublishListing = () => {
   const [phone, setPhone] = useState("");
   const [photos, setPhotos] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState<boolean[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { phoneValid, validating, validatePhone, resetValidation } = usePhoneValidation();
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
   const selectedCityData = getCityById(cityId);
 
-  const validatePhone = (p: string) => /^\d{8}$/.test(p);
+  const isPhoneFormatValid = (p: string) => /^\d{8}$/.test(p);
 
   if (loading) return null;
   if (!user) return <Navigate to="/auth" replace />;
@@ -76,8 +80,12 @@ const PublishListing = () => {
       toast({ title: "Erreur", description: "Remplissez tous les champs obligatoires.", variant: "destructive" });
       return;
     }
-    if (!validatePhone(phone)) {
+    if (!isPhoneFormatValid(phone)) {
       toast({ title: "Erreur", description: "Le numéro doit contenir 8 chiffres.", variant: "destructive" });
+      return;
+    }
+    if (phoneValid === false) {
+      toast({ title: "Erreur", description: "Le numéro de téléphone est invalide.", variant: "destructive" });
       return;
     }
 
@@ -103,30 +111,42 @@ const PublishListing = () => {
 
       if (listingError) throw listingError;
 
-      // 2. Upload photos & insert image records
+      // 2. Upload photos via Cloudinary & insert image records
       for (let i = 0; i < photos.length; i++) {
         const file = photos[i];
-        const ext = file.name.split(".").pop() || "jpg";
-        const filePath = `${user.id}/${listing.id}/${i}.${ext}`;
+        try {
+          const formData = new FormData();
+          formData.append("file", file);
 
-        const { error: uploadError } = await supabase.storage
-          .from("listing-photos")
-          .upload(filePath, file, { upsert: true });
+          const { data: session } = await supabase.auth.getSession();
+          const token = session?.session?.access_token;
 
-        if (uploadError) {
-          console.error("Upload error:", uploadError);
+          const res = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/upload-image`,
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+              body: formData,
+            }
+          );
+
+          const uploadData = await res.json();
+          if (!res.ok || !uploadData.url) {
+            console.error("Upload error:", uploadData.error);
+            continue;
+          }
+
+          await supabase.from("listing_images").insert({
+            listing_id: listing.id,
+            image_url: uploadData.url,
+            position: i,
+          });
+        } catch (uploadErr) {
+          console.error("Upload error:", uploadErr);
           continue;
         }
-
-        const { data: urlData } = supabase.storage
-          .from("listing-photos")
-          .getPublicUrl(filePath);
-
-        await supabase.from("listing_images").insert({
-          listing_id: listing.id,
-          image_url: urlData.publicUrl,
-          position: i,
-        });
       }
 
       toast({ title: "✅ Annonce publiée !", description: "Votre annonce est maintenant visible." });
@@ -260,8 +280,21 @@ const PublishListing = () => {
             <Label className="font-semibold">Téléphone *</Label>
             <div className="flex gap-2 items-center">
               <span className="text-sm font-semibold text-muted-foreground bg-muted px-3 py-2.5 rounded-xl">+235</span>
-              <Input value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 8))} placeholder="66 XX XX XX" maxLength={8} className="rounded-xl" />
+              <div className="relative flex-1">
+                <Input
+                  value={phone}
+                  onChange={(e) => { setPhone(e.target.value.replace(/\D/g, "").slice(0, 8)); resetValidation(); }}
+                  onBlur={() => { if (phone.length === 8) validatePhone(phone); }}
+                  placeholder="66 XX XX XX"
+                  maxLength={8}
+                  className="rounded-xl pr-10"
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <PhoneValidationIndicator phoneValid={phoneValid} validating={validating} />
+                </div>
+              </div>
             </div>
+            {phoneValid === false && <p className="text-xs text-destructive mt-1">Numéro de téléphone invalide</p>}
           </div>
 
           <Button

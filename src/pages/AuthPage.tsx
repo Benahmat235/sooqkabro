@@ -6,6 +6,8 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { ArrowLeft, MessageSquare, User, KeyRound, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { usePhoneValidation } from "@/hooks/usePhoneValidation";
+import { PhoneValidationIndicator } from "@/components/PhoneValidationIndicator";
 
 type AuthView = "login" | "register" | "forgot" | "otp" | "name";
 
@@ -20,6 +22,7 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { phoneValid, validating, validatePhone, resetValidation } = usePhoneValidation();
 
   // ─── Login by username + password ───
   const handleLogin = async () => {
@@ -60,6 +63,10 @@ const AuthPage = () => {
     }
     if (phone.length < 10) {
       toast({ title: "Erreur", description: "Numéro de téléphone invalide", variant: "destructive" });
+      return;
+    }
+    if (phoneValid === false) {
+      toast({ title: "Erreur", description: "Le numéro de téléphone est invalide", variant: "destructive" });
       return;
     }
     setLoading(true);
@@ -269,7 +276,13 @@ const AuthPage = () => {
               <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Nom d'utilisateur" className="h-12 rounded-xl bg-muted/50 border-0" />
               <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Nom affiché (optionnel)" className="h-12 rounded-xl bg-muted/50 border-0" />
               <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mot de passe" className="h-12 rounded-xl bg-muted/50 border-0" />
-              <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+235 XX XX XX XX" className="text-center text-lg h-12 rounded-xl bg-muted/50 border-0" />
+              <div className="relative">
+                <Input type="tel" value={phone} onChange={(e) => { setPhone(e.target.value); resetValidation(); }} onBlur={() => validatePhone(phone)} placeholder="+235 XX XX XX XX" className="text-center text-lg h-12 rounded-xl bg-muted/50 border-0 pr-10" />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <PhoneValidationIndicator phoneValid={phoneValid} validating={validating} />
+                </div>
+                {phoneValid === false && <p className="text-xs text-destructive mt-1">Numéro de téléphone invalide</p>}
+              </div>
             </div>
             <Button onClick={sendWhatsAppOtp} disabled={loading} className="w-full h-12 text-base rounded-xl font-bold bg-success hover:bg-success/90">
               {loading ? (
@@ -297,7 +310,13 @@ const AuthPage = () => {
             </div>
             <div className="w-full space-y-3">
               <Input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Nom d'utilisateur" className="h-12 rounded-xl bg-muted/50 border-0" />
-              <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+235 XX XX XX XX" className="text-center text-lg h-12 rounded-xl bg-muted/50 border-0" />
+              <div className="relative">
+                <Input type="tel" value={phone} onChange={(e) => { setPhone(e.target.value); resetValidation(); }} onBlur={() => validatePhone(phone)} placeholder="+235 XX XX XX XX" className="text-center text-lg h-12 rounded-xl bg-muted/50 border-0 pr-10" />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <PhoneValidationIndicator phoneValid={phoneValid} validating={validating} />
+                </div>
+                {phoneValid === false && <p className="text-xs text-destructive mt-1">Numéro de téléphone invalide</p>}
+              </div>
               <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Nouveau mot de passe" className="h-12 rounded-xl bg-muted/50 border-0" />
             </div>
             <Button onClick={sendForgotOtp} disabled={loading} className="w-full h-12 text-base rounded-xl font-bold">
