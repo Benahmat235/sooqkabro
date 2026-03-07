@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { ImagePlus, ChevronLeft, X } from "lucide-react";
+import { ImagePlus, ChevronLeft, X, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,8 @@ import { categories } from "@/data/categories";
 import { cities, getCityById } from "@/data/cities";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { usePhoneValidation } from "@/hooks/usePhoneValidation";
+import { PhoneValidationIndicator } from "@/components/PhoneValidationIndicator";
 
 const MAX_PHOTOS = 5;
 
@@ -28,9 +30,11 @@ const PublishListing = () => {
   const [phone, setPhone] = useState("");
   const [photos, setPhotos] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [uploadingPhotos, setUploadingPhotos] = useState<boolean[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { phoneValid, validating, validatePhone, resetValidation } = usePhoneValidation();
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
   const selectedCityData = getCityById(cityId);
