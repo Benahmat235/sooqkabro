@@ -39,7 +39,7 @@ const PublishListing = () => {
   const selectedCategory = categories.find((c) => c.id === categoryId);
   const selectedCityData = getCityById(cityId);
 
-  const validatePhone = (p: string) => /^\d{8}$/.test(p);
+  const isPhoneFormatValid = (p: string) => /^\d{8}$/.test(p);
 
   if (loading) return null;
   if (!user) return <Navigate to="/auth" replace />;
