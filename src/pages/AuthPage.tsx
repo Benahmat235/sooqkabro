@@ -65,6 +65,10 @@ const AuthPage = () => {
       toast({ title: "Erreur", description: "Numéro de téléphone invalide", variant: "destructive" });
       return;
     }
+    if (phoneValid === false) {
+      toast({ title: "Erreur", description: "Le numéro de téléphone est invalide", variant: "destructive" });
+      return;
+    }
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("whatsapp-otp", {
