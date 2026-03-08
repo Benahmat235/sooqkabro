@@ -388,7 +388,7 @@ const ListingDetail = () => {
         phoneFormatted={phoneFormatted}
         onChat={handleStartChat}
         isChatDisabled={startConversation.isPending}
-        canChat={!!user && !isOwner}
+        canChat={!isOwner}
         sellerName={sellerProfile?.display_name}
       />
     </div>

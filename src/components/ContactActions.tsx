@@ -83,11 +83,6 @@ const ContactActions = ({
         </Button>
       </div>
 
-      {!canChat && !isVerified && (
-        <p className="text-xs text-muted-foreground text-center mt-2">
-          Connectez-vous pour discuter avec le vendeur
-        </p>
-      )}
     </div>
   );
 };
