@@ -72,10 +72,14 @@ const ListingDetail = () => {
   }, [id, user?.id]);
 
   const handleStartChat = async () => {
-    if (!user || !listing) return;
+    if (!listing) return;
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
     if (user.id === listing.user_id) return;
     try {
-      const convoId = await startConversation.mutateAsync({
+      await startConversation.mutateAsync({
         listingId: listing.id,
         buyerId: user.id,
         sellerId: listing.user_id,
@@ -384,7 +388,7 @@ const ListingDetail = () => {
         phoneFormatted={phoneFormatted}
         onChat={handleStartChat}
         isChatDisabled={startConversation.isPending}
-        canChat={!!user && !isOwner}
+        canChat={!isOwner}
         sellerName={sellerProfile?.display_name}
       />
     </div>
