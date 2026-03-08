@@ -6,7 +6,7 @@ import ContactActions from "@/components/ContactActions";
 import ListingCard from "@/components/ListingCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Textarea } from "@/components/ui/textarea";
 import { formatPrice } from "@/data/mockListings";
 import { getCityById } from "@/data/cities";
