@@ -148,7 +148,7 @@ const ListingDetail = () => {
   const isOwner = user?.id === listing.user_id;
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-28">
       {/* Fullscreen gallery */}
       {fullscreen && (
         <div className="fixed inset-0 z-50 bg-foreground flex flex-col animate-fade-in">
