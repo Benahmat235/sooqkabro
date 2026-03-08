@@ -7,7 +7,6 @@ import ListingCard from "@/components/ListingCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
-import { Textarea } from "@/components/ui/textarea";
 import { formatPrice } from "@/data/mockListings";
 import { getCityById } from "@/data/cities";
 import { getCategoryById, getSubcategoryName } from "@/data/categories";
