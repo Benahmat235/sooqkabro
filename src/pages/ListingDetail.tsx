@@ -380,6 +380,8 @@ const ListingDetail = () => {
       <ContactActions
         isVerified={!!sellerProfile?.is_verified}
         whatsappLink={whatsappLink}
+        callLink={callLink}
+        phoneFormatted={phoneFormatted}
         onChat={handleStartChat}
         isChatDisabled={startConversation.isPending}
         canChat={!!user && !isOwner}
