@@ -377,7 +377,15 @@ const ListingDetail = () => {
         </div>
       )}
 
-      <BottomNav />
+      {/* Sticky bottom contact bar */}
+      <ContactActions
+        isVerified={!!sellerProfile?.is_verified}
+        whatsappLink={whatsappLink}
+        onChat={handleStartChat}
+        isChatDisabled={startConversation.isPending}
+        canChat={!!user && !isOwner}
+        sellerName={sellerProfile?.display_name}
+      />
     </div>
   );
 };
