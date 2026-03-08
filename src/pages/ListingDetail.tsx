@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { MapPin, Clock, Share2, Heart, ChevronLeft, ChevronRight as ChevronRightIcon, X, BadgeCheck, Star } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
+import ContactActions from "@/components/ContactActions";
 import ListingCard from "@/components/ListingCard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
