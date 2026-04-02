@@ -1,0 +1,1 @@
+ALTER TABLE public.listings ADD COLUMN original_price bigint DEFAULT NULL;
