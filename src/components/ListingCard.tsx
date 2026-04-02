@@ -32,7 +32,10 @@ const ListingCard = ({ listing }: ListingCardProps) => {
     ? formatDistanceToNow(new Date(listing.created_at), { addSuffix: false, locale: fr })
     : "";
 
-  const badge = (listing as any).badge;
+  const badge = listing.badge;
+  const originalPrice = (listing as any).original_price as number | null;
+  const hasDiscount = originalPrice && originalPrice > listing.price;
+  const discountPercent = hasDiscount ? Math.round(((originalPrice - listing.price) / originalPrice) * 100) : 0;
 
   return (
     <Link to={`/annonce/${listing.id}`} className="block group">
@@ -44,7 +47,6 @@ const ListingCard = ({ listing }: ListingCardProps) => {
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
           />
-          {/* Badge promotion */}
           {badge === "urgent" && (
             <div className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[9px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
               <Zap className="h-2.5 w-2.5" />URGENT
@@ -55,20 +57,31 @@ const ListingCard = ({ listing }: ListingCardProps) => {
               <Crown className="h-2.5 w-2.5" />PREMIUM
             </div>
           )}
+          {hasDiscount && (
+            <div className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow-sm">
+              -{discountPercent}%
+            </div>
+          )}
           {/* Price badge */}
           <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-foreground/60 to-transparent pt-6 pb-2 px-2">
-            <span className="text-card text-xs font-extrabold drop-shadow-sm">
-              {formatPrice(listing.price)}
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-card text-xs font-extrabold drop-shadow-sm">
+                {formatPrice(listing.price)}
+              </span>
+              {hasDiscount && (
+                <span className="text-card/60 text-[10px] line-through drop-shadow-sm">
+                  {formatPrice(originalPrice)}
+                </span>
+              )}
+            </div>
           </div>
-          {/* Favorite button */}
           <button
             className="absolute top-2 right-2 bg-card/90 backdrop-blur-sm rounded-full p-1.5 shadow-sm hover:bg-card transition-all active:scale-90"
             onClick={handleFav}
           >
             <Heart className={cn(
               "h-3.5 w-3.5 transition-all",
-              isFav ? "fill-chad-red text-chad-red" : "text-muted-foreground",
+              isFav ? "fill-[hsl(var(--chad-red))] text-[hsl(var(--chad-red))]" : "text-muted-foreground",
               heartAnim && "animate-heart-pop"
             )} />
           </button>
@@ -81,18 +94,15 @@ const ListingCard = ({ listing }: ListingCardProps) => {
             <MapPin className="h-2.5 w-2.5 shrink-0" />
             <span className="truncate">{city?.name || listing.city_id}</span>
           </div>
-          {/* Stats: time + views */}
           <div className="flex items-center gap-2 mt-1.5 text-[9px] text-muted-foreground/70">
             {timeAgo && (
               <span className="flex items-center gap-0.5">
-                <Clock className="h-2.5 w-2.5" />
-                {timeAgo}
+                <Clock className="h-2.5 w-2.5" />{timeAgo}
               </span>
             )}
             {(listing as any).view_count !== undefined && (
               <span className="flex items-center gap-0.5">
-                <Eye className="h-2.5 w-2.5" />
-                {(listing as any).view_count}
+                <Eye className="h-2.5 w-2.5" />{(listing as any).view_count}
               </span>
             )}
             {(listing as any).is_verified && (

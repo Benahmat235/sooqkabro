@@ -10,6 +10,7 @@ import ListingDetail from "./pages/ListingDetail";
 import SearchPage from "./pages/SearchPage";
 import PublishListing from "./pages/PublishListing";
 import AuthPage from "./pages/AuthPage";
+import ResetPassword from "./pages/ResetPassword";
 import AccountPage from "./pages/AccountPage";
 import MyListings from "./pages/MyListings";
 import EditListing from "./pages/EditListing";
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/search" element={<SearchPage />} />
             <Route path="/publier" element={<PublishListing />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/compte" element={<AccountPage />} />
             <Route path="/mes-annonces" element={<MyListings />} />
             <Route path="/modifier/:id" element={<EditListing />} />
