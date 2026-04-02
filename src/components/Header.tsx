@@ -1,16 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, MapPin, MessageCircle, X, Clock, Trash2 } from "lucide-react";
+import { Search, MapPin, MessageCircle, X, Clock, Trash2, PlusCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { cities } from "@/data/cities";
 import { useSearchHistory } from "@/hooks/useSearchHistory";
 import { useUnreadCount } from "@/hooks/useConversations";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
 interface HeaderProps {
@@ -59,7 +56,7 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
         {/* Top bar */}
         <div className="flex items-center justify-between py-3">
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-chad-blue flex items-center justify-center shadow-sm">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-[hsl(var(--chad-blue))] flex items-center justify-center shadow-sm">
               <span className="text-primary-foreground font-extrabold text-sm">TC</span>
             </div>
             <span className="text-lg font-extrabold text-foreground tracking-tight">
@@ -67,14 +64,22 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
             </span>
           </Link>
 
-          <Link to="/messages" className="relative text-muted-foreground hover:text-primary transition-colors p-2 rounded-full hover:bg-accent">
-            <MessageCircle className="h-5 w-5" />
-            {unreadCount > 0 && (
-              <span className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-[8px] font-bold rounded-full h-3.5 w-3.5 flex items-center justify-center ring-2 ring-card">
-                {unreadCount > 9 ? "9+" : unreadCount}
-              </span>
-            )}
-          </Link>
+          <div className="flex items-center gap-2">
+            <Button asChild size="sm" className="rounded-xl font-bold text-xs gap-1.5 h-9 px-3 bg-[hsl(var(--chad-yellow))] text-foreground hover:bg-[hsl(var(--chad-yellow))]/90">
+              <Link to="/publier">
+                <PlusCircle className="h-4 w-4" />
+                Publier
+              </Link>
+            </Button>
+            <Link to="/messages" className="relative text-muted-foreground hover:text-primary transition-colors p-2 rounded-full hover:bg-accent">
+              <MessageCircle className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 bg-destructive text-destructive-foreground text-[8px] font-bold rounded-full h-3.5 w-3.5 flex items-center justify-center ring-2 ring-card">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+            </Link>
+          </div>
         </div>
 
         {/* Search bar */}
@@ -99,15 +104,13 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
           </form>
           <Select value={selectedCity} onValueChange={onCityChange}>
             <SelectTrigger className="w-auto min-w-[110px] h-11 rounded-xl bg-muted/50 border-0 text-xs gap-1.5 focus:ring-primary/30">
-              <MapPin className="h-3.5 w-3.5 text-chad-yellow shrink-0" />
+              <MapPin className="h-3.5 w-3.5 text-[hsl(var(--chad-yellow))] shrink-0" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tout le Tchad</SelectItem>
               {cities.map((city) => (
-                <SelectItem key={city.id} value={city.id}>
-                  {city.name}
-                </SelectItem>
+                <SelectItem key={city.id} value={city.id}>{city.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -122,17 +125,10 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
                 </button>
               </div>
               {history.map((q) => (
-                <button
-                  key={q}
-                  className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-accent/50 transition-colors text-left"
-                  onClick={() => handleHistoryClick(q)}
-                >
+                <button key={q} className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-accent/50 transition-colors text-left" onClick={() => handleHistoryClick(q)}>
                   <Clock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                   <span className="text-sm text-foreground truncate flex-1">{q}</span>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); removeSearch(q); }}
-                    className="text-muted-foreground hover:text-destructive p-0.5"
-                  >
+                  <button onClick={(e) => { e.stopPropagation(); removeSearch(q); }} className="text-muted-foreground hover:text-destructive p-0.5">
                     <X className="h-3 w-3" />
                   </button>
                 </button>
