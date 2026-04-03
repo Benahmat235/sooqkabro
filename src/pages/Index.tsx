@@ -13,11 +13,13 @@ import { Sparkles, Clock, ChevronRight } from "lucide-react";
 import { useGeoLocation } from "@/hooks/useGeoLocation";
 import { categories } from "@/data/categories";
 import { Link } from "react-router-dom";
+import { useTranslation } from "@/i18n/useTranslation";
 import type { ListingWithImages } from "@/hooks/useListings";
 
 const Index = () => {
   const [selectedCity, setSelectedCity] = useState("all");
   const { detectedCity } = useGeoLocation();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (detectedCity && selectedCity === "all") {
@@ -30,7 +32,6 @@ const Index = () => {
 
   const isLoggedIn = !!user;
 
-  // Group listings by category
   const listingsByCategory = categories.reduce<Record<string, ListingWithImages[]>>((acc, cat) => {
     acc[cat.id] = listings.filter((l) => l.category_id === cat.id).slice(0, 6);
     return acc;
@@ -46,25 +47,34 @@ const Index = () => {
         {/* Hero Section */}
         <section className="py-6 text-center">
           <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground leading-tight">
-            Cherchez. Trouvez.<br />
-            <span className="text-primary">Partout au Tchad.</span>
+            {t("hero.title1")}<br />
+            <span className="text-primary">{t("hero.title2")}</span>
           </h1>
           <p className="text-sm text-muted-foreground mt-2">
-            Des milliers d'annonces à portée de main
+            {t("hero.subtitle")}
           </p>
+          {/* Dynamic stats */}
+          {!isLoading && listings.length > 0 && (
+            <div className="flex justify-center gap-6 mt-4">
+              <div className="text-center">
+                <p className="text-xl font-extrabold text-primary">{listings.length}+</p>
+                <p className="text-[10px] text-muted-foreground">{t("hero.stats.ads")}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-xl font-extrabold text-primary">13</p>
+                <p className="text-[10px] text-muted-foreground">{t("hero.stats.cities")}</p>
+              </div>
+            </div>
+          )}
         </section>
 
-        {/* Secondary category nav */}
         <CategoryNav />
-
         <CategoryGrid />
 
-        {/* CTA Banner */}
         <div className="py-3">
           <PublishCTA />
         </div>
 
-        {/* Category sections */}
         {isLoading ? (
           <section className="py-3">
             <Skeleton className="h-6 w-40 mb-4" />
@@ -85,18 +95,17 @@ const Index = () => {
             <div className="w-20 h-20 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
               <span className="text-4xl">📦</span>
             </div>
-            <p className="text-lg font-bold text-foreground">Aucune annonce</p>
-            <p className="text-sm text-muted-foreground mt-1">Soyez le premier à publier une annonce !</p>
+            <p className="text-lg font-bold text-foreground">{t("listings.none")}</p>
+            <p className="text-sm text-muted-foreground mt-1">{t("listings.beFirst")}</p>
           </div>
         ) : (
           <>
-            {/* Recent / For You section */}
             <section className="py-3">
               <div className="flex items-center gap-2 mb-4">
                 <div className="p-1.5 rounded-lg bg-accent">
                   {isLoggedIn ? <Sparkles className="h-4 w-4 text-accent-foreground" /> : <Clock className="h-4 w-4 text-accent-foreground" />}
                 </div>
-                <h2 className="text-lg font-extrabold text-foreground">{isLoggedIn ? "Pour vous" : "Annonces récentes"}</h2>
+                <h2 className="text-lg font-extrabold text-foreground">{isLoggedIn ? t("listings.forYou") : t("listings.recent")}</h2>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {listings.slice(0, 6).map((listing, i) => (
@@ -107,7 +116,6 @@ const Index = () => {
               </div>
             </section>
 
-            {/* Per-category sections */}
             {popularCategories.map((cat) => {
               const catListings = listingsByCategory[cat.id];
               if (!catListings || catListings.length === 0) return null;
@@ -119,10 +127,10 @@ const Index = () => {
                       <div className="p-1.5 rounded-lg bg-accent">
                         <Icon className="h-4 w-4 text-accent-foreground" />
                       </div>
-                      <h2 className="text-lg font-extrabold text-foreground">{cat.name.split(" ")[0]}</h2>
+                      <h2 className="text-lg font-extrabold text-foreground">{t(`cat.${cat.id}`).split(" ")[0]}</h2>
                     </div>
                     <Link to={`/categorie/${cat.id}`} className="text-primary text-xs font-semibold flex items-center gap-0.5 hover:underline">
-                      Voir plus <ChevronRight className="h-3 w-3" />
+                      {t("listings.seeMore")} <ChevronRight className="h-3 w-3" />
                     </Link>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

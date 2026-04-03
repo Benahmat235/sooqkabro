@@ -1,19 +1,19 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, PlusCircle, Search, User, MessageCircle } from "lucide-react";
+import { Home, PlusCircle, Search, User, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useUnreadCount } from "@/hooks/useConversations";
-
-const navItems = [
-  { path: "/", icon: Home, label: "Accueil" },
-  { path: "/search", icon: Search, label: "Recherche" },
-  { path: "/publier", icon: PlusCircle, label: "Publier", isMain: true },
-  { path: "/messages", icon: MessageCircle, label: "Messages", hasBadge: true },
-  { path: "/compte", icon: User, label: "Compte" },
-];
+import { useTranslation } from "@/i18n/useTranslation";
 
 const BottomNav = () => {
   const location = useLocation();
-  const { data: unreadCount = 0 } = useUnreadCount();
+  const { t } = useTranslation();
+
+  const navItems = [
+    { path: "/", icon: Home, label: t("nav.home") },
+    { path: "/search", icon: Search, label: t("nav.search") },
+    { path: "/publier", icon: PlusCircle, label: t("nav.publish"), isMain: true },
+    { path: "/favoris", icon: Heart, label: t("nav.favorites") },
+    { path: "/compte", icon: User, label: t("nav.account") },
+  ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 glass border-t safe-area-bottom">
@@ -49,11 +49,6 @@ const BottomNav = () => {
                 isActive && "bg-accent"
               )}>
                 <Icon className={cn("h-5 w-5", isActive && "stroke-[2.5px]")} />
-                {item.hasBadge && unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[7px] font-bold rounded-full h-3.5 w-3.5 flex items-center justify-center ring-2 ring-card">
-                    {unreadCount > 9 ? "9+" : unreadCount}
-                  </span>
-                )}
               </div>
               <span className={cn("text-[10px]", isActive ? "font-bold" : "font-medium")}>{item.label}</span>
             </Link>

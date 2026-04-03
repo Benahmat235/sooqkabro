@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import { I18nProvider } from "@/i18n/useTranslation";
 import Index from "./pages/Index";
 import CategoryPage from "./pages/CategoryPage";
 import ListingDetail from "./pages/ListingDetail";
@@ -23,31 +24,33 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/categorie/:categoryId" element={<CategoryPage />} />
-            <Route path="/categorie/:categoryId/:subId" element={<CategoryPage />} />
-            <Route path="/annonce/:id" element={<ListingDetail />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/publier" element={<PublishListing />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/compte" element={<AccountPage />} />
-            <Route path="/mes-annonces" element={<MyListings />} />
-            <Route path="/modifier/:id" element={<EditListing />} />
-            <Route path="/favoris" element={<FavoritesPage />} />
-            <Route path="/messages" element={<MessagesPage />} />
-            <Route path="/admin" element={<AdminPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
+    <I18nProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/categorie/:categoryId" element={<CategoryPage />} />
+              <Route path="/categorie/:categoryId/:subId" element={<CategoryPage />} />
+              <Route path="/annonce/:id" element={<ListingDetail />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/publier" element={<PublishListing />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/compte" element={<AccountPage />} />
+              <Route path="/mes-annonces" element={<MyListings />} />
+              <Route path="/modifier/:id" element={<EditListing />} />
+              <Route path="/favoris" element={<FavoritesPage />} />
+              <Route path="/messages" element={<MessagesPage />} />
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </I18nProvider>
   </QueryClientProvider>
 );
 
