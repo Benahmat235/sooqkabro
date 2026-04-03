@@ -19,6 +19,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useTranslation } from "@/i18n/useTranslation";
+import { useToast } from "@/hooks/use-toast";
 
 const ListingDetail = () => {
   const { id } = useParams();
@@ -34,6 +36,8 @@ const ListingDetail = () => {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const { t } = useTranslation();
+  const { toast } = useToast();
 
   const listing = allListings.find((l) => l.id === id);
   const isFav = listing ? favoriteIds.includes(listing.id) : false;
@@ -73,10 +77,7 @@ const ListingDetail = () => {
 
   const handleStartChat = async () => {
     if (!listing) return;
-    if (!user) {
-      navigate("/auth");
-      return;
-    }
+    if (!user) { navigate("/auth"); return; }
     if (user.id === listing.user_id) return;
     try {
       await startConversation.mutateAsync({
@@ -85,8 +86,22 @@ const ListingDetail = () => {
         sellerId: listing.user_id,
       });
       navigate("/messages");
-    } catch (err) {
-      console.error(err);
+    } catch (err) { console.error(err); }
+  };
+
+  const handleNativeShare = async () => {
+    if (!listing) return;
+    const city = getCityById(listing.city_id);
+    const url = `${window.location.origin}/annonce/${listing.id}`;
+    const text = `${listing.title} - ${formatPrice(listing.price)}\n📍 ${city?.name || ""}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: listing.title, text, url });
+      } catch {}
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast({ title: t("detail.copied"), description: t("detail.linkCopied") });
     }
   };
 
@@ -122,8 +137,8 @@ const ListingDetail = () => {
           <div className="w-20 h-20 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
             <span className="text-4xl">🔍</span>
           </div>
-          <p className="text-xl font-extrabold text-foreground">Annonce introuvable</p>
-          <Link to="/" className="text-primary font-semibold mt-2 inline-block hover:underline">← Retour à l'accueil</Link>
+          <p className="text-xl font-extrabold text-foreground">{t("listings.notFound")}</p>
+          <Link to="/" className="text-primary font-semibold mt-2 inline-block hover:underline">{t("listings.backHome")}</Link>
         </div>
       </div>
     );
@@ -139,9 +154,6 @@ const ListingDetail = () => {
   const phoneFormatted = cleanPhone.length >= 11
     ? `+${cleanPhone.slice(0, 3)} ${cleanPhone.slice(3, 5)} ${cleanPhone.slice(5, 7)} ${cleanPhone.slice(7, 9)} ${cleanPhone.slice(9)}`
     : listing.phone;
-  const listingUrl = `${window.location.origin}/annonce/${listing.id}`;
-  const shareText = `${listing.title} - ${formatPrice(listing.price)}\n📍 ${city?.name || ""}\n👉 ${listingUrl}`;
-  const shareWhatsappLink = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
   const timeAgo = formatDistanceToNow(new Date(listing.created_at), { addSuffix: true, locale: fr });
 
   const similarListings = allListings
@@ -152,7 +164,6 @@ const ListingDetail = () => {
 
   return (
     <div className="min-h-screen bg-background pb-28">
-      {/* Fullscreen gallery */}
       {fullscreen && (
         <div className="fixed inset-0 z-50 bg-foreground flex flex-col animate-fade-in">
           <button onClick={() => setFullscreen(false)} className="absolute top-4 right-4 z-10 bg-card/20 rounded-full p-2.5 backdrop-blur-sm">
@@ -222,13 +233,28 @@ const ListingDetail = () => {
         )}
       </div>
 
+      {/* Thumbnails */}
+      {images.length > 1 && (
+        <div className="flex gap-2 px-4 pt-3 overflow-x-auto scrollbar-hide">
+          {images.map((img, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentImg(i)}
+              className={cn("w-16 h-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all", i === currentImg ? "border-primary" : "border-transparent opacity-60")}
+            >
+              <img src={img} alt="" className="w-full h-full object-cover" />
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Content */}
       <div className="px-4 py-5 animate-fade-in">
         <h2 className="text-2xl font-extrabold text-primary mb-1">{formatPrice(listing.price)}</h2>
         <h1 className="text-lg font-bold text-foreground mb-2">{listing.title}</h1>
         
         <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
-          <span className="bg-accent text-accent-foreground px-2 py-0.5 rounded-full font-medium">{category?.name}</span>
+          <span className="bg-accent text-accent-foreground px-2 py-0.5 rounded-full font-medium">{category ? t(`cat.${category.id}`) : ""}</span>
           <span className="text-border">›</span>
           <span>{subcategoryName}</span>
         </div>
@@ -259,7 +285,7 @@ const ListingDetail = () => {
               />
               <div className="flex-1">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-sm text-foreground">{sellerProfile.display_name || "Vendeur"}</span>
+                  <span className="font-bold text-sm text-foreground">{sellerProfile.display_name || t("detail.seller")}</span>
                   {sellerProfile.is_verified && (
                     <BadgeCheck className="h-4 w-4 text-primary" />
                   )}
@@ -271,45 +297,72 @@ const ListingDetail = () => {
                       {sellerAvg} ({reviewCount})
                     </span>
                   )}
-                  <span>Membre {formatDistanceToNow(new Date(sellerProfile.created_at), { addSuffix: true, locale: fr })}</span>
+                  <span>{t("detail.memberSince")} {formatDistanceToNow(new Date(sellerProfile.created_at), { addSuffix: true, locale: fr })}</span>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Contact actions are now in sticky bottom bar */}
-
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <a href={shareWhatsappLink} target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" className="gap-2 rounded-2xl h-11 w-full text-sm">
-              <Share2 className="h-4 w-4" />Partager
-            </Button>
-          </a>
+          <Button variant="outline" className="gap-2 rounded-2xl h-11" onClick={handleNativeShare}>
+            <Share2 className="h-4 w-4" />{t("detail.share")}
+          </Button>
           <Button
             variant="outline"
             className={cn("gap-2 rounded-2xl h-11", isFav && "border-chad-red text-chad-red")}
             onClick={() => toggleFav.mutate({ listingId: listing.id, isFav })}
           >
             <Heart className={cn("h-4 w-4", isFav && "fill-chad-red")} />
-            {isFav ? "Sauvegardé" : "Sauvegarder"}
+            {isFav ? t("detail.saved") : t("detail.save")}
           </Button>
         </div>
       </div>
 
-      {/* Seller reviews section */}
+      {/* Reviews section */}
       <div className="px-4 pb-5">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-extrabold text-foreground">Avis sur le vendeur</h2>
+          <h2 className="text-base font-extrabold text-foreground">{t("detail.sellerReviews")}</h2>
           {user && !isOwner && (
             <button
               onClick={() => setShowReviewForm(!showReviewForm)}
               className="text-xs text-primary font-semibold hover:underline"
             >
-              {showReviewForm ? "Annuler" : "Donner un avis"}
+              {showReviewForm ? t("detail.cancel") : t("detail.giveReview")}
             </button>
           )}
         </div>
+
+        {/* Review rating bars */}
+        {reviewCount > 0 && (
+          <div className="bg-card border rounded-2xl p-4 mb-3">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="text-center">
+                <p className="text-3xl font-extrabold text-foreground">{sellerAvg}</p>
+                <div className="flex items-center gap-0.5">
+                  {[1,2,3,4,5].map((s) => (
+                    <Star key={s} className={cn("h-3 w-3", s <= Math.round(sellerAvg) ? "fill-chad-yellow text-chad-yellow" : "text-muted-foreground/30")} />
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{reviewCount} avis</p>
+              </div>
+              <div className="flex-1 space-y-1">
+                {[5,4,3,2,1].map((star) => {
+                  const count = reviews.filter((r) => r.rating === star).length;
+                  const pct = reviewCount > 0 ? (count / reviewCount) * 100 : 0;
+                  return (
+                    <div key={star} className="flex items-center gap-2">
+                      <span className="text-[10px] w-3 text-muted-foreground">{star}</span>
+                      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-chad-yellow rounded-full" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
 
         {showReviewForm && (
           <div className="bg-card border rounded-2xl p-4 mb-3 animate-fade-in">
@@ -323,19 +376,19 @@ const ListingDetail = () => {
             <Textarea
               value={reviewComment}
               onChange={(e) => setReviewComment(e.target.value)}
-              placeholder="Votre commentaire (optionnel)..."
+              placeholder={t("detail.commentPlaceholder")}
               rows={2}
               className="rounded-xl mb-2"
               maxLength={500}
             />
             <Button onClick={handleSubmitReview} size="sm" className="rounded-xl" disabled={submitReview.isPending}>
-              Publier l'avis
+              {t("detail.publishReview")}
             </Button>
           </div>
         )}
 
         {reviews.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Aucun avis pour ce vendeur</p>
+          <p className="text-xs text-muted-foreground">{t("detail.noReviews")}</p>
         ) : (
           <div className="space-y-3">
             {reviews.slice(0, 5).map((r) => (
@@ -359,19 +412,19 @@ const ListingDetail = () => {
       {/* Safety tips */}
       <div className="px-4 pb-5">
         <div className="bg-accent/50 border border-accent rounded-2xl p-4">
-          <h3 className="font-extrabold text-sm mb-2.5 flex items-center gap-2">🛡️ Conseils de sécurité</h3>
+          <h3 className="font-extrabold text-sm mb-2.5 flex items-center gap-2">{t("safety.title")}</h3>
           <ul className="text-xs text-muted-foreground space-y-1.5 list-disc pl-4">
-            <li>Ne payez jamais à l'avance avant d'avoir vu l'article</li>
-            <li>Rencontrez le vendeur dans un lieu public</li>
-            <li>Vérifiez l'article avant de payer</li>
-            <li>Méfiez-vous des prix anormalement bas</li>
+            <li>{t("safety.tip1")}</li>
+            <li>{t("safety.tip2")}</li>
+            <li>{t("safety.tip3")}</li>
+            <li>{t("safety.tip4")}</li>
           </ul>
         </div>
       </div>
 
       {similarListings.length > 0 && (
         <div className="px-4 pb-6">
-          <h2 className="text-lg font-extrabold text-foreground mb-3">Annonces similaires</h2>
+          <h2 className="text-lg font-extrabold text-foreground mb-3">{t("listings.similar")}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {similarListings.map((l) => (
               <ListingCard key={l.id} listing={l} />
@@ -380,7 +433,6 @@ const ListingDetail = () => {
         </div>
       )}
 
-      {/* Sticky bottom contact bar */}
       <ContactActions
         isVerified={!!sellerProfile?.is_verified}
         whatsappLink={whatsappLink}

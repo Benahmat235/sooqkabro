@@ -1,19 +1,46 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { ArrowLeft, SearchX, Search } from "lucide-react";
+import { ArrowLeft, SearchX, Search, SlidersHorizontal } from "lucide-react";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import ListingCard from "@/components/ListingCard";
+import FilterPanel from "@/components/FilterPanel";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSearchListings } from "@/hooks/useListings";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "@/i18n/useTranslation";
 
 const SearchPage = () => {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
   const cityParam = searchParams.get("city") || "all";
   const [selectedCity, setSelectedCity] = useState(cityParam);
+  const [showFilters, setShowFilters] = useState(false);
+  const [sortBy, setSortBy] = useState("recent");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [quartier, setQuartier] = useState("all");
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [dateFilter, setDateFilter] = useState("all");
+  const { t } = useTranslation();
 
-  const { data: results = [], isLoading } = useSearchListings(query, selectedCity);
+  const { data: rawResults = [], isLoading } = useSearchListings(query, selectedCity);
+
+  const results = useMemo(() => {
+    let filtered = [...rawResults];
+    if (minPrice) filtered = filtered.filter((l) => l.price >= Number(minPrice));
+    if (maxPrice) filtered = filtered.filter((l) => l.price <= Number(maxPrice));
+    if (quartier !== "all") filtered = filtered.filter((l) => l.quartier === quartier);
+    if (dateFilter !== "all") {
+      const now = Date.now();
+      const ms = dateFilter === "today" ? 86400000 : dateFilter === "7days" ? 604800000 : 2592000000;
+      filtered = filtered.filter((l) => now - new Date(l.created_at).getTime() < ms);
+    }
+    if (sortBy === "price-asc") filtered.sort((a, b) => a.price - b.price);
+    else if (sortBy === "price-desc") filtered.sort((a, b) => b.price - a.price);
+    return filtered;
+  }, [rawResults, minPrice, maxPrice, quartier, dateFilter, sortBy]);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -22,7 +49,7 @@ const SearchPage = () => {
         {query && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
             <Link to="/" className="hover:text-primary flex items-center gap-1 transition-colors">
-              <ArrowLeft className="h-4 w-4" /> Accueil
+              <ArrowLeft className="h-4 w-4" /> {t("common.home")}
             </Link>
             <span className="text-border">/</span>
             <span className="text-foreground font-semibold">"{query}"</span>
@@ -30,9 +57,46 @@ const SearchPage = () => {
         )}
 
         {query && (
-          <p className="text-sm text-muted-foreground mb-4">
-            <span className="font-semibold text-foreground">{results.length}</span> résultat{results.length !== 1 ? "s" : ""} trouvé{results.length !== 1 ? "s" : ""}
-          </p>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground">{results.length}</span> {results.length !== 1 ? t("search.resultsPlural") : t("search.results")} {results.length !== 1 ? t("search.foundPlural") : t("search.found")}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="rounded-full text-xs gap-1.5 border-border/50" onClick={() => setShowFilters(!showFilters)}>
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                {t("filter.filters")}
+              </Button>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-32 h-8 text-xs rounded-full border-border/50">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recent">{t("filter.recent")}</SelectItem>
+                  <SelectItem value="price-asc">{t("filter.priceAsc")}</SelectItem>
+                  <SelectItem value="price-desc">{t("filter.priceDesc")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
+        {showFilters && (
+          <div className="mb-3">
+            <FilterPanel
+              selectedCity={selectedCity}
+              onCityChange={setSelectedCity}
+              minPrice={minPrice}
+              onMinPriceChange={setMinPrice}
+              maxPrice={maxPrice}
+              onMaxPriceChange={setMaxPrice}
+              quartier={quartier}
+              onQuartierChange={setQuartier}
+              verifiedOnly={verifiedOnly}
+              onVerifiedOnlyChange={setVerifiedOnly}
+              dateFilter={dateFilter}
+              onDateFilterChange={setDateFilter}
+            />
+          </div>
         )}
 
         {isLoading ? (
@@ -52,9 +116,9 @@ const SearchPage = () => {
             <div className="w-20 h-20 rounded-full bg-accent mx-auto mb-4 flex items-center justify-center">
               <Search className="h-9 w-9 text-accent-foreground" />
             </div>
-            <p className="text-lg font-bold text-foreground">Trouvez ce que vous cherchez</p>
+            <p className="text-lg font-bold text-foreground">{t("search.find")}</p>
             <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">
-              Utilisez la barre de recherche pour trouver des annonces parmi toutes les catégories
+              {t("search.useBar")}
             </p>
           </div>
         ) : results.length === 0 ? (
@@ -62,9 +126,9 @@ const SearchPage = () => {
             <div className="w-20 h-20 rounded-full bg-muted mx-auto mb-4 flex items-center justify-center">
               <SearchX className="h-9 w-9 text-muted-foreground" />
             </div>
-            <p className="text-lg font-bold text-foreground">Aucun résultat</p>
+            <p className="text-lg font-bold text-foreground">{t("search.noResults")}</p>
             <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">
-              Essayez d'autres mots-clés ou changez de ville
+              {t("search.tryOther")}
             </p>
           </div>
         ) : (
