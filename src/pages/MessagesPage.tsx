@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useTranslation } from "@/i18n/useTranslation";
 
 const MessagesPage = () => {
   const { user, loading } = useAuth();
@@ -33,12 +34,13 @@ const MessagesPage = () => {
 
 function ConversationList({ userId, onSelect }: { userId: string; onSelect: (c: Conversation) => void }) {
   const { data: conversations = [], isLoading } = useConversations();
+  const { t } = useTranslation();
 
   return (
     <>
       <div className="sticky top-0 z-50 glass border-b px-4 py-3 flex items-center gap-3">
         <Link to="/"><ChevronLeft className="h-5 w-5 text-foreground" /></Link>
-        <h1 className="text-lg font-extrabold">Messages</h1>
+        <h1 className="text-lg font-extrabold">{t("messages.title")}</h1>
       </div>
 
       <div className="px-4 py-3">
@@ -59,8 +61,8 @@ function ConversationList({ userId, onSelect }: { userId: string; onSelect: (c: 
             <div className="w-20 h-20 rounded-full bg-accent mx-auto mb-4 flex items-center justify-center">
               <MessageCircle className="h-9 w-9 text-accent-foreground" />
             </div>
-            <p className="text-lg font-bold text-foreground">Aucun message</p>
-            <p className="text-sm text-muted-foreground mt-1">Vos conversations apparaîtront ici</p>
+            <p className="text-lg font-bold text-foreground">{t("messages.none")}</p>
+            <p className="text-sm text-muted-foreground mt-1">{t("messages.appear")}</p>
           </div>
         ) : (
           <div className="space-y-1">
@@ -71,11 +73,7 @@ function ConversationList({ userId, onSelect }: { userId: string; onSelect: (c: 
                 className="w-full flex items-center gap-3 p-3 rounded-2xl hover:bg-accent/50 transition-colors text-left"
               >
                 <div className="relative">
-                  <img
-                    src={convo.listing_image}
-                    alt=""
-                    className="w-12 h-12 rounded-xl object-cover bg-muted"
-                  />
+                  <img src={convo.listing_image} alt="" className="w-12 h-12 rounded-xl object-cover bg-muted" />
                   {(convo.unread_count || 0) > 0 && (
                     <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[9px] font-bold rounded-full h-4 w-4 flex items-center justify-center ring-2 ring-card">
                       {convo.unread_count}
@@ -111,8 +109,8 @@ function ChatView({ conversation, userId, onBack }: { conversation: Conversation
   const { data: messages = [] } = useMessages(conversation.id);
   const sendMessage = useSendMessage();
   const [text, setText] = useState("");
+  const { t } = useTranslation();
 
-  // Mark messages as read
   const unreadIds = messages.filter((m) => !m.read && m.sender_id !== userId).map((m) => m.id);
   if (unreadIds.length > 0) {
     supabase.from("messages").update({ read: true }).in("id", unreadIds).then(() => {});
@@ -126,7 +124,6 @@ function ChatView({ conversation, userId, onBack }: { conversation: Conversation
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
-      {/* Header */}
       <div className="sticky top-0 z-50 glass border-b px-4 py-3 flex items-center gap-3">
         <button onClick={onBack}><ChevronLeft className="h-5 w-5 text-foreground" /></button>
         <img src={conversation.listing_image} alt="" className="w-8 h-8 rounded-lg object-cover bg-muted" />
@@ -136,7 +133,6 @@ function ChatView({ conversation, userId, onBack }: { conversation: Conversation
         </div>
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
         {messages.map((msg) => {
           const isMine = msg.sender_id === userId;
@@ -158,12 +154,11 @@ function ChatView({ conversation, userId, onBack }: { conversation: Conversation
         })}
       </div>
 
-      {/* Input */}
       <div className="border-t glass px-4 py-3 flex gap-2">
         <Input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Votre message..."
+          placeholder={t("messages.placeholder")}
           className="rounded-xl bg-muted/50 border-0"
           onKeyDown={(e) => e.key === "Enter" && handleSend()}
         />
