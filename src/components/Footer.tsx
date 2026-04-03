@@ -1,37 +1,53 @@
 import { Link } from "react-router-dom";
+import { categories } from "@/data/categories";
+import LanguageSwitcher from "@/i18n/LanguageSwitcher";
+import { useTranslation } from "@/i18n/useTranslation";
 
 const Footer = () => {
+  const { t } = useTranslation();
+
   return (
-    <footer className="bg-muted/50 border-t mt-8 pb-24">
+    <footer className="bg-card border-t mt-8 pb-24">
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary to-[hsl(var(--chad-blue))] flex items-center justify-center">
+        <div className="flex items-center gap-2 mb-6">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-[hsl(var(--chad-blue))] flex items-center justify-center">
             <span className="text-primary-foreground font-extrabold text-xs">TC</span>
           </div>
           <span className="text-base font-extrabold text-foreground">
             Tchad<span className="text-primary">Market</span>
           </span>
         </div>
-        <p className="text-xs text-muted-foreground mb-6">
-          La première marketplace du Tchad. Achetez et vendez facilement.
-        </p>
-        <div className="grid grid-cols-2 gap-4 text-xs">
-          <div className="space-y-2">
-            <h4 className="font-bold text-foreground">Navigation</h4>
-            <Link to="/" className="block text-muted-foreground hover:text-primary">Accueil</Link>
-            <Link to="/search" className="block text-muted-foreground hover:text-primary">Rechercher</Link>
-            <Link to="/publier" className="block text-muted-foreground hover:text-primary">Publier</Link>
+
+        <p className="text-xs text-muted-foreground mb-6">{t("footer.tagline")}</p>
+
+        <div className="grid grid-cols-2 gap-6 mb-6">
+          <div>
+            <h4 className="text-xs font-bold text-foreground mb-3">{t("footer.categories")}</h4>
+            <ul className="space-y-1.5">
+              {categories.slice(0, 6).map((cat) => (
+                <li key={cat.id}>
+                  <Link to={`/categorie/${cat.id}`} className="text-xs text-muted-foreground hover:text-primary transition-colors">
+                    {t(`cat.${cat.id}`)}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </div>
-          <div className="space-y-2">
-            <h4 className="font-bold text-foreground">Informations</h4>
-            <span className="block text-muted-foreground">Conditions d'utilisation</span>
-            <span className="block text-muted-foreground">Confidentialité</span>
-            <span className="block text-muted-foreground">Aide & Support</span>
+          <div>
+            <h4 className="text-xs font-bold text-foreground mb-3">Liens</h4>
+            <ul className="space-y-1.5">
+              <li><Link to="/" className="text-xs text-muted-foreground hover:text-primary transition-colors">{t("footer.about")}</Link></li>
+              <li><Link to="/" className="text-xs text-muted-foreground hover:text-primary transition-colors">{t("footer.help")}</Link></li>
+              <li><Link to="/" className="text-xs text-muted-foreground hover:text-primary transition-colors">{t("footer.terms")}</Link></li>
+              <li><Link to="/" className="text-xs text-muted-foreground hover:text-primary transition-colors">{t("footer.privacy")}</Link></li>
+            </ul>
           </div>
         </div>
-        <div className="border-t mt-6 pt-4">
-          <p className="text-[10px] text-muted-foreground text-center">
-            © {new Date().getFullYear()} TchadMarket. Tous droits réservés.
+
+        <div className="border-t pt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <LanguageSwitcher />
+          <p className="text-[10px] text-muted-foreground">
+            © {new Date().getFullYear()} TchadMarket. {t("footer.rights")}.
           </p>
         </div>
       </div>
