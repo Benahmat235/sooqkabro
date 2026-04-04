@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Flame, TrendingUp, Clock, Sparkles } from "lucide-react";
 import Header from "@/components/Header";
