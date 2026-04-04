@@ -126,8 +126,9 @@ const SkeletonSection = () => (
 
 const DiscoverPage = () => {
   const { t } = useTranslation();
-  const { data: listings, isLoading } = useListings();
-  const { data: personalizedFeed } = usePersonalizedFeed();
+  const [selectedCity, setSelectedCity] = useState("all");
+  const { data: listings, isLoading } = useListings(selectedCity);
+  const { data: personalizedFeed } = usePersonalizedFeed(selectedCity);
 
   const featured = (listings || []).filter(
     (l) => l.badge === "premium" || l.badge === "urgent"
