@@ -146,7 +146,7 @@ const DiscoverPage = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      <Header />
+      <Header selectedCity={selectedCity} onCityChange={setSelectedCity} />
 
       <div className="pt-4">
         <h1 className="text-xl font-extrabold text-foreground px-4 mb-4">
