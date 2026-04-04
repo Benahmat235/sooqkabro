@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Heart, MapPin, Eye, Clock, BadgeCheck, Zap, Crown } from "lucide-react";
 import { formatPrice } from "@/data/mockListings";
@@ -8,6 +8,11 @@ import { useFavorites, useToggleFavorite } from "@/hooks/useFavorites";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+
+function cloudinaryOptimize(url: string, width: number): string {
+  if (!url || !url.includes("cloudinary.com")) return url;
+  return url.replace("/upload/", `/upload/w_${width},c_limit,q_auto,f_auto/`);
+}
 
 interface ListingCardProps {
   listing: ListingWithImages;
@@ -19,6 +24,11 @@ const ListingCard = ({ listing }: ListingCardProps) => {
   const toggleFav = useToggleFavorite();
   const isFav = favoriteIds.includes(listing.id);
   const [heartAnim, setHeartAnim] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
+
+  const imgSrc = listing.images[0] || "/placeholder.svg";
+  const srcSmall = cloudinaryOptimize(imgSrc, 400);
+  const srcLarge = cloudinaryOptimize(imgSrc, 800);
 
   const handleFav = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -41,11 +51,20 @@ const ListingCard = ({ listing }: ListingCardProps) => {
     <Link to={`/annonce/${listing.id}`} className="block group">
       <div className="relative rounded-2xl overflow-hidden bg-card shadow-card group-hover:shadow-card-hover transition-all duration-300 group-active:scale-[0.98]">
         <div className="relative aspect-square bg-muted overflow-hidden">
+          {!imgLoaded && (
+            <div className="absolute inset-0 animate-pulse bg-muted" />
+          )}
           <img
-            src={listing.images[0] || "/placeholder.svg"}
+            src={srcSmall}
+            srcSet={imgSrc.includes("cloudinary.com") ? `${srcSmall} 400w, ${srcLarge} 800w` : undefined}
+            sizes="(max-width: 640px) 50vw, 200px"
             alt={listing.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className={cn(
+              "w-full h-full object-cover group-hover:scale-105 transition-all duration-500",
+              !imgLoaded && "opacity-0"
+            )}
             loading="lazy"
+            onLoad={() => setImgLoaded(true)}
           />
           {badge === "urgent" && (
             <div className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[9px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">

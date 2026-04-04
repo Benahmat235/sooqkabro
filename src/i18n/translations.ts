@@ -209,6 +209,15 @@ export const translations: Record<Locale, Record<string, string>> = {
     "common.error": "Erreur",
     "common.loading": "Chargement...",
     "common.free": "Gratuit",
+
+    // Discover
+    "discover.title": "Découvrir",
+    "discover.featured": "Mises en avant",
+    "discover.forYou": "Pour vous",
+    "discover.deals": "Bonnes affaires",
+    "discover.recent": "Nouveautés",
+    "discover.popular": "Populaires",
+    "nav.discover": "Découvrir",
   },
 
   en: {
@@ -404,6 +413,15 @@ export const translations: Record<Locale, Record<string, string>> = {
     "common.error": "Error",
     "common.loading": "Loading...",
     "common.free": "Free",
+
+    // Discover
+    "discover.title": "Discover",
+    "discover.featured": "Featured",
+    "discover.forYou": "For You",
+    "discover.deals": "Best Deals",
+    "discover.recent": "New Arrivals",
+    "discover.popular": "Popular",
+    "nav.discover": "Discover",
   },
 
   ar: {
@@ -599,5 +617,14 @@ export const translations: Record<Locale, Record<string, string>> = {
     "common.error": "خطأ",
     "common.loading": "جارٍ التحميل...",
     "common.free": "مجاني",
+
+    // Discover
+    "discover.title": "اكتشف",
+    "discover.featured": "مميزة",
+    "discover.forYou": "لك",
+    "discover.deals": "عروض جيدة",
+    "discover.recent": "جديد",
+    "discover.popular": "الأكثر شعبية",
+    "nav.discover": "اكتشف",
   },
 };
