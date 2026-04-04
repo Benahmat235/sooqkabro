@@ -34,7 +34,7 @@ const BottomNav = () => {
                 className="flex flex-col items-center -mt-6 focus-ring rounded-2xl"
                 aria-label={item.ariaLabel}
               >
-                <div className="bg-gradient-to-br from-chad-yellow to-secondary rounded-2xl p-3.5 shadow-lg shadow-secondary/30 active:scale-95 transition-transform">
+                <div className="bg-gradient-to-br from-[hsl(var(--chad-yellow))] to-secondary rounded-2xl p-3.5 shadow-lg shadow-secondary/30 active:scale-95 transition-transform">
                   <PlusCircle className="h-7 w-7 text-secondary-foreground" />
                 </div>
                 <span className="text-xs mt-1.5 font-bold text-secondary">{item.label}</span>
