@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Heart, MapPin, Eye, Clock, BadgeCheck, Zap, Crown } from "lucide-react";
 import { formatPrice } from "@/data/mockListings";
@@ -8,6 +8,11 @@ import { useFavorites, useToggleFavorite } from "@/hooks/useFavorites";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+
+function cloudinaryOptimize(url: string, width: number): string {
+  if (!url || !url.includes("cloudinary.com")) return url;
+  return url.replace("/upload/", `/upload/w_${width},c_limit,q_auto,f_auto/`);
+}
 
 interface ListingCardProps {
   listing: ListingWithImages;
