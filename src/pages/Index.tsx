@@ -45,24 +45,24 @@ const Index = () => {
 
       <main className="container mx-auto px-4">
         {/* Hero Section */}
-        <section className="py-6 text-center">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground leading-tight">
+        <section className="py-8 text-center">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-foreground leading-tight text-balance">
             {t("hero.title1")}<br />
             <span className="text-primary">{t("hero.title2")}</span>
           </h1>
-          <p className="text-sm text-muted-foreground mt-2">
+          <p className="text-base text-muted-foreground mt-3 max-w-md mx-auto text-pretty">
             {t("hero.subtitle")}
           </p>
           {/* Dynamic stats */}
           {!isLoading && listings.length > 0 && (
-            <div className="flex justify-center gap-6 mt-4">
+            <div className="flex justify-center gap-8 mt-6">
               <div className="text-center">
-                <p className="text-xl font-extrabold text-primary">{listings.length}+</p>
-                <p className="text-[10px] text-muted-foreground">{t("hero.stats.ads")}</p>
+                <p className="text-2xl font-extrabold text-primary">{listings.length}+</p>
+                <p className="text-xs text-muted-foreground">{t("hero.stats.ads")}</p>
               </div>
               <div className="text-center">
-                <p className="text-xl font-extrabold text-primary">13</p>
-                <p className="text-[10px] text-muted-foreground">{t("hero.stats.cities")}</p>
+                <p className="text-2xl font-extrabold text-primary">13</p>
+                <p className="text-xs text-muted-foreground">{t("hero.stats.cities")}</p>
               </div>
             </div>
           )}
@@ -76,15 +76,15 @@ const Index = () => {
         </div>
 
         {isLoading ? (
-          <section className="py-3">
-            <Skeleton className="h-6 w-40 mb-4" />
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="rounded-2xl overflow-hidden">
+          <section className="py-4">
+            <Skeleton className="h-7 w-48 mb-5" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="rounded-3xl overflow-hidden">
                   <Skeleton className="aspect-square w-full" />
-                  <div className="p-2.5 space-y-2">
-                    <Skeleton className="h-3 w-3/4" />
-                    <Skeleton className="h-2.5 w-1/2" />
+                  <div className="p-3 space-y-2.5">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3.5 w-1/2" />
                   </div>
                 </div>
               ))}
@@ -100,15 +100,15 @@ const Index = () => {
           </div>
         ) : (
           <>
-            <section className="py-3">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="p-1.5 rounded-lg bg-accent">
-                  {isLoggedIn ? <Sparkles className="h-4 w-4 text-accent-foreground" /> : <Clock className="h-4 w-4 text-accent-foreground" />}
+            <section className="py-4">
+              <div className="flex items-center gap-2.5 mb-5">
+                <div className="p-2 rounded-xl bg-accent">
+                  {isLoggedIn ? <Sparkles className="h-5 w-5 text-accent-foreground" /> : <Clock className="h-5 w-5 text-accent-foreground" />}
                 </div>
-                <h2 className="text-lg font-extrabold text-foreground">{isLoggedIn ? t("listings.forYou") : t("listings.recent")}</h2>
+                <h2 className="text-xl font-extrabold text-foreground">{isLoggedIn ? t("listings.forYou") : t("listings.recent")}</h2>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {listings.slice(0, 6).map((listing, i) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {listings.slice(0, 8).map((listing, i) => (
                   <div key={listing.id} className="animate-fade-in" style={{ animationDelay: `${i * 50}ms`, animationFillMode: "both" }}>
                     <ListingCard listing={listing} />
                   </div>
@@ -121,19 +121,22 @@ const Index = () => {
               if (!catListings || catListings.length === 0) return null;
               const Icon = cat.icon;
               return (
-                <section key={cat.id} className="py-3">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-accent">
-                        <Icon className="h-4 w-4 text-accent-foreground" />
+                <section key={cat.id} className="py-4">
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2 rounded-xl bg-accent">
+                        <Icon className="h-5 w-5 text-accent-foreground" />
                       </div>
-                      <h2 className="text-lg font-extrabold text-foreground">{t(`cat.${cat.id}`).split(" ")[0]}</h2>
+                      <h2 className="text-xl font-extrabold text-foreground">{t(`cat.${cat.id}`).split(" ")[0]}</h2>
                     </div>
-                    <Link to={`/categorie/${cat.id}`} className="text-primary text-xs font-semibold flex items-center gap-0.5 hover:underline">
-                      {t("listings.seeMore")} <ChevronRight className="h-3 w-3" />
+                    <Link 
+                      to={`/categorie/${cat.id}`} 
+                      className="text-primary text-sm font-semibold flex items-center gap-1 hover:underline focus-ring rounded-lg px-2 py-1"
+                    >
+                      {t("listings.seeMore")} <ChevronRight className="h-4 w-4" />
                     </Link>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {catListings.map((listing, i) => (
                       <div key={listing.id} className="animate-fade-in" style={{ animationDelay: `${i * 50}ms`, animationFillMode: "both" }}>
                         <ListingCard listing={listing} />
