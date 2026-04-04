@@ -413,6 +413,15 @@ export const translations: Record<Locale, Record<string, string>> = {
     "common.error": "Error",
     "common.loading": "Loading...",
     "common.free": "Free",
+
+    // Discover
+    "discover.title": "Discover",
+    "discover.featured": "Featured",
+    "discover.forYou": "For You",
+    "discover.deals": "Best Deals",
+    "discover.recent": "New Arrivals",
+    "discover.popular": "Popular",
+    "nav.discover": "Discover",
   },
 
   ar: {
