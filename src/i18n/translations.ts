@@ -617,5 +617,14 @@ export const translations: Record<Locale, Record<string, string>> = {
     "common.error": "خطأ",
     "common.loading": "جارٍ التحميل...",
     "common.free": "مجاني",
+
+    // Discover
+    "discover.title": "اكتشف",
+    "discover.featured": "مميزة",
+    "discover.forYou": "لك",
+    "discover.deals": "عروض جيدة",
+    "discover.recent": "جديد",
+    "discover.popular": "الأكثر شعبية",
+    "nav.discover": "اكتشف",
   },
 };

@@ -9,9 +9,9 @@ const BottomNav = () => {
 
   const navItems = [
     { path: "/", icon: Home, label: t("nav.home") },
-    { path: "/search", icon: Search, label: t("nav.search") },
+    { path: "/decouvrir", icon: Compass, label: t("nav.discover") },
     { path: "/publier", icon: PlusCircle, label: t("nav.publish"), isMain: true },
-    { path: "/favoris", icon: Heart, label: t("nav.favorites") },
+    { path: "/search", icon: Search, label: t("nav.search") },
     { path: "/compte", icon: User, label: t("nav.account") },
   ];
 
