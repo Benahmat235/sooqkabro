@@ -20,6 +20,7 @@ const MyListings = lazy(() => import("./pages/MyListings"));
 const EditListing = lazy(() => import("./pages/EditListing"));
 const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
 const MessagesPage = lazy(() => import("./pages/MessagesPage"));
+const SellerProfile = lazy(() => import("./pages/SellerProfile"));
 const AdminPage = lazy(() => import("./pages/AdminPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -55,6 +56,7 @@ const App = () => (
                 <Route path="/modifier/:id" element={<EditListing />} />
                 <Route path="/favoris" element={<FavoritesPage />} />
                 <Route path="/messages" element={<MessagesPage />} />
+                <Route path="/vendeur/:sellerId" element={<SellerProfile />} />
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
