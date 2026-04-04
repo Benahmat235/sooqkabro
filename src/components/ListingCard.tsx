@@ -24,6 +24,11 @@ const ListingCard = ({ listing }: ListingCardProps) => {
   const toggleFav = useToggleFavorite();
   const isFav = favoriteIds.includes(listing.id);
   const [heartAnim, setHeartAnim] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
+
+  const imgSrc = listing.images[0] || "/placeholder.svg";
+  const srcSmall = cloudinaryOptimize(imgSrc, 400);
+  const srcLarge = cloudinaryOptimize(imgSrc, 800);
 
   const handleFav = (e: React.MouseEvent) => {
     e.preventDefault();
