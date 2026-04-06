@@ -276,7 +276,10 @@ const ListingDetail = () => {
 
         {/* Seller profile card */}
         {sellerProfile && (
-          <div className="bg-card border rounded-2xl p-4 mb-5">
+          <Link
+            to={`/vendeur/${listing?.user_id}`}
+            className="block bg-card border rounded-2xl p-4 mb-5 hover:shadow-md transition-shadow"
+          >
             <div className="flex items-center gap-3">
               <img
                 src={sellerProfile.avatar_url || "/placeholder.svg"}
@@ -301,7 +304,7 @@ const ListingDetail = () => {
                 </div>
               </div>
             </div>
-          </div>
+          </Link>
         )}
 
         <div className="grid grid-cols-2 gap-3 mb-6">
