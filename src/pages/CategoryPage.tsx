@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCategoryById } from "@/data/categories";
 import { useListings } from "@/hooks/useListings";
+import { useInfiniteScroll, InfiniteScrollLoader, InfiniteScrollSentinel } from "@/hooks/useInfiniteScroll";
 import { useTranslation } from "@/i18n/useTranslation";
 
 const CategoryPage = () => {
@@ -45,6 +46,12 @@ const CategoryPage = () => {
 
     return filtered;
   }, [allListings, categoryId, subId, minPrice, maxPrice, sortBy, quartier, dateFilter]);
+
+  const { visibleItems, hasMore, isLoading: loadingMore, sentinelRef } = useInfiniteScroll({
+    items: listings,
+    initialCount: 12,
+    incrementCount: 8,
+  });
 
   const catName = category ? (t(`cat.${category.id}`) || category.name) : categoryId;
 
@@ -135,17 +142,21 @@ const CategoryPage = () => {
             <p className="text-sm text-muted-foreground mt-1">{t("filter.changeFilters")}</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {listings.map((listing, i) => (
-              <div
-                key={listing.id}
-                className="animate-fade-in"
-                style={{ animationDelay: `${i * 50}ms`, animationFillMode: "both" }}
-              >
-                <ListingCard listing={listing} />
-              </div>
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {visibleItems.map((listing, i) => (
+                <div
+                  key={listing.id}
+                  className="animate-fade-in"
+                  style={{ animationDelay: `${Math.min(i, 11) * 50}ms`, animationFillMode: "both" }}
+                >
+                  <ListingCard listing={listing} />
+                </div>
+              ))}
+            </div>
+            <InfiniteScrollLoader isLoading={loadingMore} />
+            <InfiniteScrollSentinel sentinelRef={sentinelRef} hasMore={hasMore} />
+          </>
         )}
       </main>
 

@@ -4,7 +4,9 @@ import { Search, MapPin, X, Clock, Trash2, Heart, Bell, Menu, ChevronDown } from
 import { Input } from "@/components/ui/input";
 import { cities } from "@/data/cities";
 import { useSearchHistory } from "@/hooks/useSearchHistory";
+import { useNotifications } from "@/hooks/useNotifications";
 import { useTranslation } from "@/i18n/useTranslation";
+import NotificationCenter from "@/components/NotificationCenter";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -18,8 +20,10 @@ interface HeaderProps {
 const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showHistory, setShowHistory] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
   const { history, addSearch, removeSearch, clearHistory } = useSearchHistory();
+  const { unreadCount } = useNotifications();
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const historyRef = useRef<HTMLDivElement>(null);
@@ -55,6 +59,8 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
     : cities.find(c => c.id === selectedCity)?.name || selectedCity;
 
   return (
+    <>
+    <NotificationCenter isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
     <header className="bg-card border-b border-border/50">
       <div className="container mx-auto px-3">
         {/* Row 1: Actions left + Logo right */}
@@ -63,8 +69,17 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
             <Link to="/favoris" className="p-2 rounded-full hover:bg-muted transition-colors" aria-label="Favoris">
               <Heart className="h-5 w-5 text-foreground" />
             </Link>
-            <button className="p-2 rounded-full hover:bg-muted transition-colors relative" aria-label="Notifications">
+            <button 
+              onClick={() => setShowNotifications(true)}
+              className="p-2 rounded-full hover:bg-muted transition-colors relative" 
+              aria-label="Notifications"
+            >
               <Bell className="h-5 w-5 text-foreground" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center px-1">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
             </button>
             <Link
               to="/publier"
@@ -184,6 +199,7 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
         </div>
       </div>
     </header>
+    </>
   );
 };
 
