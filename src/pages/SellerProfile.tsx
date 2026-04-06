@@ -13,12 +13,16 @@ import {
   Zap,
   Share2,
   Filter,
-  ChevronDown
+  ChevronDown,
+  Heart,
+  Loader2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSellerStats } from "@/hooks/useSellerStats";
 import { useSellerReviews, useSellerRating } from "@/hooks/useSellerReviews";
+import { useSellerFollowers } from "@/hooks/useSellerFollowers";
 import { useListings } from "@/hooks/useListings";
+import { useAuth } from "@/hooks/useAuth";
 import BottomNav from "@/components/BottomNav";
 import ListingCard from "@/components/ListingCard";
 import { Button } from "@/components/ui/button";
@@ -39,11 +43,13 @@ const SellerProfile = () => {
   const [reviewSort, setReviewSort] = useState<ReviewSort>("recent");
   const [showAllReviews, setShowAllReviews] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const { data: sellerStats } = useSellerStats(sellerId);
   const { data: reviews = [] } = useSellerReviews(sellerId);
   const { avg: sellerAvg, count: reviewCount } = useSellerRating(sellerId);
   const { data: allListings = [] } = useListings();
+  const { data: followersData, loading: followLoading, toggleFollow } = useSellerFollowers(sellerId);
 
   // Get seller's listings
   const sellerListings = useMemo(() => {
@@ -268,6 +274,38 @@ const SellerProfile = () => {
             </div>
           </div>
         )}
+
+        {/* Followers Stats */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-card border rounded-2xl p-4 text-center">
+            <div className="text-2xl font-bold text-foreground">{followersData.followerCount}</div>
+            <p className="text-xs text-muted-foreground mt-1">Abonnes</p>
+          </div>
+          {user?.id !== sellerId && (
+            <Button
+              onClick={toggleFollow}
+              disabled={followLoading}
+              variant={followersData.isFollowing ? "outline" : "default"}
+              className={cn(
+                "rounded-2xl font-semibold",
+                followersData.isFollowing && "border-primary/50"
+              )}
+            >
+              {followLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : followersData.isFollowing ? (
+                <>
+                  <Heart className="h-4 w-4 fill-current mr-1" />
+                  Abonne
+                </>
+              ) : (
+                <>
+                  <Heart className="h-4 w-4 mr-1" />
+                  S'abonner
+                </>
+              )}
+            </Button>
+          )}
 
         {/* Seller's Listings */}
         {sellerListings.length > 0 && (
