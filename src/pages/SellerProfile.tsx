@@ -281,6 +281,7 @@ const SellerProfile = () => {
             <div className="text-2xl font-bold text-foreground">{followersData.followerCount}</div>
             <p className="text-xs text-muted-foreground mt-1">Abonnes</p>
           </div>
+          <div className="flex items-center justify-center">
           {user?.id !== sellerId && (
             <Button
               onClick={toggleFollow}
@@ -306,6 +307,7 @@ const SellerProfile = () => {
               )}
             </Button>
           )}
+          </div>
         </div>
 
         {/* Seller's Listings */}
