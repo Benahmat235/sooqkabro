@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { MapPin, Clock, Share2, Heart, ChevronLeft, ChevronRight as ChevronRightIcon, X, BadgeCheck, Star } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import ContactActions from "@/components/ContactActions";
-import ListingCard from "@/components/ListingCard";
+import SimilarProducts from "@/components/SimilarProducts";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
@@ -155,10 +155,6 @@ const ListingDetail = () => {
     ? `+${cleanPhone.slice(0, 3)} ${cleanPhone.slice(3, 5)} ${cleanPhone.slice(5, 7)} ${cleanPhone.slice(7, 9)} ${cleanPhone.slice(9)}`
     : listing.phone;
   const timeAgo = formatDistanceToNow(new Date(listing.created_at), { addSuffix: true, locale: fr });
-
-  const similarListings = allListings
-    .filter((l) => l.category_id === listing.category_id && l.id !== listing.id)
-    .slice(0, 6);
 
   const isOwner = user?.id === listing.user_id;
 
@@ -425,16 +421,7 @@ const ListingDetail = () => {
         </div>
       </div>
 
-      {similarListings.length > 0 && (
-        <div className="px-4 pb-6">
-          <h2 className="text-lg font-extrabold text-foreground mb-3">{t("listings.similar")}</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {similarListings.map((l) => (
-              <ListingCard key={l.id} listing={l} />
-            ))}
-          </div>
-        </div>
-      )}
+      <SimilarProducts currentListing={listing} allListings={allListings} />
 
       <ContactActions
         isVerified={!!sellerProfile?.is_verified}
