@@ -7,14 +7,14 @@ const Footer = () => {
   const { t } = useTranslation();
 
   return (
-    <footer className="bg-card border-t mt-8 pb-24">
+    <footer className="bg-card border-t mt-8">
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center gap-2 mb-6">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-[hsl(var(--chad-blue))] flex items-center justify-center">
-            <span className="text-primary-foreground font-extrabold text-xs">TC</span>
+            <span className="text-primary-foreground font-extrabold text-xs">SK</span>
           </div>
           <span className="text-base font-extrabold text-foreground">
-            Tchad<span className="text-primary">Market</span>
+            Sooq<span className="text-primary">Kabro</span>
           </span>
         </div>
 
@@ -47,7 +47,7 @@ const Footer = () => {
         <div className="border-t pt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
           <LanguageSwitcher />
           <p className="text-[10px] text-muted-foreground">
-            © {new Date().getFullYear()} TchadMarket. {t("footer.rights")}.
+            © {new Date().getFullYear()} SooqKabro. {t("footer.rights")}.
           </p>
         </div>
       </div>
