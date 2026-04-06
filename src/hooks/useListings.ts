@@ -20,12 +20,13 @@ export interface ListingWithImages {
   is_verified?: boolean;
 }
 
-async function fetchListings(cityId?: string): Promise<ListingWithImages[]> {
+async function fetchListings(cityId?: string, limit = 50): Promise<ListingWithImages[]> {
   let query = supabase
     .from("listings")
     .select("*, listing_images(image_url, position)")
     .eq("status", "published")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(0, limit - 1);
 
   if (cityId && cityId !== "all") {
     query = query.eq("city_id", cityId);
@@ -41,16 +42,20 @@ async function fetchListings(cityId?: string): Promise<ListingWithImages[]> {
       .map((img: any) => img.image_url),
   }));
 
-  // Fetch view counts and verified status in batch
   if (listings.length > 0) {
     const ids = listings.map((l: any) => l.id);
     const userIds = [...new Set(listings.map((l: any) => l.user_id))];
 
-    // View counts
-    const viewPromises = ids.map((id: string) =>
-      supabase.from("listing_views").select("id", { count: "exact", head: true }).eq("listing_id", id)
-    );
-    const viewResults = await Promise.all(viewPromises);
+    // Batch view counts — single query, count client-side
+    const { data: viewRows } = await supabase
+      .from("listing_views")
+      .select("listing_id")
+      .in("listing_id", ids);
+
+    const viewCounts = new Map<string, number>();
+    (viewRows || []).forEach((r: any) => {
+      viewCounts.set(r.listing_id, (viewCounts.get(r.listing_id) || 0) + 1);
+    });
 
     // Verified status
     const { data: profiles } = await supabase
@@ -60,9 +65,9 @@ async function fetchListings(cityId?: string): Promise<ListingWithImages[]> {
 
     const verifiedMap = new Map((profiles || []).map((p: any) => [p.id, p.is_verified]));
 
-    return listings.map((l: any, i: number) => ({
+    return listings.map((l: any) => ({
       ...l,
-      view_count: viewResults[i]?.count || 0,
+      view_count: viewCounts.get(l.id) || 0,
       is_verified: verifiedMap.get(l.user_id) || false,
     }));
   }
@@ -81,7 +86,7 @@ export function useSearchListings(query: string, cityId?: string) {
   return useQuery({
     queryKey: ["listings-search", query, cityId || "all"],
     queryFn: async () => {
-      const listings = await fetchListings(cityId);
+      const listings = await fetchListings(cityId, 200);
       if (!query) return listings;
       const q = query.toLowerCase();
       return listings.filter(

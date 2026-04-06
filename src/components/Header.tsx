@@ -52,20 +52,20 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
   };
 
   return (
-    <header className="sticky top-0 z-50 glass border-b shadow-warm">
+    <header className="glass border-b shadow-warm">
       <div className="container mx-auto px-4">
         {/* Top row: Logo + Actions */}
         <div className="flex items-center justify-between py-3">
           <Link 
             to="/" 
             className="flex items-center gap-2.5 focus-ring rounded-lg"
-            aria-label="TchadMarket - Accueil"
+            aria-label="SooqKabro - Accueil"
           >
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-[hsl(var(--chad-blue))] flex items-center justify-center shadow-sm">
-              <span className="text-primary-foreground font-extrabold text-sm">TC</span>
+              <span className="text-primary-foreground font-extrabold text-sm">SK</span>
             </div>
             <span className="text-lg font-extrabold text-foreground tracking-tight">
-              Tchad<span className="text-primary">Market</span>
+              Sooq<span className="text-primary">Kabro</span>
             </span>
           </Link>
 
