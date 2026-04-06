@@ -12,6 +12,7 @@ export interface Category {
   id: string;
   name: string;
   icon: any;
+  image: string;
   color: string;
   bgColor: string;
   subcategories: SubCategory[];
@@ -22,6 +23,7 @@ export const categories: Category[] = [
     id: "vehicules",
     name: "Véhicules & Transports",
     icon: Car,
+    image: "/categories/vehicules.jpg",
     color: "text-blue-600",
     bgColor: "bg-blue-50",
     subcategories: [
@@ -37,6 +39,7 @@ export const categories: Category[] = [
     id: "immobilier",
     name: "Immobilier",
     icon: Home,
+    image: "/categories/immobilier.jpg",
     color: "text-green-600",
     bgColor: "bg-green-50",
     subcategories: [
@@ -52,6 +55,7 @@ export const categories: Category[] = [
     id: "telephones",
     name: "Téléphones & Tablettes",
     icon: Smartphone,
+    image: "/categories/telephones.jpg",
     color: "text-purple-600",
     bgColor: "bg-purple-50",
     subcategories: [
@@ -66,6 +70,7 @@ export const categories: Category[] = [
     id: "emploi",
     name: "Emploi & Formation",
     icon: Briefcase,
+    image: "/categories/emploi.jpg",
     color: "text-amber-600",
     bgColor: "bg-amber-50",
     subcategories: [
@@ -79,6 +84,7 @@ export const categories: Category[] = [
     id: "services",
     name: "Services",
     icon: Wrench,
+    image: "/categories/services.jpg",
     color: "text-cyan-600",
     bgColor: "bg-cyan-50",
     subcategories: [
@@ -95,6 +101,7 @@ export const categories: Category[] = [
     id: "animaux",
     name: "Animaux & Élevage",
     icon: PawPrint,
+    image: "/categories/animaux.jpg",
     color: "text-orange-600",
     bgColor: "bg-orange-50",
     subcategories: [
@@ -109,6 +116,7 @@ export const categories: Category[] = [
     id: "mode",
     name: "Mode & Beauté",
     icon: Shirt,
+    image: "/categories/mode.jpg",
     color: "text-pink-600",
     bgColor: "bg-pink-50",
     subcategories: [
@@ -124,6 +132,7 @@ export const categories: Category[] = [
     id: "maison",
     name: "Maison & Meubles",
     icon: Sofa,
+    image: "/categories/maison.jpg",
     color: "text-teal-600",
     bgColor: "bg-teal-50",
     subcategories: [
@@ -137,6 +146,7 @@ export const categories: Category[] = [
     id: "electronique",
     name: "Électronique",
     icon: Monitor,
+    image: "/categories/electronique.jpg",
     color: "text-indigo-600",
     bgColor: "bg-indigo-50",
     subcategories: [
@@ -149,6 +159,7 @@ export const categories: Category[] = [
     id: "alimentation",
     name: "Alimentation",
     icon: UtensilsCrossed,
+    image: "/categories/alimentation.jpg",
     color: "text-red-600",
     bgColor: "bg-red-50",
     subcategories: [

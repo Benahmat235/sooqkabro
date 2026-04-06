@@ -9,7 +9,6 @@ const CategoryNav = () => {
     <div className="overflow-x-auto scrollbar-hide py-2">
       <div className="flex gap-2 min-w-max px-1">
         {categories.map((cat) => {
-          const Icon = cat.icon;
           const isActive = location.pathname.includes(`/categorie/${cat.id}`);
           return (
             <Link
@@ -22,7 +21,11 @@ const CategoryNav = () => {
                   : "bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground border border-border/50"
               )}
             >
-              <Icon className="h-3.5 w-3.5" />
+              <img
+                src={cat.image}
+                alt={cat.name}
+                className="h-4 w-4 rounded-full object-cover flex-shrink-0"
+              />
               <span>{cat.name.split(" ")[0]}</span>
             </Link>
           );
