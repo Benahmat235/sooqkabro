@@ -306,6 +306,7 @@ const SellerProfile = () => {
               )}
             </Button>
           )}
+        </div>
 
         {/* Seller's Listings */}
         {sellerListings.length > 0 && (
