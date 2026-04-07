@@ -1,11 +1,9 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -19,7 +17,6 @@ serve(async (req) => {
       });
     }
 
-    // Clean phone: only digits, expect 8 digits for Chad
     const cleaned = phone.replace(/\D/g, "");
     if (cleaned.length < 8) {
       return new Response(JSON.stringify({ valid: false, error: "Numéro trop court" }), {
@@ -29,7 +26,6 @@ serve(async (req) => {
 
     const apiKey = Deno.env.get("NUMVERIFY_API_KEY");
     if (!apiKey) {
-      // Fallback: basic regex validation for Chad numbers
       const isValid = /^235\d{8}$/.test(cleaned) || /^\d{8}$/.test(cleaned);
       return new Response(JSON.stringify({ valid: isValid, fallback: true }), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
