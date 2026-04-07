@@ -14,9 +14,10 @@ function cloudinaryOptimize(url: string, width: number): string {
 
 interface ListingCardProps {
   listing: ListingWithImages;
+  compact?: boolean;
 }
 
-const ListingCard = ({ listing }: ListingCardProps) => {
+const ListingCard = ({ listing, compact = false }: ListingCardProps) => {
   const city = getCityById(listing.city_id);
   const { favoriteIds } = useFavorites();
   const toggleFav = useToggleFavorite();
