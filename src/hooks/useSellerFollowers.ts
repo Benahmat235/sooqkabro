@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
 interface FollowerData {
@@ -11,26 +12,31 @@ export const useSellerFollowers = (sellerId?: string) => {
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
 
-  // Load followers from localStorage
   useEffect(() => {
     if (!sellerId) return;
 
-    const storageKey = `followers_${sellerId}`;
-    const stored = localStorage.getItem(storageKey);
-    
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setData(prev => ({ ...prev, followerCount: parsed.count || 0 }));
-      } catch {}
-    }
+    const fetchFollowers = async () => {
+      // Get count
+      const { count } = await supabase
+        .from("seller_followers")
+        .select("id", { count: "exact", head: true })
+        .eq("seller_id", sellerId);
 
-    // Check if current user is following
-    if (user?.id) {
-      const followingKey = `following_${user.id}_${sellerId}`;
-      const isFollowing = localStorage.getItem(followingKey) === "true";
-      setData(prev => ({ ...prev, isFollowing }));
-    }
+      let isFollowing = false;
+      if (user?.id) {
+        const { data: follow } = await supabase
+          .from("seller_followers")
+          .select("id")
+          .eq("seller_id", sellerId)
+          .eq("follower_id", user.id)
+          .maybeSingle();
+        isFollowing = !!follow;
+      }
+
+      setData({ followerCount: count || 0, isFollowing });
+    };
+
+    fetchFollowers();
   }, [sellerId, user?.id]);
 
   const toggleFollow = useCallback(async () => {
@@ -38,42 +44,31 @@ export const useSellerFollowers = (sellerId?: string) => {
 
     setLoading(true);
     try {
-      const storageKey = `followers_${sellerId}`;
-      const followingKey = `following_${user.id}_${sellerId}`;
-      
-      const isCurrentlyFollowing = localStorage.getItem(followingKey) === "true";
-      
-      if (isCurrentlyFollowing) {
-        // Unfollow
-        localStorage.removeItem(followingKey);
-        const stored = localStorage.getItem(storageKey);
-        const parsed = stored ? JSON.parse(stored) : { count: 0 };
-        parsed.count = Math.max(0, (parsed.count || 1) - 1);
-        localStorage.setItem(storageKey, JSON.stringify(parsed));
-        
+      if (data.isFollowing) {
+        await supabase
+          .from("seller_followers")
+          .delete()
+          .eq("seller_id", sellerId)
+          .eq("follower_id", user.id);
+
         setData(prev => ({
-          ...prev,
           isFollowing: false,
-          followerCount: Math.max(0, prev.followerCount - 1)
+          followerCount: Math.max(0, prev.followerCount - 1),
         }));
       } else {
-        // Follow
-        localStorage.setItem(followingKey, "true");
-        const stored = localStorage.getItem(storageKey);
-        const parsed = stored ? JSON.parse(stored) : { count: 0 };
-        parsed.count = (parsed.count || 0) + 1;
-        localStorage.setItem(storageKey, JSON.stringify(parsed));
-        
+        await supabase
+          .from("seller_followers")
+          .insert({ seller_id: sellerId, follower_id: user.id });
+
         setData(prev => ({
-          ...prev,
           isFollowing: true,
-          followerCount: prev.followerCount + 1
+          followerCount: prev.followerCount + 1,
         }));
       }
     } finally {
       setLoading(false);
     }
-  }, [sellerId, user?.id]);
+  }, [sellerId, user?.id, data.isFollowing]);
 
   return { data, loading, toggleFollow };
 };

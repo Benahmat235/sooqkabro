@@ -23,22 +23,16 @@ export function useSellerStats(sellerId: string | undefined) {
     queryFn: async (): Promise<SellerStats | null> => {
       if (!sellerId) return null;
 
-      // Fetch all data in parallel
       const [listingsRes, profileRes, conversationsRes] = await Promise.all([
-        // Get seller's listings
         supabase
           .from("listings")
           .select("id, status, created_at")
           .eq("user_id", sellerId),
-        
-        // Get profile info - only select columns that exist in the schema
         supabase
           .from("profiles")
-          .select("created_at, is_verified")
+          .select("created_at, is_verified, last_seen, bio")
           .eq("id", sellerId)
           .maybeSingle(),
-        
-        // Get conversations where seller participated (for response rate)
         supabase
           .from("conversations")
           .select("id, created_at")
@@ -46,40 +40,83 @@ export function useSellerStats(sellerId: string | undefined) {
       ]);
 
       const listings = listingsRes.data || [];
-      const profile = profileRes.data;
+      const profile = profileRes.data as any;
       const conversations = conversationsRes.data || [];
 
-      // Calculate active listings
       const activeListings = listings.filter((l) => l.status === "published").length;
       const totalListings = listings.length;
 
-      // Calculate response rate (mock: conversations responded / total)
+      // Calculate real response rate & avg response time
       let responseRate = 0;
+      let avgResponseTime = "—";
+
       if (conversations.length > 0) {
-        // Get messages from seller in those conversations
         const convoIds = conversations.map((c) => c.id);
-        const { count: respondedCount } = await supabase
-          .from("messages")
-          .select("conversation_id", { count: "exact", head: true })
-          .eq("sender_id", sellerId)
-          .in("conversation_id", convoIds);
         
-        responseRate = Math.min(100, Math.round(((respondedCount || 0) / conversations.length) * 100));
+        // Get all messages for these conversations
+        const { data: allMessages } = await supabase
+          .from("messages")
+          .select("conversation_id, sender_id, created_at")
+          .in("conversation_id", convoIds)
+          .order("created_at", { ascending: true });
+
+        if (allMessages && allMessages.length > 0) {
+          let respondedConvos = 0;
+          const responseTimes: number[] = [];
+
+          // Group by conversation
+          const byConvo = new Map<string, typeof allMessages>();
+          allMessages.forEach((m) => {
+            const arr = byConvo.get(m.conversation_id) || [];
+            arr.push(m);
+            byConvo.set(m.conversation_id, arr);
+          });
+
+          byConvo.forEach((msgs) => {
+            // Find first buyer message then first seller response
+            const firstBuyer = msgs.find((m) => m.sender_id !== sellerId);
+            if (!firstBuyer) return;
+            
+            const sellerResponse = msgs.find(
+              (m) => m.sender_id === sellerId && new Date(m.created_at) > new Date(firstBuyer.created_at)
+            );
+            
+            if (sellerResponse) {
+              respondedConvos++;
+              const diffMs = new Date(sellerResponse.created_at).getTime() - new Date(firstBuyer.created_at).getTime();
+              responseTimes.push(diffMs);
+            }
+          });
+
+          responseRate = conversations.length > 0
+            ? Math.round((respondedConvos / conversations.length) * 100)
+            : 0;
+
+          if (responseTimes.length > 0) {
+            const avgMs = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
+            const avgMins = Math.floor(avgMs / 60000);
+            if (avgMins < 30) avgResponseTime = "< 30min";
+            else if (avgMins < 60) avgResponseTime = "< 1h";
+            else if (avgMins < 120) avgResponseTime = "~ 1h";
+            else if (avgMins < 360) avgResponseTime = `~ ${Math.round(avgMins / 60)}h`;
+            else if (avgMins < 1440) avgResponseTime = `~ ${Math.round(avgMins / 60)}h`;
+            else avgResponseTime = `~ ${Math.round(avgMins / 1440)}j`;
+          }
+        }
       }
 
-      // Simulate online status (in a real app, this would use last_seen from profile)
-      // For now, randomly show some sellers as "online" for demo purposes
-      const isOnline = Math.random() > 0.7; // 30% chance to show as online
-      const lastSeen = isOnline ? new Date() : new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000);
+      // Real online status from last_seen
+      const lastSeenDate = profile?.last_seen ? new Date(profile.last_seen) : null;
+      const isOnline = lastSeenDate
+        ? (Date.now() - lastSeenDate.getTime()) < 5 * 60 * 1000
+        : false;
 
-      // Format last seen
       const formatLastSeen = (date: Date | null): string | null => {
         if (!date) return null;
-        const now = new Date();
-        const diffMs = now.getTime() - date.getTime();
-        const diffMins = Math.floor(diffMs / (1000 * 60));
-        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        const diffMs = Date.now() - date.getTime();
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
 
         if (diffMins < 5) return "En ligne";
         if (diffMins < 60) return `Actif il y a ${diffMins} min`;
@@ -91,23 +128,20 @@ export function useSellerStats(sellerId: string | undefined) {
       return {
         activeListings,
         totalListings,
-        responseRate: responseRate || 95, // Default high rate
-        avgResponseTime: "< 1h", // Simplified for now
+        responseRate,
+        avgResponseTime,
         memberSince: profile?.created_at || new Date().toISOString(),
-        lastSeen: formatLastSeen(lastSeen),
+        lastSeen: formatLastSeen(lastSeenDate),
         isOnline,
         verifications: {
-          email: true, // Assume email verified for existing users
+          email: true,
           phone: profile?.is_verified ?? false,
           identity: profile?.is_verified ?? false,
         },
-        bio: null, // Bio not in schema yet
+        bio: profile?.bio || null,
       };
     },
     enabled: !!sellerId,
-    staleTime: 30000, // Cache for 30 seconds
+    staleTime: 30000,
   });
 }
-
-// Note: useUpdateLastSeen would require adding last_seen column to profiles table
-// For now, we simulate online status in useSellerStats
