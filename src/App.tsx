@@ -6,7 +6,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { I18nProvider } from "@/i18n/useTranslation";
+import { useUpdateLastSeen } from "@/hooks/useUpdateLastSeen";
 import Index from "./pages/Index";
+
+const LastSeenTracker = () => {
+  useUpdateLastSeen();
+  return null;
+};
 
 const DiscoverPage = lazy(() => import("./pages/DiscoverPage"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
@@ -36,6 +42,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <I18nProvider>
       <AuthProvider>
+        <LastSeenTracker />
         <TooltipProvider>
           <Toaster />
           <Sonner />

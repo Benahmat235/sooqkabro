@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useAdmin";
 import { useSellerStats } from "@/hooks/useSellerStats";
 import { useSellerReviews, useSellerRating } from "@/hooks/useSellerReviews";
+import { useSellerFollowers } from "@/hooks/useSellerFollowers";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,14 +62,16 @@ const AccountPage = () => {
 
   const { data: sellerStats } = useSellerStats(user?.id);
   const { avg: sellerAvg, count: reviewCount } = useSellerRating(user?.id);
+  const { data: followersData } = useSellerFollowers(user?.id);
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("display_name, phone, username, avatar_url, is_verified, created_at").eq("id", user.id).single()
+    supabase.from("profiles").select("display_name, phone, username, avatar_url, is_verified, created_at, bio").eq("id", user.id).single()
       .then(({ data }) => {
         if (data) {
-          setProfile(data);
-          setForm({ display_name: data.display_name || "", phone: data.phone || "", username: data.username || "", bio: "" });
+          const d = data as any;
+          setProfile(d);
+          setForm({ display_name: d.display_name || "", phone: d.phone || "", username: d.username || "", bio: d.bio || "" });
         }
       });
 
@@ -116,7 +119,7 @@ const AccountPage = () => {
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
-    const { error } = await supabase.from("profiles").update({ display_name: form.display_name || null, phone: form.phone, username: form.username || null }).eq("id", user.id);
+    const { error } = await supabase.from("profiles").update({ display_name: form.display_name || null, phone: form.phone, username: form.username || null, bio: form.bio || null } as any).eq("id", user.id);
     if (error) { toast({ title: t("common.error"), description: error.message, variant: "destructive" }); }
     else { setProfile((prev) => prev ? { ...prev, display_name: form.display_name, phone: form.phone, username: form.username } : prev); setEditing(false); toast({ title: t("account.profileUpdated") }); }
     setSaving(false);
@@ -314,6 +317,16 @@ const AccountPage = () => {
                 placeholder="+235 XX XX XX XX"
               />
             </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Bio</label>
+              <Textarea 
+                value={form.bio} 
+                onChange={(e) => setForm({ ...form, bio: e.target.value })} 
+                className="rounded-xl bg-muted/50 border-0 min-h-[80px]" 
+                placeholder="Parlez de vous..."
+                maxLength={300}
+              />
+            </div>
           </div>
           <div className="flex gap-2 pt-2">
             <Button onClick={handleSave} disabled={saving} className="flex-1 gap-1.5 h-11 rounded-xl font-bold">
@@ -342,8 +355,8 @@ const AccountPage = () => {
             {[
               { icon: Package, value: stats.totalListings, label: "Annonces", color: "text-primary bg-primary/10" },
               { icon: Eye, value: stats.totalViews, label: "Vues", color: "text-amber-600 bg-amber-50" },
-              { icon: Heart, value: stats.totalFavorites, label: "Favoris", color: "text-rose-600 bg-rose-50" },
-              { icon: Users, value: sellerStats?.responseRate || 0, label: "Reponse %", color: "text-emerald-600 bg-emerald-50" },
+              { icon: Users, value: followersData?.followerCount || 0, label: "Abonnés", color: "text-rose-600 bg-rose-50" },
+              { icon: Clock, value: sellerStats?.avgResponseTime || "—", label: "Délai", color: "text-emerald-600 bg-emerald-50" },
             ].map((stat) => (
               <div key={stat.label} className="bg-card rounded-2xl p-3 text-center shadow-sm border">
                 <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center mx-auto mb-1.5", stat.color)}>

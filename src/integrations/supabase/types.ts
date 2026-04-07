@@ -266,35 +266,77 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string
           display_name: string | null
           id: string
           is_verified: boolean
+          last_seen: string | null
           phone: string
           updated_at: string
           username: string | null
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
           id: string
           is_verified?: boolean
+          last_seen?: string | null
           phone: string
           updated_at?: string
           username?: string | null
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
           is_verified?: boolean
+          last_seen?: string | null
           phone?: string
           updated_at?: string
           username?: string | null
         }
         Relationships: []
+      }
+      seller_followers: {
+        Row: {
+          created_at: string | null
+          follower_id: string
+          id: string
+          seller_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          follower_id: string
+          id?: string
+          seller_id: string
+        }
+        Update: {
+          created_at?: string | null
+          follower_id?: string
+          id?: string
+          seller_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seller_followers_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "seller_followers_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       seller_reviews: {
         Row: {
