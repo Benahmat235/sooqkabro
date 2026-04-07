@@ -1,56 +1,86 @@
-## Plan : Refonte visuelle inspiree d'OpenSooq
+## Plan : Activer les fonctionnalites reelles sur les profils (vendeur + mon compte)
 
-### 1. Header — Style OpenSooq
+### Problemes actuels
 
-**Fichier** : `src/components/Header.tsx`
 
-- Row 1 : Logo SooqKabro a droite, icones coeur (favoris) + cloche (notifications) + bouton "Publier" a gauche 
-- Row 2 : Selecteur ville avec drapeau du Tchad + texte "Tchad - Toutes les villes" (dropdown)
-- Row 3 : Barre de recherche pleine largeur avec bouton "Rechercher" colore a droite et icone hamburger (menu) a droite
-- Supprimer le LanguageSwitcher du header (le garder dans le profile uniquement)
+| Fonctionnalite              | Etat actuel                     | Correction                                                       |
+| --------------------------- | ------------------------------- | ---------------------------------------------------------------- |
+| Statut en ligne / last_seen | Simule avec `Math.random()`     | Colonne `last_seen` dans profiles, mise a jour a chaque activite |
+| Bio                         | Hardcode `null`                 | Colonne `bio` dans profiles                                      |
+| Abonnes (followers)         | localStorage uniquement         | Table `seller_followers` dans la base de donnees                 |
+| Taux de reponse             | Calcul reel mais fallback a 95% | Garder le calcul reel, retirer le fallback fictif                |
+| Delai de reponse            | Hardcode "< 1h"                 | Calculer a partir des timestamps des messages                    |
 
-### 2. Categories — Grille 4 colonnes avec images
 
-**Fichier** : `src/components/CategoryGrid.tsx`
+### 1. Migration base de donnees
 
-- Remplacer le scroll horizontal d'icones par une **grille 4 colonnes** (grid-cols-4)
-- Chaque categorie : carte avec **image illustrative** (emoji large ou icone SVG dans un cercle colore plus grand ~20x20) + texte en dessous
-- Style : fond clair colore par categorie, coins arrondis (rounded-2xl), ombre legere
-- Titre de section "SooqKabro" avec lien "Voir tout" a droite (comme OpenSooq)
+**Ajouter colonnes a `profiles**` :
 
-### 3. BottomNav — Style OpenSooq
+```sql
+ALTER TABLE profiles ADD COLUMN last_seen TIMESTAMPTZ DEFAULT now();
+ALTER TABLE profiles ADD COLUMN bio TEXT;
+```
 
-**Fichier** : `src/components/BottomNav.tsx`
+**Creer table `seller_followers**` :
 
-- 5 items : Accueil (maison pleine si active), Messages (bulle avec badge), Publier (cercle orange/jaune surelevé avec +), Mes annonces (icone liste), Mon compte (silhouette)
-- Remplacer "Decouvrir" par "Mes annonces" (/mes-annonces) pour coller au modele OpenSooq
-- Style : fond blanc, icones noires, actif = noir gras, bouton central = cercle jaune/orange surelevé
+```sql
+CREATE TABLE seller_followers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  seller_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  follower_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(seller_id, follower_id)
+);
+ALTER TABLE seller_followers ENABLE ROW LEVEL SECURITY;
+-- SELECT: public (pour compter)
+-- INSERT: auth.uid() = follower_id
+-- DELETE: auth.uid() = follower_id
+```
 
-### 4. Listings — Grille 3 colonnes mobile
+### 2. Refonte `useSellerStats.ts`
 
-**Fichier** : `src/pages/Index.tsx` + `src/components/ListingCard.tsx`
+- Lire `last_seen` et `bio` depuis profiles (ajouter ces colonnes au SELECT)
+- Calculer `isOnline` : `last_seen > now() - 5 minutes`
+- Calculer le delai de reponse moyen reel :
+  - Pour chaque conversation du vendeur, trouver le premier message du vendeur apres le premier message de l'acheteur
+  - Calculer la difference moyenne et formater ("< 1h", "< 30min", "2h", etc.)
+- Retirer le fallback `responseRate || 95` → afficher 0% si aucune conversation
 
-- Changer la grille de `grid-cols-1` mobile a `**grid-cols-3**` sur mobile (comme OpenSooq)
-- ListingCard compact : image carree, prix en overlay en bas a gauche, coeur en haut a droite
-- Texte sous l'image : description courte (ville + details), plus petit
-- Sections par categorie avec sous-filtres en chips (ex: Résidentiel / Terrains / Commercial)
+### 3. Refonte `useSellerFollowers.ts`
 
-### 5. Footer — Plus simple
+Remplacer localStorage par Supabase :
 
-**Fichier** : `src/components/Footer.tsx`
+- `followerCount` : `supabase.from("seller_followers").select("id", { count: "exact" }).eq("seller_id", sellerId)`
+- `isFollowing` : `supabase.from("seller_followers").select("id").eq("seller_id", sellerId).eq("follower_id", user.id).maybeSingle()`
+- `toggleFollow` : INSERT ou DELETE dans `seller_followers`
 
-- Simplifier : garder logo + copyright + LanguageSwitcher
-- Supprimer la grille de liens (trop chargee pour mobile)
-- Le footer ne doit PAS etre fixe — il scrolle avec le contenu
+### 4. Hook `useUpdateLastSeen`
+
+Nouveau hook leger appele dans `App.tsx` :
+
+- Met a jour `profiles.last_seen = now()` toutes les 60 secondes quand l'utilisateur est actif
+- Ecoute `visibilitychange` pour mettre a jour a chaque retour sur l'onglet
+
+### 5. Mise a jour `AccountPage.tsx`
+
+- Afficher le taux de reponse reel et le delai moyen dans les stats
+- Afficher le nombre d'abonnes reel (depuis `useSellerFollowers(user.id)`)
+- Afficher le statut "En ligne" / "Derniere connexion il y a Xh" depuis `last_seen`
+- Ajouter un champ bio dans le formulaire d'edition du profil
+
+### 6. Mise a jour `SellerProfile.tsx`
+
+- Les stats cards utilisent deja `sellerStats` et `followersData` → rien a changer dans le JSX
+- Le passage aux donnees reelles se fait via les hooks refactures
 
 ### Fichiers impactes
 
 
-| Fichier                           | Modification                                  |
-| --------------------------------- | --------------------------------------------- |
-| `src/components/Header.tsx`       | Refonte 3 lignes style OpenSooq               |
-| `src/components/CategoryGrid.tsx` | Grille 4 colonnes avec images                 |
-| `src/components/BottomNav.tsx`    | 5 items style OpenSooq                        |
-| `src/components/ListingCard.tsx`  | Version compacte pour grille 3 colonnes       |
-| `src/pages/Index.tsx`             | Grille 3 colonnes mobile + sections categorie |
-| `src/components/Footer.tsx`       | Simplification                                |
+| Fichier                           | Modification                                               |
+| --------------------------------- | ---------------------------------------------------------- |
+| Migration SQL                     | `last_seen`, `bio` sur profiles + table `seller_followers` |
+| `src/hooks/useSellerStats.ts`     | Lire `last_seen`/`bio`, calculer delai reel                |
+| `src/hooks/useSellerFollowers.ts` | Remplacer localStorage par Supabase                        |
+| `src/hooks/useUpdateLastSeen.ts`  | Nouveau — ping `last_seen` toutes les 60s                  |
+| `src/App.tsx`                     | Appeler `useUpdateLastSeen()`                              |
+| `src/pages/AccountPage.tsx`       | Afficher abonnes, bio editable, delai reel                 |
