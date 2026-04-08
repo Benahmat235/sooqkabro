@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ArrowLeft, Mail, Eye, EyeOff, KeyRound, User, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
-import { useToast } from "@/hooks/use-toast";
+import { useAppToast } from "@/hooks/useAppToast";
 import { useTranslation } from "@/i18n/useTranslation";
 import { validatePassword, checkRateLimit, sanitizeInput } from "@/lib/security";
 
@@ -19,7 +19,7 @@ const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { success, error: showError, warning } = useAppToast();
   const { t } = useTranslation();
 
   // Password strength indicator
@@ -38,13 +38,13 @@ const AuthPage = () => {
         redirect_uri: window.location.origin,
       });
       if (result.error) {
-        toast({ title: t("auth.error"), description: t("auth.googleFailed"), variant: "destructive" });
+        showError(t("auth.googleFailed"), t("auth.error"));
       }
       if (result.redirected) return;
-      toast({ title: t("auth.welcomeMsg"), description: t("auth.loginSuccess") });
+      success(t("auth.welcomeMsg"), t("auth.loginSuccess"));
       navigate("/");
     } catch (err: any) {
-      toast({ title: t("auth.error"), description: err.message || t("auth.loginFailed"), variant: "destructive" });
+      showError(err);
     } finally {
       setLoading(false);
     }
