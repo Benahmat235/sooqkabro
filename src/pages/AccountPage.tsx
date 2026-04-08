@@ -10,6 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { 
   User, LogOut, Phone, ChevronRight, Eye, FileText, Heart, Pencil, Check, X, Camera, 
   ShieldCheck, BadgeCheck, Star, MapPin, Calendar, Share2, Settings, Bell, Globe, 
@@ -58,6 +61,13 @@ const AccountPage = () => {
   const [uploading, setUploading] = useState(false);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [activeTab, setActiveTab] = useState<"overview" | "settings">("overview");
+  const [openSheet, setOpenSheet] = useState<"notifications" | "langue" | "securite" | "aide" | null>(null);
+  const [notifPrefs, setNotifPrefs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("sooq_notif_prefs") || "{}"); } catch { return {}; }
+  });
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: sellerStats } = useSellerStats(user?.id);
