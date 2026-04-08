@@ -14,7 +14,8 @@ import {
   ArrowDown,
   Circle,
   Clock,
-  Filter
+  Filter,
+  Star
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations, useMessages, useSendMessage, type Conversation, type Message } from "@/hooks/useConversations";
@@ -34,6 +35,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import RateSellerDialog from "@/components/RateSellerDialog";
 
 const MessagesPage = () => {
   const { user, loading } = useAuth();
@@ -281,8 +283,10 @@ function ChatView({ conversation, userId, onBack }: { conversation: Conversation
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [showRateDialog, setShowRateDialog] = useState(false);
 
   const otherId = conversation.buyer_id === userId ? conversation.seller_id : conversation.buyer_id;
+  const isBuyer = conversation.buyer_id === userId;
   const { isOnline, lastSeen } = useUserPresence(otherId);
 
   // Group messages by date
@@ -416,6 +420,12 @@ function ChatView({ conversation, userId, onBack }: { conversation: Conversation
                   <Phone className="h-4 w-4 mr-2" />
                   Appeler
                 </DropdownMenuItem>
+                {isBuyer && (
+                  <DropdownMenuItem onClick={() => setShowRateDialog(true)}>
+                    <Star className="h-4 w-4 mr-2" />
+                    Noter le vendeur
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem className="text-destructive">
                   Bloquer
                 </DropdownMenuItem>
@@ -424,6 +434,27 @@ function ChatView({ conversation, userId, onBack }: { conversation: Conversation
           </div>
         </div>
       </div>
+
+      {/* Rate Seller Banner - shown to buyer after messages exist */}
+      {isBuyer && messages.length >= 3 && (
+        <div className="mx-4 mt-3 mb-0">
+          <button
+            onClick={() => setShowRateDialog(true)}
+            className="w-full flex items-center justify-between p-3 bg-gradient-to-r from-[hsl(var(--chad-yellow))]/10 to-[hsl(var(--chad-yellow))]/5 border border-[hsl(var(--chad-yellow))]/20 rounded-xl hover:bg-[hsl(var(--chad-yellow))]/15 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[hsl(var(--chad-yellow))]/20 flex items-center justify-center">
+                <Star className="h-5 w-5 text-[hsl(var(--chad-yellow))]" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-foreground">Evaluez votre experience</p>
+                <p className="text-xs text-muted-foreground">Notez {conversation.other_user_name}</p>
+              </div>
+            </div>
+            <ChevronLeft className="h-5 w-5 text-muted-foreground rotate-180" />
+          </button>
+        </div>
+      )}
 
       {/* Messages Area */}
       <div 
@@ -536,6 +567,16 @@ function ChatView({ conversation, userId, onBack }: { conversation: Conversation
           </Button>
         </div>
       </div>
+
+      {/* Rate Seller Dialog */}
+      <RateSellerDialog
+        isOpen={showRateDialog}
+        onClose={() => setShowRateDialog(false)}
+        sellerId={conversation.seller_id}
+        sellerName={conversation.other_user_name || "Vendeur"}
+        sellerAvatar={conversation.other_user_avatar}
+        reviewerId={userId}
+      />
     </div>
   );
 }
