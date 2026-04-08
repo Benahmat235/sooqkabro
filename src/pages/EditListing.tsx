@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { categories } from "@/data/categories";
 import { cities, getCityById } from "@/data/cities";
-import { useToast } from "@/hooks/use-toast";
+import { useAppToast } from "@/hooks/useAppToast";
 import { supabase } from "@/integrations/supabase/client";
 
 const MAX_PHOTOS = 5;
@@ -25,7 +25,7 @@ const EditListing = () => {
   const { id } = useParams();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { success, error: showError } = useAppToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(true);
@@ -58,7 +58,7 @@ const EditListing = () => {
         .single();
 
       if (error || !data) {
-        toast({ title: "Erreur", description: "Annonce introuvable.", variant: "destructive" });
+        showError("Cette annonce n'existe pas ou vous n'avez pas les droits.", "Annonce introuvable");
         navigate("/mes-annonces");
         return;
       }
@@ -110,7 +110,7 @@ const EditListing = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!categoryId || !subcategoryId || !title || !description || !cityId || !phone) {
-      toast({ title: "Erreur", description: "Remplissez tous les champs obligatoires.", variant: "destructive" });
+      showError("Veuillez remplir tous les champs obligatoires.", "Champs manquants");
       return;
     }
 
@@ -169,10 +169,10 @@ const EditListing = () => {
         });
       }
 
-      toast({ title: "✅ Annonce modifiée !" });
+      success("Annonce modifiee !", "Les changements ont ete enregistres.");
       navigate(`/annonce/${id}`);
     } catch (err: any) {
-      toast({ title: "Erreur", description: err.message, variant: "destructive" });
+      showError(err);
     } finally {
       setSubmitting(false);
     }

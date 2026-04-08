@@ -12,7 +12,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { categories } from "@/data/categories";
 import { cities, getCityById } from "@/data/cities";
-import { useToast } from "@/hooks/use-toast";
+import { useAppToast } from "@/hooks/useAppToast";
 import { supabase } from "@/integrations/supabase/client";
 import { usePhoneValidation } from "@/hooks/usePhoneValidation";
 import { PhoneValidationIndicator } from "@/components/PhoneValidationIndicator";
@@ -143,7 +143,7 @@ const PublishListing = () => {
   const [submitting, setSubmitting] = useState(false);
   const [categoryDetails, setCategoryDetails] = useState<Record<string, string | string[]>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
+  const { toast, error: showError, success } = useAppToast();
   const { phoneValid, validating, validatePhone, resetValidation } = usePhoneValidation();
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
@@ -165,11 +165,11 @@ const PublishListing = () => {
     const remaining = MAX_PHOTOS - photos.length;
     const validFiles = files.filter((f) => {
       if (!f.type.startsWith("image/")) {
-        toast({ title: "Erreur", description: "Seules les images sont acceptees.", variant: "destructive" });
+        showError("Seules les images sont acceptees.", "Format invalide");
         return false;
       }
       if (f.size > 5 * 1024 * 1024) {
-        toast({ title: "Erreur", description: "Fichier trop volumineux (max 5 Mo).", variant: "destructive" });
+        showError("Fichier trop volumineux (max 5 Mo).", "Fichier trop grand");
         return false;
       }
       return true;
@@ -203,11 +203,11 @@ const PublishListing = () => {
 
   const validateStep1 = () => {
     if (!categoryId) {
-      toast({ title: "Erreur", description: "Selectionnez une categorie.", variant: "destructive" });
+      showError("Selectionnez une categorie.", "Champ requis");
       return false;
     }
     if (!subcategoryId) {
-      toast({ title: "Erreur", description: "Selectionnez une sous-categorie.", variant: "destructive" });
+      showError("Selectionnez une sous-categorie.", "Champ requis");
       return false;
     }
     return true;
@@ -215,17 +215,17 @@ const PublishListing = () => {
 
   const validateStep2 = () => {
     if (!title.trim()) {
-      toast({ title: "Erreur", description: "Entrez un titre.", variant: "destructive" });
+      showError("Entrez un titre pour votre annonce.", "Titre requis");
       return false;
     }
     if (!description.trim()) {
-      toast({ title: "Erreur", description: "Entrez une description.", variant: "destructive" });
+      showError("Decrivez votre article ou service.", "Description requise");
       return false;
     }
     // Validate required category fields
     for (const field of currentCategoryFields) {
       if (field.required && !categoryDetails[field.label]) {
-        toast({ title: "Erreur", description: `Le champ "${field.label}" est obligatoire.`, variant: "destructive" });
+        showError(`Veuillez remplir le champ "${field.label}".`, "Information manquante");
         return false;
       }
     }
@@ -234,15 +234,15 @@ const PublishListing = () => {
 
   const validateStep3 = () => {
     if (!cityId) {
-      toast({ title: "Erreur", description: "Selectionnez une ville.", variant: "destructive" });
+      showError("Selectionnez votre ville.", "Ville requise");
       return false;
     }
     if (!phone || !isPhoneFormatValid(phone)) {
-      toast({ title: "Erreur", description: "Entrez un numero de telephone valide (8 chiffres).", variant: "destructive" });
+      showError("Le numero doit contenir 8 chiffres.", "Telephone invalide");
       return false;
     }
     if (phoneValid === false) {
-      toast({ title: "Erreur", description: "Le numero de telephone est invalide.", variant: "destructive" });
+      showError("Ce numero de telephone semble invalide.", "Verification echouee");
       return false;
     }
     return true;
@@ -319,10 +319,11 @@ const PublishListing = () => {
         }
       }
 
-      toast({ title: "Annonce publiee !", description: "Votre annonce est maintenant visible." });
+      success("Annonce publiee !", "Votre annonce est maintenant visible.");
       navigate(`/annonce/${listing.id}`);
     } catch (err: any) {
-      toast({ title: "Erreur", description: err.message || "Impossible de publier.", variant: "destructive" });
+      // Use smart error parsing for technical errors
+      showError(err);
     } finally {
       setSubmitting(false);
     }

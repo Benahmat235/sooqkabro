@@ -2,11 +2,12 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Mail, Eye, EyeOff, KeyRound, User } from "lucide-react";
+import { ArrowLeft, Mail, Eye, EyeOff, KeyRound, User, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
-import { useToast } from "@/hooks/use-toast";
+import { useAppToast } from "@/hooks/useAppToast";
 import { useTranslation } from "@/i18n/useTranslation";
+import { validatePassword, checkRateLimit, sanitizeInput } from "@/lib/security";
 
 type AuthView = "login" | "register" | "forgot";
 
@@ -18,8 +19,17 @@ const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { success, error: showError, warning } = useAppToast();
   const { t } = useTranslation();
+
+  // Password strength indicator
+  const passwordStrength = validatePassword(password);
+  const strengthColors = {
+    weak: 'bg-destructive',
+    fair: 'bg-orange-500',
+    good: 'bg-yellow-500',
+    strong: 'bg-green-500',
+  };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -28,13 +38,13 @@ const AuthPage = () => {
         redirect_uri: window.location.origin,
       });
       if (result.error) {
-        toast({ title: t("auth.error"), description: t("auth.googleFailed"), variant: "destructive" });
+        showError(t("auth.googleFailed"), t("auth.error"));
       }
       if (result.redirected) return;
-      toast({ title: t("auth.welcomeMsg"), description: t("auth.loginSuccess") });
+      success(t("auth.welcomeMsg"), t("auth.loginSuccess"));
       navigate("/");
     } catch (err: any) {
-      toast({ title: t("auth.error"), description: err.message || t("auth.loginFailed"), variant: "destructive" });
+      showError(err);
     } finally {
       setLoading(false);
     }
@@ -64,9 +74,22 @@ const AuthPage = () => {
       toast({ title: t("auth.error"), description: t("auth.fillFields"), variant: "destructive" });
       return;
     }
+    
+    // Rate limiting check
+    const rateLimit = checkRateLimit(`login_${email.trim()}`, 5, 60000);
+    if (!rateLimit.allowed) {
+      const seconds = Math.ceil((rateLimit.remainingTime || 60000) / 1000);
+      toast({ 
+        title: "Trop de tentatives", 
+        description: `Reessayez dans ${seconds} secondes`, 
+        variant: "destructive" 
+      });
+      return;
+    }
+    
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      const { error } = await supabase.auth.signInWithPassword({ email: sanitizeInput(email.trim()), password });
       if (error) throw error;
       toast({ title: t("auth.welcomeMsg"), description: t("auth.loginSuccess") });
       navigate("/");
@@ -82,18 +105,25 @@ const AuthPage = () => {
       toast({ title: t("auth.error"), description: t("auth.fillFields"), variant: "destructive" });
       return;
     }
-    if (password.length < 6) {
-      toast({ title: t("auth.error"), description: t("auth.passwordLength"), variant: "destructive" });
+    
+    // Strong password validation
+    if (passwordStrength.score < 3) {
+      toast({ 
+        title: "Mot de passe trop faible", 
+        description: passwordStrength.suggestions[0] || "Choisissez un mot de passe plus fort", 
+        variant: "destructive" 
+      });
       return;
     }
+    
     setLoading(true);
     try {
       const { error } = await supabase.auth.signUp({
-        email: email.trim(),
+        email: sanitizeInput(email.trim()),
         password,
         options: {
           emailRedirectTo: window.location.origin,
-          data: { display_name: displayName.trim() || undefined },
+          data: { display_name: sanitizeInput(displayName.trim()) || undefined },
         },
       });
       if (error) throw error;
@@ -237,13 +267,37 @@ const AuthPage = () => {
               <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder={t("auth.displayName")} className="h-12 rounded-xl bg-muted/50 border-0" />
               <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("auth.email")} type="email" className="h-12 rounded-xl bg-muted/50 border-0" />
               <div className="relative">
-                <Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("auth.passwordMin")} className="h-12 rounded-xl bg-muted/50 border-0 pr-12" />
+                <Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mot de passe (8+ caracteres)" className="h-12 rounded-xl bg-muted/50 border-0 pr-12" />
                 <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              {/* Password strength indicator */}
+              {password.length > 0 && (
+                <div className="space-y-1.5">
+                  <div className="flex gap-1">
+                    {[0, 1, 2, 3].map((i) => (
+                      <div 
+                        key={i} 
+                        className={`h-1.5 flex-1 rounded-full transition-colors ${
+                          i < passwordStrength.score ? strengthColors[passwordStrength.label] : 'bg-muted'
+                        }`} 
+                      />
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheck className={`h-3.5 w-3.5 ${passwordStrength.score >= 3 ? 'text-green-500' : 'text-muted-foreground'}`} />
+                    <span className={`text-xs ${passwordStrength.score >= 3 ? 'text-green-500' : 'text-muted-foreground'}`}>
+                      {passwordStrength.label === 'weak' && 'Faible'}
+                      {passwordStrength.label === 'fair' && 'Moyen'}
+                      {passwordStrength.label === 'good' && 'Bon'}
+                      {passwordStrength.label === 'strong' && 'Fort'}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
-            <Button onClick={handleEmailRegister} disabled={loading} className="w-full h-12 text-base rounded-xl font-bold">
+            <Button onClick={handleEmailRegister} disabled={loading || passwordStrength.score < 3} className="w-full h-12 text-base rounded-xl font-bold">
               {loading ? t("auth.registering") : t("auth.registerBtn")}
             </Button>
 
