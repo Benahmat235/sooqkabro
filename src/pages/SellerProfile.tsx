@@ -52,6 +52,7 @@ const SellerProfile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [starFilter, setStarFilter] = useState<number | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 

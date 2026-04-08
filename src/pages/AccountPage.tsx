@@ -52,7 +52,7 @@ const AccountPage = () => {
   const { data: isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, locale, setLocale } = useTranslation();
   const [stats, setStats] = useState<Stats>({ totalListings: 0, totalViews: 0, totalFavorites: 0 });
   const [profile, setProfile] = useState<Profile | null>(null);
   const [editing, setEditing] = useState(false);
@@ -530,23 +530,20 @@ const AccountPage = () => {
               { code: "fr" as const, label: "Francais", flag: "🇫🇷" },
               { code: "en" as const, label: "English", flag: "🇬🇧" },
               { code: "ar" as const, label: "العربية", flag: "🇹🇩" },
-            ].map((lang) => {
-              const { language, setLanguage } = useTranslation();
-              return (
+            ].map((lang) => (
                 <button
                   key={lang.code}
-                  onClick={() => { setLanguage(lang.code); setOpenSheet(null); toast({ title: `Langue changee: ${lang.label}` }); }}
+                  onClick={() => { setLocale(lang.code); setOpenSheet(null); toast({ title: `Langue changee: ${lang.label}` }); }}
                   className={cn(
                     "w-full flex items-center gap-3 p-4 rounded-xl border transition-all",
-                    language === lang.code ? "bg-primary/10 border-primary" : "bg-card hover:bg-muted/50"
+                    locale === lang.code ? "bg-primary/10 border-primary" : "bg-card hover:bg-muted/50"
                   )}
                 >
                   <span className="text-2xl">{lang.flag}</span>
                   <span className="font-semibold text-foreground">{lang.label}</span>
-                  {language === lang.code && <Check className="h-5 w-5 text-primary ml-auto" />}
+                  {locale === lang.code && <Check className="h-5 w-5 text-primary ml-auto" />}
                 </button>
-              );
-            })}
+              ))}
           </div>
         </SheetContent>
       </Sheet>
