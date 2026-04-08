@@ -301,6 +301,118 @@ GRANT SELECT ON public.user_roles TO authenticated;
 -- ((bucket_id = 'listings'::text) AND (auth.role() = 'authenticated'::text))
 
 -- ============================================================================
+-- SECTION 13: Security Helper Functions
+-- ============================================================================
+
+-- Function to check if user is admin
+CREATE OR REPLACE FUNCTION public.is_admin(user_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.user_roles 
+    WHERE user_roles.user_id = $1 AND role = 'admin'
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to check if user is moderator or admin
+CREATE OR REPLACE FUNCTION public.is_moderator_or_admin(user_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.user_roles 
+    WHERE user_roles.user_id = $1 AND role IN ('admin', 'moderator')
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to check if user is conversation participant
+CREATE OR REPLACE FUNCTION public.is_conversation_participant(conv_id UUID, user_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.conversations 
+    WHERE id = conv_id AND (buyer_id = user_id OR seller_id = user_id)
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to check if user owns a listing
+CREATE OR REPLACE FUNCTION public.owns_listing(listing_id UUID, user_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.listings 
+    WHERE id = listing_id AND listings.user_id = $2
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================================================
+-- SECTION 14: Admin Override Policies
+-- ============================================================================
+
+-- Admins can manage all listings
+DROP POLICY IF EXISTS "listings_admin_all" ON public.listings;
+CREATE POLICY "listings_admin_all" ON public.listings
+FOR ALL USING (
+  public.is_moderator_or_admin(auth.uid())
+);
+
+-- Admins can manage all conversations (for support purposes)
+DROP POLICY IF EXISTS "conversations_admin_select" ON public.conversations;
+CREATE POLICY "conversations_admin_select" ON public.conversations
+FOR SELECT USING (
+  public.is_admin(auth.uid())
+);
+
+-- ============================================================================
+-- SECTION 15: Audit Logging Table (Optional)
+-- ============================================================================
+
+-- Create audit log table for security events
+CREATE TABLE IF NOT EXISTS public.security_audit_log (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  event_type TEXT NOT NULL,
+  user_id UUID REFERENCES auth.users(id),
+  target_table TEXT,
+  target_id UUID,
+  details JSONB,
+  ip_address TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable RLS on audit log
+ALTER TABLE public.security_audit_log ENABLE ROW LEVEL SECURITY;
+
+-- Only admins can view audit logs
+CREATE POLICY "audit_log_admin_only" ON public.security_audit_log
+FOR SELECT USING (public.is_admin(auth.uid()));
+
+-- System can insert audit logs
+CREATE POLICY "audit_log_insert" ON public.security_audit_log
+FOR INSERT WITH CHECK (true);
+
+-- Function to log security events
+CREATE OR REPLACE FUNCTION public.log_security_event(
+  p_event_type TEXT,
+  p_target_table TEXT DEFAULT NULL,
+  p_target_id UUID DEFAULT NULL,
+  p_details JSONB DEFAULT NULL
+)
+RETURNS UUID AS $$
+DECLARE
+  v_log_id UUID;
+BEGIN
+  INSERT INTO public.security_audit_log (event_type, user_id, target_table, target_id, details)
+  VALUES (p_event_type, auth.uid(), p_target_table, p_target_id, p_details)
+  RETURNING id INTO v_log_id;
+  
+  RETURN v_log_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- ============================================================================
 -- VERIFICATION QUERIES
 -- ============================================================================
 
@@ -325,3 +437,12 @@ SELECT
 FROM pg_policies 
 WHERE schemaname = 'public'
 ORDER BY tablename, policyname;
+
+-- Verify security functions exist:
+SELECT 
+  routine_name,
+  routine_type
+FROM information_schema.routines 
+WHERE routine_schema = 'public' 
+AND routine_name LIKE '%admin%' OR routine_name LIKE '%security%'
+ORDER BY routine_name;
