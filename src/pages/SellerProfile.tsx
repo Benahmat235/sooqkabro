@@ -67,6 +67,11 @@ const SellerProfile = () => {
     return allListings.filter((l) => l.user_id === sellerId);
   }, [allListings, sellerId]);
 
+  const filteredReviews = useMemo(() => {
+    if (starFilter === null) return reviews;
+    return reviews.filter((r) => r.rating === starFilter);
+  }, [reviews, starFilter]);
+
   const { visibleItems: visibleListings, hasMore, isLoading: loadingMore, sentinelRef } = useInfiniteScroll({
     items: sellerListings,
     initialCount: 8,
