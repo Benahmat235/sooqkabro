@@ -52,6 +52,7 @@ const SellerProfile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [starFilter, setStarFilter] = useState<number | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -65,6 +66,11 @@ const SellerProfile = () => {
   const sellerListings = useMemo(() => {
     return allListings.filter((l) => l.user_id === sellerId);
   }, [allListings, sellerId]);
+
+  const filteredReviews = useMemo(() => {
+    if (starFilter === null) return reviews;
+    return reviews.filter((r) => r.rating === starFilter);
+  }, [reviews, starFilter]);
 
   const { visibleItems: visibleListings, hasMore, isLoading: loadingMore, sentinelRef } = useInfiniteScroll({
     items: sellerListings,
@@ -417,6 +423,24 @@ const SellerProfile = () => {
         </TabsContent>
 
         <TabsContent value="reviews" className="mt-0">
+          {/* Star Filter */}
+          <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
+            {[null, 5, 4, 3, 2, 1].map((star) => (
+              <button
+                key={star ?? "all"}
+                onClick={() => setStarFilter(star)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-semibold border whitespace-nowrap transition-colors",
+                  starFilter === star
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-card text-foreground border-muted hover:bg-muted/50"
+                )}
+              >
+                {star === null ? "Tous" : `${star}★`}
+              </button>
+            ))}
+          </div>
+
           {/* Rating Summary */}
           {reviewCount > 0 && (
             <div className="bg-card border rounded-xl p-4 mb-4">
@@ -461,14 +485,14 @@ const SellerProfile = () => {
           )}
 
           {/* Reviews List */}
-          {reviews.length === 0 ? (
+          {filteredReviews.length === 0 ? (
             <div className="text-center py-12">
               <Star className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">Aucun avis pour le moment</p>
+              <p className="text-muted-foreground">{starFilter !== null ? `Aucun avis ${starFilter}★` : "Aucun avis pour le moment"}</p>
             </div>
           ) : (
             <div className="space-y-3">
-              {reviews.map((review) => (
+              {filteredReviews.map((review) => (
                 <div key={review.id} className="bg-card border rounded-xl p-4">
                   <div className="flex items-start gap-3">
                     <img 

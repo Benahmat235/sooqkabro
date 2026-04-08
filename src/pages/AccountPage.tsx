@@ -10,6 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { 
   User, LogOut, Phone, ChevronRight, Eye, FileText, Heart, Pencil, Check, X, Camera, 
   ShieldCheck, BadgeCheck, Star, MapPin, Calendar, Share2, Settings, Bell, Globe, 
@@ -49,7 +52,7 @@ const AccountPage = () => {
   const { data: isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, locale, setLocale } = useTranslation();
   const [stats, setStats] = useState<Stats>({ totalListings: 0, totalViews: 0, totalFavorites: 0 });
   const [profile, setProfile] = useState<Profile | null>(null);
   const [editing, setEditing] = useState(false);
@@ -58,6 +61,13 @@ const AccountPage = () => {
   const [uploading, setUploading] = useState(false);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [activeTab, setActiveTab] = useState<"overview" | "settings">("overview");
+  const [openSheet, setOpenSheet] = useState<"notifications" | "langue" | "securite" | "aide" | null>(null);
+  const [notifPrefs, setNotifPrefs] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("sooq_notif_prefs") || "{}"); } catch { return {}; }
+  });
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: sellerStats } = useSellerStats(user?.id);
@@ -434,13 +444,14 @@ const AccountPage = () => {
           <div className="space-y-2">
             <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wide px-1">Parametres</h3>
             {[
-              { label: "Notifications", icon: Bell, description: "Gerer vos alertes" },
-              { label: "Langue", icon: Globe, description: "Francais" },
-              { label: "Securite", icon: Lock, description: "Mot de passe et connexion" },
-              { label: "Aide et support", icon: HelpCircle, description: "FAQ et contact" },
+              { label: "Notifications", icon: Bell, description: "Gerer vos alertes", key: "notifications" as const },
+              { label: "Langue", icon: Globe, description: t("language") || "Francais", key: "langue" as const },
+              { label: "Securite", icon: Lock, description: "Mot de passe et connexion", key: "securite" as const },
+              { label: "Aide et support", icon: HelpCircle, description: "FAQ et contact", key: "aide" as const },
             ].map((item) => (
               <button 
-                key={item.label} 
+                key={item.label}
+                onClick={() => setOpenSheet(item.key)}
                 className="w-full flex items-center gap-3 p-3.5 bg-card rounded-2xl shadow-sm border hover:shadow-md transition-all text-left"
               >
                 <div className="p-2.5 rounded-xl bg-muted">
@@ -474,6 +485,163 @@ const AccountPage = () => {
           )}
         </div>
       )}
+
+      {/* Notifications Sheet */}
+      <Sheet open={openSheet === "notifications"} onOpenChange={(o) => !o && setOpenSheet(null)}>
+        <SheetContent side="bottom" className="rounded-t-2xl max-h-[80vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2"><Bell className="h-5 w-5" /> Notifications</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-4 mt-4">
+            {[
+              { key: "messages", label: "Messages", desc: "Nouveaux messages recus" },
+              { key: "offers", label: "Offres", desc: "Offres sur vos annonces" },
+              { key: "favorites", label: "Favoris", desc: "Quand on ajoute vos annonces en favoris" },
+              { key: "reviews", label: "Avis", desc: "Nouveaux avis sur votre profil" },
+              { key: "followers", label: "Abonnes", desc: "Nouveaux abonnes" },
+            ].map((item) => (
+              <div key={item.key} className="flex items-center justify-between p-3 bg-muted/50 rounded-xl">
+                <div>
+                  <p className="font-semibold text-sm text-foreground">{item.label}</p>
+                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                </div>
+                <Switch
+                  checked={notifPrefs[item.key] !== false}
+                  onCheckedChange={(checked) => {
+                    const updated = { ...notifPrefs, [item.key]: checked };
+                    setNotifPrefs(updated);
+                    localStorage.setItem("sooq_notif_prefs", JSON.stringify(updated));
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Langue Sheet */}
+      <Sheet open={openSheet === "langue"} onOpenChange={(o) => !o && setOpenSheet(null)}>
+        <SheetContent side="bottom" className="rounded-t-2xl">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2"><Globe className="h-5 w-5" /> Langue</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-2 mt-4">
+            {[
+              { code: "fr" as const, label: "Francais", flag: "🇫🇷" },
+              { code: "en" as const, label: "English", flag: "🇬🇧" },
+              { code: "ar" as const, label: "العربية", flag: "🇹🇩" },
+            ].map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => { setLocale(lang.code); setOpenSheet(null); toast({ title: `Langue changee: ${lang.label}` }); }}
+                  className={cn(
+                    "w-full flex items-center gap-3 p-4 rounded-xl border transition-all",
+                    locale === lang.code ? "bg-primary/10 border-primary" : "bg-card hover:bg-muted/50"
+                  )}
+                >
+                  <span className="text-2xl">{lang.flag}</span>
+                  <span className="font-semibold text-foreground">{lang.label}</span>
+                  {locale === lang.code && <Check className="h-5 w-5 text-primary ml-auto" />}
+                </button>
+              ))}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Securite Sheet */}
+      <Sheet open={openSheet === "securite"} onOpenChange={(o) => { if (!o) { setOpenSheet(null); setNewPassword(""); setConfirmPassword(""); } }}>
+        <SheetContent side="bottom" className="rounded-t-2xl max-h-[80vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2"><Lock className="h-5 w-5" /> Securite</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <h4 className="font-bold text-sm text-foreground mb-3">Changer le mot de passe</h4>
+              <div className="space-y-3">
+                <Input
+                  type="password"
+                  placeholder="Nouveau mot de passe"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="h-11 rounded-xl"
+                />
+                <Input
+                  type="password"
+                  placeholder="Confirmer le mot de passe"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="h-11 rounded-xl"
+                />
+                <Button
+                  className="w-full rounded-xl h-11 font-bold"
+                  disabled={!newPassword || newPassword !== confirmPassword || changingPassword}
+                  onClick={async () => {
+                    setChangingPassword(true);
+                    const { error } = await supabase.auth.updateUser({ password: newPassword });
+                    if (error) { toast({ title: "Erreur", description: error.message, variant: "destructive" }); }
+                    else { toast({ title: "Mot de passe mis a jour" }); setNewPassword(""); setConfirmPassword(""); setOpenSheet(null); }
+                    setChangingPassword(false);
+                  }}
+                >
+                  {changingPassword ? <Loader2 className="h-4 w-4 animate-spin" /> : "Mettre a jour"}
+                </Button>
+              </div>
+            </div>
+            <div className="border-t pt-4">
+              <h4 className="font-bold text-sm text-foreground mb-2">Methode de connexion</h4>
+              <div className="p-3 bg-muted/50 rounded-xl flex items-center gap-3">
+                <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm text-foreground">{user?.email || user?.phone || "Email"}</span>
+              </div>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Aide Sheet */}
+      <Sheet open={openSheet === "aide"} onOpenChange={(o) => !o && setOpenSheet(null)}>
+        <SheetContent side="bottom" className="rounded-t-2xl max-h-[80vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2"><HelpCircle className="h-5 w-5" /> Aide et support</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4">
+            <Accordion type="single" collapsible className="space-y-1">
+              {[
+                { q: "Comment publier une annonce ?", a: "Cliquez sur le bouton '+' en bas de l'ecran, remplissez les informations et ajoutez des photos." },
+                { q: "Comment contacter un vendeur ?", a: "Sur la page d'une annonce, utilisez le bouton 'Contacter' pour envoyer un message." },
+                { q: "Comment modifier mon profil ?", a: "Allez dans Mon Compte, puis cliquez sur 'Modifier le profil' pour changer vos informations." },
+                { q: "Est-ce que SooqKabro est gratuit ?", a: "Oui, la publication d'annonces est entierement gratuite." },
+                { q: "Comment signaler une annonce ?", a: "Sur la page de l'annonce, utilisez le menu '...' puis 'Signaler'." },
+              ].map((faq, i) => (
+                <AccordionItem key={i} value={`faq-${i}`} className="border rounded-xl px-3">
+                  <AccordionTrigger className="text-sm font-semibold text-foreground hover:no-underline">{faq.q}</AccordionTrigger>
+                  <AccordionContent className="text-sm text-muted-foreground">{faq.a}</AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+            <div className="mt-6 space-y-2">
+              <a href="mailto:support@sooqkabro.com" className="flex items-center gap-3 p-3.5 bg-card rounded-2xl border hover:shadow-md transition-all">
+                <div className="p-2.5 rounded-xl bg-primary/10">
+                  <MessageSquare className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <span className="font-semibold text-foreground block text-sm">Contacter le support</span>
+                  <span className="text-xs text-muted-foreground">support@sooqkabro.com</span>
+                </div>
+              </a>
+              <a href="https://wa.me/23566000000" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3.5 bg-card rounded-2xl border hover:shadow-md transition-all">
+                <div className="p-2.5 rounded-xl bg-green-100">
+                  <Phone className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <span className="font-semibold text-foreground block text-sm">WhatsApp</span>
+                  <span className="text-xs text-muted-foreground">+235 66 00 00 00</span>
+                </div>
+              </a>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Logout */}
       <div className="px-4 pb-4">
