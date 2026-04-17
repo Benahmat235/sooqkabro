@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { I18nProvider } from "@/i18n/useTranslation";
 import { useUpdateLastSeen } from "@/hooks/useUpdateLastSeen";
+import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import OfflineIndicator from "@/components/OfflineIndicator";
 import Index from "./pages/Index";
 
 const LastSeenTracker = () => {
@@ -46,6 +48,8 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <OfflineIndicator />
+          <PWAInstallPrompt />
           <BrowserRouter>
             <Suspense fallback={<PageLoader />}>
               <Routes>
