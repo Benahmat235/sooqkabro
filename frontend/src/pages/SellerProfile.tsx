@@ -97,10 +97,21 @@ const SellerProfile = () => {
     const url = `${window.location.origin}/vendeur/${sellerId}`;
     const text = `Profil de ${profile?.display_name || "Vendeur"} sur SooqKabro`;
     if (navigator.share) {
-      try { await navigator.share({ title: text, url }); } catch {}
+      try { 
+        await navigator.share({ title: text, url }); 
+      } catch (error) {
+        // User cancelled share or share failed - fallback to clipboard
+        console.log("Share cancelled or failed:", error);
+        try {
+          await navigator.clipboard.writeText(url);
+          toast({ title: "Lien copié!", description: "Le lien du profil a été copié." });
+        } catch {
+          console.error("Failed to copy to clipboard");
+        }
+      }
     } else {
       await navigator.clipboard.writeText(url);
-      toast({ title: "Lien copie!", description: "Le lien du profil a ete copie." });
+      toast({ title: "Lien copié!", description: "Le lien du profil a été copié." });
     }
   };
 

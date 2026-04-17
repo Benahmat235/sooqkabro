@@ -141,7 +141,10 @@ const EditListing = () => {
           if (match?.[1]) {
             await supabase.storage.from("listing-photos").remove([match[1]]);
           }
-        } catch {}
+        } catch (error) {
+          console.error("Failed to delete storage image:", error);
+          // Continue with deletion from database even if storage deletion fails
+        }
         await supabase.from("listing_images").delete().eq("id", img.id);
       }
 

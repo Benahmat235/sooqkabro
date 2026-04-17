@@ -34,7 +34,7 @@ const FavoritesPage = () => {
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="rounded-2xl overflow-hidden">
+              <div key={`fav-skeleton-${i}`} className="rounded-2xl overflow-hidden">
                 <Skeleton className="aspect-square w-full" />
                 <div className="p-2.5 space-y-2">
                   <Skeleton className="h-3 w-3/4" />

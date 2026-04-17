@@ -98,7 +98,16 @@ const ListingDetail = () => {
     if (navigator.share) {
       try {
         await navigator.share({ title: listing.title, text, url });
-      } catch {}
+      } catch (error) {
+        // User cancelled share or share failed - fallback to clipboard
+        console.log("Share cancelled or failed:", error);
+        try {
+          await navigator.clipboard.writeText(url);
+          toast({ title: t("detail.copied"), description: t("detail.linkCopied") });
+        } catch {
+          console.error("Failed to copy to clipboard");
+        }
+      }
     } else {
       await navigator.clipboard.writeText(url);
       toast({ title: t("detail.copied"), description: t("detail.linkCopied") });

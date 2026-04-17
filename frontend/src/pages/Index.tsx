@@ -74,7 +74,7 @@ const Index = () => {
               animate="show"
             >
               {Array.from({ length: 9 }).map((_, i) => (
-                <motion.div key={i} variants={itemVariants} className="rounded-xl overflow-hidden">
+                <motion.div key={`skeleton-${i}`} variants={itemVariants} className="rounded-xl overflow-hidden">
                   <Skeleton className="aspect-square w-full skeleton-shimmer" />
                   <div className="p-1.5 space-y-1">
                     <Skeleton className="h-3 w-3/4" />

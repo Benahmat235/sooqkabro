@@ -39,6 +39,7 @@ const SearchPage = () => {
     }
     if (sortBy === "price-asc") filtered.sort((a, b) => a.price - b.price);
     else if (sortBy === "price-desc") filtered.sort((a, b) => b.price - a.price);
+    else if (sortBy === "recent") filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     return filtered;
   }, [rawResults, minPrice, maxPrice, quartier, dateFilter, sortBy]);
 

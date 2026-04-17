@@ -39,11 +39,9 @@ const CategoryPage = () => {
       const ms = dateFilter === "today" ? 86400000 : dateFilter === "7days" ? 604800000 : 2592000000;
       filtered = filtered.filter((l) => now - new Date(l.created_at).getTime() < ms);
     }
-
     if (sortBy === "price-asc") filtered.sort((a, b) => a.price - b.price);
     else if (sortBy === "price-desc") filtered.sort((a, b) => b.price - a.price);
     else filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
     return filtered;
   }, [allListings, categoryId, subId, minPrice, maxPrice, sortBy, quartier, dateFilter]);
 
@@ -124,7 +122,7 @@ const CategoryPage = () => {
         {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="rounded-2xl overflow-hidden">
+              <div key={`cat-skeleton-${i}`} className="rounded-2xl overflow-hidden">
                 <Skeleton className="aspect-square w-full" />
                 <div className="p-2.5 space-y-2">
                   <Skeleton className="h-3 w-3/4" />
