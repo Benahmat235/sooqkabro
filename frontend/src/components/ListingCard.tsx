@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Heart, MapPin, Zap, Crown } from "lucide-react";
+import { motion } from "framer-motion";
 import { formatPrice } from "@/data/mockListings";
 import { getCityById } from "@/data/cities";
 import type { ListingWithImages } from "@/hooks/useListings";
 import { useFavorites, useToggleFavorite } from "@/hooks/useFavorites";
 import { cn } from "@/lib/utils";
+import { cardHoverVariants, heartVariants } from "@/lib/animations";
 
 function cloudinaryOptimize(url: string, width: number): string {
   if (!url || !url.includes("cloudinary.com")) return url;
@@ -45,73 +47,124 @@ const ListingCard = ({ listing, compact = false }: ListingCardProps) => {
   return (
     <Link 
       to={`/annonce/${listing.id}`} 
-      className="block group"
+      className="block"
       aria-label={`${listing.title} - ${formatPrice(listing.price)}`}
     >
-      <div className="relative rounded-xl overflow-hidden bg-card border border-border/30 group-active:scale-[0.97] transition-transform">
-        {/* Image */}
+      <motion.div
+        variants={cardHoverVariants}
+        initial="initial"
+        whileHover="hover"
+        whileTap="tap"
+        className="relative rounded-xl overflow-hidden bg-card border border-border/30 shadow-card hover:shadow-card-hover transition-shadow duration-300"
+      >
+        {/* Image Container */}
         <div className="relative aspect-square bg-muted overflow-hidden">
-          {!imgLoaded && <div className="absolute inset-0 animate-pulse bg-muted" />}
-          <img
+          {/* Loading skeleton */}
+          {!imgLoaded && (
+            <div className="absolute inset-0 skeleton-shimmer" />
+          )}
+          
+          <motion.img
             src={srcSmall}
             alt={listing.title}
             className={cn(
-              "w-full h-full object-cover",
-              !imgLoaded && "opacity-0"
+              "w-full h-full object-cover transition-all duration-500",
+              !imgLoaded && "opacity-0 scale-105"
             )}
             loading="lazy"
             onLoad={() => setImgLoaded(true)}
+            initial={{ scale: 1 }}
+            whileHover={{ scale: 1.05 }}
+            transition={{ duration: 0.4 }}
           />
 
-          {/* Badge */}
+          {/* Gradient overlay for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+          {/* Badges */}
           {showBadge === "urgent" && (
-            <div className="absolute top-1.5 left-1.5 bg-destructive text-destructive-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
-              <Zap className="h-2.5 w-2.5" />URGENT
-            </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8, x: -10 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[9px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg"
+            >
+              <Zap className="h-2.5 w-2.5" fill="currentColor" />
+              <span>URGENT</span>
+            </motion.div>
           )}
           {showBadge === "premium" && (
-            <div className="absolute top-1.5 left-1.5 bg-[hsl(var(--chad-yellow))] text-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
-              <Crown className="h-2.5 w-2.5" />PRO
-            </div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8, x: -10 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              className="absolute top-2 left-2 bg-gradient-to-r from-[hsl(var(--chad-yellow))] to-amber-400 text-foreground text-[9px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg"
+            >
+              <Crown className="h-2.5 w-2.5" fill="currentColor" />
+              <span>PRO</span>
+            </motion.div>
           )}
           {showBadge === "discount" && (
-            <div className="absolute top-1.5 left-1.5 bg-destructive text-destructive-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8, rotate: -10 }}
+              animate={{ opacity: 1, scale: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 200 }}
+              className="absolute top-2 left-2 bg-destructive text-destructive-foreground text-[10px] font-extrabold px-2 py-1 rounded-full shadow-lg"
+            >
               -{discountPercent}%
-            </div>
+            </motion.div>
           )}
 
-          {/* Favorite */}
-          <button
-            className="absolute top-1.5 right-1.5 bg-card/80 backdrop-blur-sm rounded-full p-1.5 active:scale-90 transition-transform"
+          {/* Favorite Button */}
+          <motion.button
+            className="absolute top-2 right-2 bg-card/90 backdrop-blur-sm rounded-full p-1.5 shadow-lg hover:bg-card transition-colors z-10"
             onClick={handleFav}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
             aria-label={isFav ? "Retirer des favoris" : "Ajouter aux favoris"}
           >
-            <Heart className={cn(
-              "h-3.5 w-3.5 transition-all",
-              isFav ? "fill-[hsl(var(--chad-red))] text-[hsl(var(--chad-red))]" : "text-muted-foreground",
-              heartAnim && "animate-heart-pop"
-            )} />
-          </button>
+            <motion.div
+              animate={heartAnim ? "liked" : "initial"}
+              variants={heartVariants}
+            >
+              <Heart 
+                className={cn(
+                  "h-4 w-4 transition-all duration-300",
+                  isFav 
+                    ? "fill-[hsl(var(--chad-red))] text-[hsl(var(--chad-red))]" 
+                    : "text-foreground/70 hover:text-foreground"
+                )} 
+              />
+            </motion.div>
+          </motion.button>
 
-          {/* Price overlay */}
-          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent pt-6 pb-1.5 px-2">
-            <span className="text-white text-xs font-bold drop-shadow-sm">
-              {formatPrice(listing.price)}
-            </span>
+          {/* Price Overlay */}
+          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent pt-8 pb-2 px-2.5">
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-white text-sm font-extrabold drop-shadow-lg">
+                {formatPrice(listing.price)}
+              </span>
+              {hasDiscount && originalPrice && (
+                <span className="text-white/70 text-[10px] font-medium line-through">
+                  {formatPrice(originalPrice)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-1.5">
-          <p className="text-[10px] font-medium text-foreground line-clamp-1 leading-tight">
+        {/* Card Content */}
+        <div className="p-2">
+          <h3 className="text-[11px] font-semibold text-foreground line-clamp-2 leading-tight mb-1">
             {listing.title}
-          </p>
-          <div className="flex items-center gap-0.5 mt-0.5">
-            <MapPin className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
-            <span className="text-[9px] text-muted-foreground truncate">{city?.name || listing.city_id}</span>
+          </h3>
+          <div className="flex items-center gap-1 text-muted-foreground">
+            <MapPin className="h-3 w-3 shrink-0" />
+            <span className="text-[9px] truncate">{city?.name || listing.city_id}</span>
           </div>
         </div>
-      </div>
+
+        {/* Hover overlay effect */}
+        <div className="absolute inset-0 border-2 border-primary/0 hover:border-primary/20 rounded-xl transition-colors duration-300 pointer-events-none" />
+      </motion.div>
     </Link>
   );
 };
