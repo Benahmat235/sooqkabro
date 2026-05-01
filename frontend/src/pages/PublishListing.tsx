@@ -619,6 +619,17 @@ const PublishListing = () => {
                 )}
               </div>
 
+              {/* Live quality indicator */}
+              <QualityIndicator
+                variant="detailed"
+                input={{
+                  title,
+                  description,
+                  price: priceType === "free" ? 0 : parseInt(price) || 0,
+                  imageCount: photos.length,
+                }}
+              />
+
               <div className="flex gap-3">
                 <Button type="button" variant="outline" onClick={prevStep} className="flex-1 h-12 rounded-xl">
                   Retour
