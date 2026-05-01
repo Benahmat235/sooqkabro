@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePhoneValidation } from "@/hooks/usePhoneValidation";
 import { PhoneValidationIndicator } from "@/components/PhoneValidationIndicator";
 import { cn } from "@/lib/utils";
+import { QualityIndicator } from "@/components/QualityIndicator";
 
 const MAX_PHOTOS = 5;
 
