@@ -161,9 +161,21 @@ const MyListings = () => {
                     <p className="text-sm font-bold text-primary mt-1">
                       {listing.price.toLocaleString()} FCFA
                     </p>
-                    <Badge variant={st.variant} className="mt-1 text-xs">
-                      {st.label}
-                    </Badge>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                      <Badge variant={st.variant} className="text-xs">
+                        {st.label}
+                      </Badge>
+                      <QualityIndicator
+                        input={{
+                          title: listing.title,
+                          description: listing.description,
+                          price: listing.price,
+                          quartier: listing.quartier,
+                          phone: listing.phone,
+                          imageCount: listing.images.length,
+                        }}
+                      />
+                    </div>
                   </div>
                 </Link>
 
