@@ -15,14 +15,18 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { QualityIndicator } from "@/components/QualityIndicator";
 
 interface Listing {
   id: string;
   title: string;
+  description: string;
   price: number;
   status: "draft" | "published" | "archived";
   created_at: string;
   city_id: string;
+  quartier: string | null;
+  phone: string;
   images: { image_url: string }[];
 }
 
