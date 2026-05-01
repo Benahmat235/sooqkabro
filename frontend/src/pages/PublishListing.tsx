@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePhoneValidation } from "@/hooks/usePhoneValidation";
 import { PhoneValidationIndicator } from "@/components/PhoneValidationIndicator";
 import { cn } from "@/lib/utils";
+import { QualityIndicator } from "@/components/QualityIndicator";
 
 const MAX_PHOTOS = 5;
 
@@ -618,6 +619,17 @@ const PublishListing = () => {
                 )}
               </div>
 
+              {/* Live quality indicator */}
+              <QualityIndicator
+                variant="detailed"
+                input={{
+                  title,
+                  description,
+                  price: priceType === "free" ? 0 : parseInt(price) || 0,
+                  imageCount: photos.length,
+                }}
+              />
+
               <div className="flex gap-3">
                 <Button type="button" variant="outline" onClick={prevStep} className="flex-1 h-12 rounded-xl">
                   Retour
@@ -690,6 +702,19 @@ const PublishListing = () => {
                 </div>
                 {phoneValid === false && <p className="text-xs text-destructive mt-1">Numero de telephone invalide</p>}
               </div>
+
+              {/* Final quality score */}
+              <QualityIndicator
+                variant="detailed"
+                input={{
+                  title,
+                  description,
+                  price: priceType === "free" ? 0 : parseInt(price) || 0,
+                  quartier: quartierId || null,
+                  phone: phone.length === 8 ? `+235${phone}` : "",
+                  imageCount: photos.length,
+                }}
+              />
 
               {/* Summary */}
               <div className="p-4 bg-muted/30 rounded-2xl border space-y-3">

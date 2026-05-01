@@ -15,14 +15,18 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { QualityIndicator } from "@/components/QualityIndicator";
 
 interface Listing {
   id: string;
   title: string;
+  description: string;
   price: number;
   status: "draft" | "published" | "archived";
   created_at: string;
   city_id: string;
+  quartier: string | null;
+  phone: string;
   images: { image_url: string }[];
 }
 
@@ -44,7 +48,7 @@ const MyListings = () => {
     if (!user) return;
     const { data } = await supabase
       .from("listings")
-      .select("id, title, price, status, created_at, city_id, listing_images(image_url)")
+      .select("id, title, description, price, status, created_at, city_id, quartier, phone, listing_images(image_url)")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
@@ -157,9 +161,21 @@ const MyListings = () => {
                     <p className="text-sm font-bold text-primary mt-1">
                       {listing.price.toLocaleString()} FCFA
                     </p>
-                    <Badge variant={st.variant} className="mt-1 text-xs">
-                      {st.label}
-                    </Badge>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                      <Badge variant={st.variant} className="text-xs">
+                        {st.label}
+                      </Badge>
+                      <QualityIndicator
+                        input={{
+                          title: listing.title,
+                          description: listing.description,
+                          price: listing.price,
+                          quartier: listing.quartier,
+                          phone: listing.phone,
+                          imageCount: listing.images.length,
+                        }}
+                      />
+                    </div>
                   </div>
                 </Link>
 
