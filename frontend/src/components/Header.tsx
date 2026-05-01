@@ -161,7 +161,7 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
               ))}
             </SelectContent>
           </Select>
-        </div>
+        </motion.div>
 
         {/* Row 3: Search bar */}
         <div className="pb-3 relative" ref={historyRef}>

@@ -1,0 +1,14 @@
+{
+  "name": "sooqkabro-root",
+  "private": true,
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "build:dev": "cd frontend && npm run build:dev",
+    "preview": "cd frontend && npm run preview",
+    "lint": "cd frontend && npm run lint",
+    "test": "cd frontend && npm run test",
+    "postinstall": "cd frontend && npm install"
+  }
+}
