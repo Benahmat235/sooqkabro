@@ -703,6 +703,19 @@ const PublishListing = () => {
                 {phoneValid === false && <p className="text-xs text-destructive mt-1">Numero de telephone invalide</p>}
               </div>
 
+              {/* Final quality score */}
+              <QualityIndicator
+                variant="detailed"
+                input={{
+                  title,
+                  description,
+                  price: priceType === "free" ? 0 : parseInt(price) || 0,
+                  quartier: quartierId || null,
+                  phone: phone.length === 8 ? `+235${phone}` : "",
+                  imageCount: photos.length,
+                }}
+              />
+
               {/* Summary */}
               <div className="p-4 bg-muted/30 rounded-2xl border space-y-3">
                 <h3 className="font-semibold text-sm">Resume de votre annonce</h3>
