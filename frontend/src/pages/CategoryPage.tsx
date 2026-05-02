@@ -143,7 +143,7 @@ const CategoryPage = () => {
           </div>
         ) : (
           <>
-            <CategoryGrid items={visibleItems} />
+            <PricedGrid items={visibleItems} />
             <InfiniteScrollLoader isLoading={loadingMore} />
             <InfiniteScrollSentinel sentinelRef={sentinelRef} hasMore={hasMore} />
           </>
