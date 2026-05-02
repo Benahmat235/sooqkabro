@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useSearchListings } from "@/hooks/useListings";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/i18n/useTranslation";
+import { usePriceStatsBatch } from "@/hooks/usePriceStats";
+import { classifyPrice } from "@/lib/pricing";
 
 const SearchPage = () => {
   const [searchParams] = useSearchParams();
