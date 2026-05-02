@@ -16,6 +16,8 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "@/i18n/useTranslation";
 import type { ListingWithImages } from "@/hooks/useListings";
 import { containerVariants, itemVariants, fadeInUpVariants } from "@/lib/animations";
+import { usePriceStatsBatch } from "@/hooks/usePriceStats";
+import { classifyPrice } from "@/lib/pricing";
 
 const Index = () => {
   const [selectedCity, setSelectedCity] = useState("all");
@@ -39,6 +41,12 @@ const Index = () => {
   }, {});
 
   const popularCategories = categories.filter((cat) => (listingsByCategory[cat.id]?.length || 0) > 0).slice(0, 5);
+
+  const { data: priceStatsMap } = usePriceStatsBatch(
+    listings.map((l) => ({ category_id: l.category_id, subcategory_id: l.subcategory_id }))
+  );
+  const levelFor = (l: ListingWithImages) =>
+    classifyPrice(l.price, priceStatsMap?.get(`${l.category_id}::${l.subcategory_id ?? ""}`));
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -153,7 +161,7 @@ const Index = () => {
               >
                 {listings.slice(0, 9).map((listing) => (
                   <motion.div key={listing.id} variants={itemVariants}>
-                    <ListingCard listing={listing} />
+                    <ListingCard listing={listing} priceLevel={levelFor(listing)} />
                   </motion.div>
                 ))}
               </motion.div>
@@ -220,7 +228,7 @@ const Index = () => {
                   >
                     {catListings.map((listing) => (
                       <motion.div key={listing.id} variants={itemVariants}>
-                        <ListingCard listing={listing} />
+                        <ListingCard listing={listing} priceLevel={levelFor(listing)} />
                       </motion.div>
                     ))}
                   </motion.div>
