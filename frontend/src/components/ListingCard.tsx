@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Heart, MapPin, Zap, Crown } from "lucide-react";
+import { Heart, MapPin, Zap, Crown, TrendingDown, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatPrice } from "@/data/mockListings";
 import { getCityById } from "@/data/cities";
@@ -8,6 +8,7 @@ import type { ListingWithImages } from "@/hooks/useListings";
 import { useFavorites, useToggleFavorite } from "@/hooks/useFavorites";
 import { cn } from "@/lib/utils";
 import { cardHoverVariants, heartVariants } from "@/lib/animations";
+import type { PriceLevel } from "@/lib/pricing";
 
 function cloudinaryOptimize(url: string, width: number): string {
   if (!url || !url.includes("cloudinary.com")) return url;
@@ -17,9 +18,10 @@ function cloudinaryOptimize(url: string, width: number): string {
 interface ListingCardProps {
   listing: ListingWithImages;
   compact?: boolean;
+  priceLevel?: PriceLevel;
 }
 
-const ListingCard = ({ listing, compact = false }: ListingCardProps) => {
+const ListingCard = ({ listing, compact = false, priceLevel }: ListingCardProps) => {
   const city = getCityById(listing.city_id);
   const { favoriteIds } = useFavorites();
   const toggleFav = useToggleFavorite();
