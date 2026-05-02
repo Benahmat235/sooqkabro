@@ -12,6 +12,8 @@ import { getCategoryById } from "@/data/categories";
 import { useListings } from "@/hooks/useListings";
 import { useInfiniteScroll, InfiniteScrollLoader, InfiniteScrollSentinel } from "@/hooks/useInfiniteScroll";
 import { useTranslation } from "@/i18n/useTranslation";
+import { usePriceStatsBatch } from "@/hooks/usePriceStats";
+import { classifyPrice } from "@/lib/pricing";
 
 const CategoryPage = () => {
   const { categoryId, subId } = useParams();
@@ -141,17 +143,7 @@ const CategoryPage = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {visibleItems.map((listing, i) => (
-                <div
-                  key={listing.id}
-                  className="animate-fade-in"
-                  style={{ animationDelay: `${Math.min(i, 11) * 50}ms`, animationFillMode: "both" }}
-                >
-                  <ListingCard listing={listing} />
-                </div>
-              ))}
-            </div>
+            <PricedGrid items={visibleItems} />
             <InfiniteScrollLoader isLoading={loadingMore} />
             <InfiniteScrollSentinel sentinelRef={sentinelRef} hasMore={hasMore} />
           </>
@@ -162,5 +154,28 @@ const CategoryPage = () => {
     </div>
   );
 };
+
+function PricedGrid({ items }: { items: any[] }) {
+  const { data: statsMap } = usePriceStatsBatch(
+    items.map((l) => ({ category_id: l.category_id, subcategory_id: l.subcategory_id }))
+  );
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      {items.map((listing, i) => {
+        const key = `${listing.category_id}::${listing.subcategory_id ?? ""}`;
+        const level = classifyPrice(listing.price, statsMap?.get(key));
+        return (
+          <div
+            key={listing.id}
+            className="animate-fade-in"
+            style={{ animationDelay: `${Math.min(i, 11) * 50}ms`, animationFillMode: "both" }}
+          >
+            <ListingCard listing={listing} priceLevel={level} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default CategoryPage;
