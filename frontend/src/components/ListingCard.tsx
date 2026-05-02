@@ -176,7 +176,6 @@ const ListingCard = ({ listing, compact = false, priceLevel }: ListingCardProps)
             </div>
           </div>
         </div>
-        </div>
 
         {/* Card Content */}
         <div className="p-2">
