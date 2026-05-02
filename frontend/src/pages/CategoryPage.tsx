@@ -12,6 +12,8 @@ import { getCategoryById } from "@/data/categories";
 import { useListings } from "@/hooks/useListings";
 import { useInfiniteScroll, InfiniteScrollLoader, InfiniteScrollSentinel } from "@/hooks/useInfiniteScroll";
 import { useTranslation } from "@/i18n/useTranslation";
+import { usePriceStatsBatch } from "@/hooks/usePriceStats";
+import { classifyPrice } from "@/lib/pricing";
 
 const CategoryPage = () => {
   const { categoryId, subId } = useParams();
@@ -141,17 +143,7 @@ const CategoryPage = () => {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {visibleItems.map((listing, i) => (
-                <div
-                  key={listing.id}
-                  className="animate-fade-in"
-                  style={{ animationDelay: `${Math.min(i, 11) * 50}ms`, animationFillMode: "both" }}
-                >
-                  <ListingCard listing={listing} />
-                </div>
-              ))}
-            </div>
+            <CategoryGrid items={visibleItems} />
             <InfiniteScrollLoader isLoading={loadingMore} />
             <InfiniteScrollSentinel sentinelRef={sentinelRef} hasMore={hasMore} />
           </>
