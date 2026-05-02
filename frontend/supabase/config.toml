@@ -3,6 +3,9 @@ project_id = "bwvtfosrbbkawieanrjd"
 [functions.getPersonalizedFeed]
 verify_jwt = false
 
+[functions.getPriceStats]
+verify_jwt = false
+
 [functions.validate-phone]
 verify_jwt = false
 
