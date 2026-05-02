@@ -138,6 +138,30 @@ const ListingCard = ({ listing, compact = false, priceLevel }: ListingCardProps)
             </motion.div>
           </motion.button>
 
+          {/* Price level badge (top-right under heart) */}
+          {priceLevel === "good" && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute top-10 right-2 bg-green-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-md"
+              title="Prix inférieur au marché"
+            >
+              <TrendingDown className="h-2.5 w-2.5" />
+              <span>Bon prix</span>
+            </motion.div>
+          )}
+          {priceLevel === "high" && (
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute top-10 right-2 bg-orange-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 shadow-md"
+              title="Prix supérieur au marché"
+            >
+              <TrendingUp className="h-2.5 w-2.5" />
+              <span>Prix élevé</span>
+            </motion.div>
+          )}
+
           {/* Price Overlay */}
           <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent pt-8 pb-2 px-2.5">
             <div className="flex items-baseline gap-1.5">
@@ -151,6 +175,7 @@ const ListingCard = ({ listing, compact = false, priceLevel }: ListingCardProps)
               )}
             </div>
           </div>
+        </div>
         </div>
 
         {/* Card Content */}
