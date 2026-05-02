@@ -135,22 +135,35 @@ const SearchPage = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {results.map((listing, i) => (
-              <div
-                key={listing.id}
-                className="animate-fade-in"
-                style={{ animationDelay: `${i * 50}ms`, animationFillMode: "both" }}
-              >
-                <ListingCard listing={listing} />
-              </div>
-            ))}
-          </div>
+          <PricedSearchGrid items={results} />
         )}
       </main>
       <BottomNav />
     </div>
   );
 };
+
+function PricedSearchGrid({ items }: { items: any[] }) {
+  const { data: statsMap } = usePriceStatsBatch(
+    items.map((l) => ({ category_id: l.category_id, subcategory_id: l.subcategory_id }))
+  );
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      {items.map((listing, i) => {
+        const key = `${listing.category_id}::${listing.subcategory_id ?? ""}`;
+        const level = classifyPrice(listing.price, statsMap?.get(key));
+        return (
+          <div
+            key={listing.id}
+            className="animate-fade-in"
+            style={{ animationDelay: `${i * 50}ms`, animationFillMode: "both" }}
+          >
+            <ListingCard listing={listing} priceLevel={level} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default SearchPage;
