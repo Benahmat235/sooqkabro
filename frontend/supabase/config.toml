@@ -6,6 +6,9 @@ verify_jwt = false
 [functions.getPriceStats]
 verify_jwt = false
 
+[functions.flagSuspiciousListing]
+verify_jwt = false
+
 [functions.validate-phone]
 verify_jwt = false
 
