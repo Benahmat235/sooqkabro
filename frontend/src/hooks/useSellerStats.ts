@@ -15,6 +15,14 @@ export interface SellerStats {
     identity: boolean;
   };
   bio: string | null;
+  trustScore: number;
+  trustBreakdown: {
+    emailVerified: boolean;
+    phoneVerified: boolean;
+    goodReviews: boolean;
+    accountAge: boolean;
+    noFlags: boolean;
+  };
 }
 
 export function useSellerStats(sellerId: string | undefined) {
