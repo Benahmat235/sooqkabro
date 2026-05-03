@@ -1,16 +1,53 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin, useMerchants, useToggleVerified } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { BadgeCheck, ChevronLeft, Search, ShieldCheck, Store, Users } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BadgeCheck, ChevronLeft, Search, ShieldCheck, Store, Users, Flag, Check } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import BottomNav from "@/components/BottomNav";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+
+interface FlaggedRow {
+  id: string;
+  listing_id: string;
+  reason: string;
+  details: any;
+  flagged_at: string;
+  reviewed: boolean;
+  listing?: { title: string; price: number; status: string } | null;
+}
+
+function useListingFlags() {
+  return useQuery({
+    queryKey: ["listing-flags"],
+    queryFn: async (): Promise<FlaggedRow[]> => {
+      const { data, error } = await supabase
+        .from("listing_flags" as any)
+        .select("id, listing_id, reason, details, flagged_at, reviewed")
+        .order("flagged_at", { ascending: false })
+        .limit(200);
+      if (error) throw error;
+      const rows = (data || []) as any as FlaggedRow[];
+      const ids = [...new Set(rows.map((r) => r.listing_id))];
+      if (ids.length === 0) return rows;
+      const { data: listings } = await supabase
+        .from("listings")
+        .select("id, title, price, status")
+        .in("id", ids);
+      const byId = new Map((listings || []).map((l: any) => [l.id, l]));
+      return rows.map((r) => ({ ...r, listing: byId.get(r.listing_id) || null }));
+    },
+  });
+}
+
 
 const AdminPage = () => {
   const navigate = useNavigate();
