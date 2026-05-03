@@ -78,6 +78,47 @@ export type Database = {
           },
         ]
       }
+      listing_flags: {
+        Row: {
+          details: Json | null
+          flagged_at: string
+          id: string
+          listing_id: string
+          reason: string
+          reviewed: boolean
+          reviewed_at: string | null
+          reviewed_by: string | null
+        }
+        Insert: {
+          details?: Json | null
+          flagged_at?: string
+          id?: string
+          listing_id: string
+          reason: string
+          reviewed?: boolean
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+        }
+        Update: {
+          details?: Json | null
+          flagged_at?: string
+          id?: string
+          listing_id?: string
+          reason?: string
+          reviewed?: boolean
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_flags_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listing_images: {
         Row: {
           created_at: string
@@ -144,6 +185,7 @@ export type Database = {
           badge: string | null
           category_id: string
           city_id: string
+          content_hash: string | null
           created_at: string
           description: string
           id: string
@@ -161,6 +203,7 @@ export type Database = {
           badge?: string | null
           category_id: string
           city_id: string
+          content_hash?: string | null
           created_at?: string
           description: string
           id?: string
@@ -178,6 +221,7 @@ export type Database = {
           badge?: string | null
           category_id?: string
           city_id?: string
+          content_hash?: string | null
           created_at?: string
           description?: string
           id?: string
