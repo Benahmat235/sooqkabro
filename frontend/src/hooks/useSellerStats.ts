@@ -45,6 +45,10 @@ export function useSellerStats(sellerId: string | undefined) {
           .from("conversations")
           .select("id, created_at")
           .eq("seller_id", sellerId),
+        supabase
+          .from("seller_reviews")
+          .select("rating")
+          .eq("seller_id", sellerId),
       ]);
 
       const listings = listingsRes.data || [];
