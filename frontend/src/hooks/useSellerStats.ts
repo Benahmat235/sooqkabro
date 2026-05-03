@@ -184,6 +184,8 @@ export function useSellerStats(sellerId: string | undefined) {
           identity: profile?.is_verified ?? false,
         },
         bio: profile?.bio || null,
+        trustScore,
+        trustBreakdown,
       };
     },
     enabled: !!sellerId,
