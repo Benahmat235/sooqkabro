@@ -15,6 +15,14 @@ export interface SellerStats {
     identity: boolean;
   };
   bio: string | null;
+  trustScore: number;
+  trustBreakdown: {
+    emailVerified: boolean;
+    phoneVerified: boolean;
+    goodReviews: boolean;
+    accountAge: boolean;
+    noFlags: boolean;
+  };
 }
 
 export function useSellerStats(sellerId: string | undefined) {
@@ -23,7 +31,7 @@ export function useSellerStats(sellerId: string | undefined) {
     queryFn: async (): Promise<SellerStats | null> => {
       if (!sellerId) return null;
 
-      const [listingsRes, profileRes, conversationsRes] = await Promise.all([
+      const [listingsRes, profileRes, conversationsRes, reviewsRes] = await Promise.all([
         supabase
           .from("listings")
           .select("id, status, created_at")
@@ -37,11 +45,48 @@ export function useSellerStats(sellerId: string | undefined) {
           .from("conversations")
           .select("id, created_at")
           .eq("seller_id", sellerId),
+        supabase
+          .from("seller_reviews")
+          .select("rating")
+          .eq("seller_id", sellerId),
       ]);
 
       const listings = listingsRes.data || [];
       const profile = profileRes.data as any;
       const conversations = conversationsRes.data || [];
+      const reviews = (reviewsRes.data || []) as { rating: number }[];
+
+      // Trust score (max 100)
+      const sellerListingIds = listings.map((l: any) => l.id);
+      let hasFlag = false;
+      if (sellerListingIds.length > 0) {
+        const { data: flags } = await supabase
+          .from("listing_flags" as any)
+          .select("id")
+          .in("listing_id", sellerListingIds)
+          .limit(1);
+        hasFlag = !!(flags && flags.length > 0);
+      }
+      const accountCreated = profile?.created_at ? new Date(profile.created_at) : null;
+      const accountAgeDays = accountCreated
+        ? (Date.now() - accountCreated.getTime()) / 86400000
+        : 0;
+      const avgRating = reviews.length
+        ? reviews.reduce((a, b) => a + b.rating, 0) / reviews.length
+        : 0;
+      const trustBreakdown = {
+        emailVerified: true,
+        phoneVerified: !!profile?.is_verified,
+        goodReviews: reviews.length >= 3 && avgRating >= 4,
+        accountAge: accountAgeDays > 30,
+        noFlags: !hasFlag,
+      };
+      const trustScore =
+        (trustBreakdown.emailVerified ? 20 : 0) +
+        (trustBreakdown.phoneVerified ? 20 : 0) +
+        (trustBreakdown.goodReviews ? 20 : 0) +
+        (trustBreakdown.accountAge ? 20 : 0) +
+        (trustBreakdown.noFlags ? 20 : 0);
 
       const activeListings = listings.filter((l) => l.status === "published").length;
       const totalListings = listings.length;
@@ -139,6 +184,8 @@ export function useSellerStats(sellerId: string | undefined) {
           identity: profile?.is_verified ?? false,
         },
         bio: profile?.bio || null,
+        trustScore,
+        trustBreakdown,
       };
     },
     enabled: !!sellerId,

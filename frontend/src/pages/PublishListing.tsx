@@ -320,6 +320,11 @@ const PublishListing = () => {
         }
       }
 
+      // Fire-and-forget spam/duplicate flagging
+      supabase.functions.invoke("flagSuspiciousListing", {
+        body: { listing_id: listing.id },
+      }).catch(() => {});
+
       success("Annonce publiee !", "Votre annonce est maintenant visible.");
       navigate(`/annonce/${listing.id}`);
     } catch (err: any) {

@@ -236,6 +236,14 @@ const SellerProfile = () => {
                   <Shield className="h-3 w-3" /> Top
                 </span>
               )}
+              {sellerStats && sellerStats.trustScore >= 60 && (
+                <span
+                  className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1"
+                  title={`Email: ${sellerStats.trustBreakdown.emailVerified ? '✓' : '✗'} • Téléphone: ${sellerStats.trustBreakdown.phoneVerified ? '✓' : '✗'} • Avis: ${sellerStats.trustBreakdown.goodReviews ? '✓' : '✗'} • Ancienneté: ${sellerStats.trustBreakdown.accountAge ? '✓' : '✗'} • Aucun signalement: ${sellerStats.trustBreakdown.noFlags ? '✓' : '✗'}`}
+                >
+                  <Shield className="h-3 w-3" /> Vendeur de confiance {sellerStats.trustScore}/100
+                </span>
+              )}
             </div>
             
             {/* Meta info */}
