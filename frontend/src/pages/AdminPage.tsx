@@ -153,9 +153,207 @@ const AdminPage = () => {
         </div>
       </div>
 
-      {/* Search + Filter */}
-      <div className="px-4 space-y-3">
-        <div className="relative">
+      {/* Tabs */}
+      <Tabs defaultValue="merchants" className="px-4 mt-4">
+        <TabsList className="grid grid-cols-2 w-full">
+          <TabsTrigger value="merchants">Marchands</TabsTrigger>
+          <TabsTrigger value="flags">
+            <Flag className="h-3.5 w-3.5 mr-1" />
+            Signalements
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="merchants" className="mt-4">
+          {/* Search + Filter */}
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher un marchand..."
+                className="pl-9 h-11 rounded-xl bg-muted/50 border-0"
+              />
+            </div>
+            <div className="flex gap-2">
+              {(["all", "verified", "unverified"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-xs font-semibold transition-colors",
+                    filter === f
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-accent"
+                  )}
+                >
+                  {f === "all" ? "Tous" : f === "verified" ? "Vérifiés" : "Non vérifiés"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Merchants list */}
+          <div className="mt-4 space-y-2">
+            {merchantsLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} className="h-20 rounded-2xl" />
+              ))
+            ) : filtered.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-sm text-muted-foreground">Aucun marchand trouvé</p>
+              </div>
+            ) : (
+              filtered.map((merchant) => (
+                <div
+                  key={merchant.id}
+                  className="bg-card rounded-2xl p-4 shadow-card flex items-center gap-3"
+                >
+                  <img
+                    src={merchant.avatar_url || "/placeholder.svg"}
+                    alt=""
+                    className="w-12 h-12 rounded-xl object-cover bg-muted shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-sm text-foreground truncate">
+                        {merchant.display_name || merchant.username || "Sans nom"}
+                      </span>
+                      {merchant.is_verified && (
+                        <BadgeCheck className="h-4 w-4 text-primary shrink-0" />
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate">{merchant.phone}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[10px] text-muted-foreground">
+                        {merchant.listing_count} annonce{merchant.listing_count !== 1 ? "s" : ""}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        · {formatDistanceToNow(new Date(merchant.created_at), { addSuffix: true, locale: fr })}
+                      </span>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant={merchant.is_verified ? "outline" : "default"}
+                    className={cn(
+                      "rounded-xl text-xs shrink-0 h-9",
+                      merchant.is_verified && "border-destructive text-destructive hover:bg-destructive/5"
+                    )}
+                    onClick={() => handleToggle(merchant.id, merchant.is_verified)}
+                    disabled={toggleVerified.isPending}
+                  >
+                    {merchant.is_verified ? "Retirer" : "Vérifier"}
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="flags" className="mt-4">
+          <FlagsList />
+        </TabsContent>
+      </Tabs>
+
+      <BottomNav />
+    </div>
+  );
+};
+
+const reasonLabels: Record<string, string> = {
+  shared_phone_multiple_users: "Téléphone partagé par plusieurs comptes",
+  abnormally_low_price: "Prix anormalement bas",
+};
+
+function FlagsList() {
+  const { data: flags = [], isLoading } = useListingFlags();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const markReviewed = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("listing_flags" as any)
+        .update({ reviewed: true, reviewed_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["listing-flags"] });
+      toast({ title: "Signalement traité" });
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <Skeleton key={i} className="h-20 rounded-2xl" />
+        ))}
+      </div>
+    );
+  }
+
+  if (flags.length === 0) {
+    return (
+      <div className="text-center py-8">
+        <Flag className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+        <p className="text-sm text-muted-foreground">Aucun signalement</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {flags.map((f) => (
+        <div
+          key={f.id}
+          className={cn(
+            "bg-card rounded-2xl p-4 shadow-card",
+            f.reviewed && "opacity-60"
+          )}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <Flag className="h-3.5 w-3.5 text-destructive shrink-0" />
+                <span className="text-xs font-bold text-destructive">
+                  {reasonLabels[f.reason] || f.reason}
+                </span>
+              </div>
+              <Link
+                to={`/annonce/${f.listing_id}`}
+                className="text-sm font-semibold text-foreground hover:text-primary block truncate"
+              >
+                {f.listing?.title || `Annonce ${f.listing_id.slice(0, 8)}…`}
+              </Link>
+              {f.details && (
+                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                  {JSON.stringify(f.details)}
+                </p>
+              )}
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                {formatDistanceToNow(new Date(f.flagged_at), { addSuffix: true, locale: fr })}
+              </p>
+            </div>
+            {!f.reviewed && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-xl text-xs h-9 shrink-0"
+                onClick={() => markReviewed.mutate(f.id)}
+                disabled={markReviewed.isPending}
+              >
+                <Check className="h-3.5 w-3.5 mr-1" /> Traiter
+              </Button>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             value={search}
