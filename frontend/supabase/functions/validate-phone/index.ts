@@ -55,7 +55,7 @@ Deno.serve(async (req) => {
     }
 
     const number = cleaned.startsWith("235") ? cleaned : `235${cleaned}`;
-    const url = `http://apilayer.net/api/validate?access_key=${apiKey}&number=${number}&country_code=TD`;
+    const url = `https://apilayer.net/api/validate?access_key=${apiKey}&number=${number}&country_code=TD`;
     const res = await fetch(url);
     const data = await res.json();
 

@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
       subcategory_id: l.subcategory_id,
       city_id: l.city_id,
       quartier: l.quartier,
-      phone: l.phone,
+      phone: l.phone, // kept server-side for quality scoring; stripped before response
       status: l.status,
       user_id: l.user_id,
       created_at: l.created_at,
@@ -186,7 +186,7 @@ Deno.serve(async (req) => {
     });
 
     scored.sort((a: any, b: any) => b._score - a._score);
-    const result = scored.slice(0, limit);
+    const result = scored.slice(0, limit).map(({ phone, ...rest }: any) => rest);
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
