@@ -186,7 +186,7 @@ Deno.serve(async (req) => {
     });
 
     scored.sort((a: any, b: any) => b._score - a._score);
-    const result = scored.slice(0, limit);
+    const result = scored.slice(0, limit).map(({ phone, ...rest }: any) => rest);
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
