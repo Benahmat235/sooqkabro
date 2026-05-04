@@ -84,6 +84,7 @@ Deno.serve(async (req) => {
       subcategory_id: l.subcategory_id,
       city_id: l.city_id,
       quartier: l.quartier,
+      phone: l.phone, // kept server-side for quality scoring; stripped before response
       status: l.status,
       user_id: l.user_id,
       created_at: l.created_at,
