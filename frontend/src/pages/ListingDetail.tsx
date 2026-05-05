@@ -4,6 +4,7 @@ import { MapPin, Clock, Share2, Heart, ChevronLeft, ChevronRight as ChevronRight
 import BottomNav from "@/components/BottomNav";
 import ContactActions from "@/components/ContactActions";
 import SimilarProducts from "@/components/SimilarProducts";
+import CoViewedProducts from "@/components/CoViewedProducts";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
