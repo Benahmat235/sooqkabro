@@ -20,6 +20,7 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useConversations, useMessages, useSendMessage, type Conversation, type Message } from "@/hooks/useConversations";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 import BottomNav from "@/components/BottomNav";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -288,6 +289,25 @@ function ChatView({ conversation, userId, onBack }: { conversation: Conversation
   const otherId = conversation.buyer_id === userId ? conversation.seller_id : conversation.buyer_id;
   const isBuyer = conversation.buyer_id === userId;
   const { isOnline, lastSeen } = useUserPresence(otherId);
+  const queryClient = useQueryClient();
+
+  // Realtime subscription for instant message delivery
+  useEffect(() => {
+    const channel = supabase
+      .channel(`messages-${conversation.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "messages", filter: `conversation_id=eq.${conversation.id}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["messages", conversation.id] });
+          queryClient.invalidateQueries({ queryKey: ["conversations"] });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversation.id, queryClient]);
 
   // Group messages by date
   const groupedMessages = useMemo(() => {

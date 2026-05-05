@@ -91,7 +91,9 @@ export function useMessages(conversationId: string | undefined) {
       return (data || []) as Message[];
     },
     enabled: !!conversationId,
-    refetchInterval: 3000,
+    refetchInterval: 1000,
+    refetchIntervalInBackground: false,
+    staleTime: 500,
   });
 }
 
@@ -105,10 +107,27 @@ export function useSendMessage() {
         content: content.trim(),
       });
       if (error) throw error;
-      // Update conversation timestamp
-      await supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId);
+      // Update conversation timestamp (fire-and-forget for speed)
+      supabase.from("conversations").update({ updated_at: new Date().toISOString() }).eq("id", conversationId).then(() => {});
     },
-    onSuccess: (_, vars) => {
+    onMutate: async ({ conversationId, content, senderId }) => {
+      await qc.cancelQueries({ queryKey: ["messages", conversationId] });
+      const previous = qc.getQueryData<Message[]>(["messages", conversationId]);
+      const optimistic: Message = {
+        id: `optimistic-${Date.now()}`,
+        conversation_id: conversationId,
+        sender_id: senderId,
+        content: content.trim(),
+        read: false,
+        created_at: new Date().toISOString(),
+      };
+      qc.setQueryData<Message[]>(["messages", conversationId], (old = []) => [...old, optimistic]);
+      return { previous };
+    },
+    onError: (_err, vars, ctx) => {
+      if (ctx?.previous) qc.setQueryData(["messages", vars.conversationId], ctx.previous);
+    },
+    onSettled: (_, __, vars) => {
       qc.invalidateQueries({ queryKey: ["messages", vars.conversationId] });
       qc.invalidateQueries({ queryKey: ["conversations"] });
     },
