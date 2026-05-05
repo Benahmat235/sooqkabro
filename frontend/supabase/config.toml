@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.admin-merchants]
 verify_jwt = false
+
+[functions.getCoViewedListings]
+verify_jwt = false
