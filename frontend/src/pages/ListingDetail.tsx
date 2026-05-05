@@ -433,6 +433,8 @@ const ListingDetail = () => {
 
       <SimilarProducts currentListing={listing} allListings={allListings} />
 
+      <CoViewedProducts listingId={listing.id} />
+
       <ContactActions
         isVerified={!!sellerProfile?.is_verified}
         whatsappLink={whatsappLink}
