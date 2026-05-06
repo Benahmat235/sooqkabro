@@ -19,6 +19,13 @@
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
 
+    <!-- Preconnect to backend origin (Supabase) to speed up FCP/LCP for above-the-fold images & API -->
+    <link rel="preconnect" href="https://bwvtfosrbbkawieanrjd.supabase.co" crossorigin />
+    <link rel="dns-prefetch" href="https://bwvtfosrbbkawieanrjd.supabase.co" />
+
+    <!-- Preload main JS module to start fetching the entry bundle ASAP -->
+    <link rel="modulepreload" href="/src/main.tsx" />
+
     <!-- Google Fonts (non-blocking) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
