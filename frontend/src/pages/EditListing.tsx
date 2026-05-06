@@ -52,7 +52,7 @@ const EditListing = () => {
     const fetchListing = async () => {
       const { data, error } = await supabase
         .from("listings")
-        .select("*, listing_images(id, image_url, position)")
+        .select("id, user_id, title, description, price, category_id, subcategory_id, city_id, quartier, status, created_at, listing_images(id, image_url, position)")
         .eq("id", id)
         .eq("user_id", user.id)
         .single();
@@ -63,6 +63,8 @@ const EditListing = () => {
         return;
       }
 
+      const { data: phoneVal } = await supabase.rpc("get_my_listing_phone", { _listing_id: id });
+
       setCategoryId(data.category_id);
       setSubcategoryId(data.subcategory_id);
       setCityId(data.city_id);
@@ -70,7 +72,7 @@ const EditListing = () => {
       setTitle(data.title);
       setDescription(data.description);
       setPrice(String(data.price || ""));
-      setPhone(data.phone.replace("+235", ""));
+      setPhone((phoneVal || "").replace("+235", ""));
       setExistingImages(
         (data.listing_images || []).sort((a: any, b: any) => a.position - b.position)
       );

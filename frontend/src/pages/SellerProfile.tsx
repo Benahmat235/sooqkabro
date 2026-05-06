@@ -84,7 +84,7 @@ const SellerProfile = () => {
       setLoading(true);
       const { data } = await supabase
         .from("profiles")
-        .select("*")
+        .select("id, display_name, username, avatar_url, is_verified, last_seen, bio, created_at, updated_at")
         .eq("id", sellerId)
         .maybeSingle();
       if (data) setProfile(data);

@@ -76,14 +76,16 @@ const AccountPage = () => {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("display_name, phone, username, avatar_url, is_verified, created_at, bio").eq("id", user.id).single()
-      .then(({ data }) => {
-        if (data) {
-          const d = data as any;
-          setProfile(d);
-          setForm({ display_name: d.display_name || "", phone: d.phone || "", username: d.username || "", bio: d.bio || "" });
-        }
-      });
+    Promise.all([
+      supabase.from("profiles").select("display_name, username, avatar_url, is_verified, created_at, bio").eq("id", user.id).single(),
+      supabase.rpc("get_my_profile_phone"),
+    ]).then(([{ data }, { data: phoneVal }]) => {
+      if (data) {
+        const d: any = { ...data, phone: phoneVal || "" };
+        setProfile(d);
+        setForm({ display_name: d.display_name || "", phone: d.phone || "", username: d.username || "", bio: d.bio || "" });
+      }
+    });
 
     const fetchStats = async () => {
       const { count: listingCount } = await supabase.from("listings").select("id", { count: "exact", head: true }).eq("user_id", user.id);
