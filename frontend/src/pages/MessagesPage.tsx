@@ -97,7 +97,7 @@ function ConversationList({ userId, onSelect }: { userId: string; onSelect: (c: 
     }
     
     return filtered;
-  }, [conversations, searchQuery, filter]);
+  }, [conversations, searchQuery, filter, userId]);
 
   const totalUnread = useMemo(() => 
     conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0),
