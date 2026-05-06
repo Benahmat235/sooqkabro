@@ -22,7 +22,7 @@ export interface ListingWithImages {
 async function fetchListings(cityId?: string, limit = 50): Promise<ListingWithImages[]> {
   let query = supabase
     .from("listings")
-    .select("*, listing_images(image_url, position)")
+    .select("id, user_id, title, description, price, original_price, category_id, subcategory_id, city_id, quartier, status, created_at, updated_at, badge, listing_images(image_url, position)")
     .eq("status", "published")
     .order("created_at", { ascending: false })
     .range(0, limit - 1);
