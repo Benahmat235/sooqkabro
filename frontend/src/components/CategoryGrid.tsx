@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { categories } from "@/data/categories";
+import { CategoryImage } from "@/components/CategoryImage";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/i18n/useTranslation";
 
@@ -28,10 +29,11 @@ const CategoryGrid = () => {
             style={{ animationDelay: `${i * 30}ms`, animationFillMode: "both" }}
           >
             <div className="w-full aspect-square overflow-hidden">
-              <img
-                src={cat.image}
-                alt={cat.name}
-                className="w-full h-full object-cover"
+              <CategoryImage
+                category={cat}
+                className="w-full h-full"
+                imgClassName="w-full h-full"
+                iconClassName="h-8 w-8 text-foreground/60"
               />
             </div>
             <span className="text-[10px] font-semibold text-foreground/80 text-center leading-tight line-clamp-2 px-1 pb-2">
