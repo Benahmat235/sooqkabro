@@ -10,9 +10,18 @@ import { cn } from "@/lib/utils";
 import { cardHoverVariants, heartVariants } from "@/lib/animations";
 import type { PriceLevel } from "@/lib/pricing";
 
-function cloudinaryOptimize(url: string, width: number): string {
-  if (!url || !url.includes("cloudinary.com")) return url;
-  return url.replace("/upload/", `/upload/w_${width},c_limit,q_auto,f_auto/`);
+function optimizeImage(url: string, width: number): string {
+  if (!url) return url;
+  if (url.includes("cloudinary.com")) {
+    return url.replace("/upload/", `/upload/w_${width},c_limit,q_auto,f_auto/`);
+  }
+  // Supabase Storage image transformation (resize + WebP via Accept header)
+  if (url.includes("/storage/v1/object/public/")) {
+    const transformed = url.replace("/storage/v1/object/public/", "/storage/v1/render/image/public/");
+    const sep = transformed.includes("?") ? "&" : "?";
+    return `${transformed}${sep}width=${width}&quality=70&resize=contain`;
+  }
+  return url;
 }
 
 interface ListingCardProps {
@@ -30,7 +39,7 @@ const ListingCard = ({ listing, compact = false, priceLevel }: ListingCardProps)
   const [imgLoaded, setImgLoaded] = useState(false);
 
   const imgSrc = listing.images[0] || "/placeholder.svg";
-  const srcSmall = cloudinaryOptimize(imgSrc, 300);
+  const srcSmall = optimizeImage(imgSrc, 300);
 
   const handleFav = (e: React.MouseEvent) => {
     e.preventDefault();
