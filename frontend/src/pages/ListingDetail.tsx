@@ -157,13 +157,13 @@ const ListingDetail = () => {
   const city = getCityById(listing.city_id);
   const category = getCategoryById(listing.category_id);
   const subcategoryName = getSubcategoryName(listing.category_id, listing.subcategory_id);
-  const cleanPhone = listing.phone.replace(/\D/g, "");
-  const whatsappPhone = (sellerPhone || listing.phone).replace(/\D/g, "");
+  const cleanPhone = (sellerPhone || "").replace(/\D/g, "");
+  const whatsappPhone = cleanPhone;
   const whatsappLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(`Bonjour, je suis intéressé par votre annonce "${listing.title}" sur TchadMarket.`)}`;
   const callLink = `tel:+${cleanPhone}`;
   const phoneFormatted = cleanPhone.length >= 11
     ? `+${cleanPhone.slice(0, 3)} ${cleanPhone.slice(3, 5)} ${cleanPhone.slice(5, 7)} ${cleanPhone.slice(7, 9)} ${cleanPhone.slice(9)}`
-    : listing.phone;
+    : (sellerPhone || "");
   const timeAgo = formatDistanceToNow(new Date(listing.created_at), { addSuffix: true, locale: fr });
 
   const isOwner = user?.id === listing.user_id;
