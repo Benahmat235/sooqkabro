@@ -39,7 +39,7 @@ const ListingCard = ({ listing, compact = false, priceLevel }: ListingCardProps)
   const [imgLoaded, setImgLoaded] = useState(false);
 
   const imgSrc = listing.images[0] || "/placeholder.svg";
-  const srcSmall = cloudinaryOptimize(imgSrc, 300);
+  const srcSmall = optimizeImage(imgSrc, 300);
 
   const handleFav = (e: React.MouseEvent) => {
     e.preventDefault();
