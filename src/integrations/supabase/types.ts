@@ -440,6 +440,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_my_listing_phone: { Args: { _listing_id: string }; Returns: string }
+      get_my_profile_phone: { Args: never; Returns: string }
       get_seller_phone: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
