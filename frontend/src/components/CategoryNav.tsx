@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { categories } from "@/data/categories";
+import { CategoryImage } from "@/components/CategoryImage";
 import { cn } from "@/lib/utils";
 
 const CategoryNav = () => {
@@ -21,10 +22,11 @@ const CategoryNav = () => {
                   : "bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground border border-border/50"
               )}
             >
-              <img
-                src={cat.image}
-                alt={cat.name}
-                className="h-4 w-4 rounded-full object-cover flex-shrink-0"
+              <CategoryImage
+                category={cat}
+                className="h-4 w-4 rounded-full flex-shrink-0"
+                imgClassName="w-full h-full"
+                iconClassName="h-3 w-3 text-foreground/70"
               />
               <span>{cat.name.split(" ")[0]}</span>
             </Link>
