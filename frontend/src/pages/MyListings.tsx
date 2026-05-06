@@ -48,13 +48,17 @@ const MyListings = () => {
     if (!user) return;
     const { data } = await supabase
       .from("listings")
-      .select("id, title, description, price, status, created_at, city_id, quartier, phone, listing_images(image_url)")
+      .select("id, title, description, price, status, created_at, city_id, quartier, listing_images(image_url)")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
+
+    const { data: phones } = await supabase.rpc("get_my_listings_phones");
+    const phoneMap = new Map<string, string>((phones || []).map((p: any) => [p.id, p.phone]));
 
     setListings(
       (data || []).map((l: any) => ({
         ...l,
+        phone: phoneMap.get(l.id) || "",
         images: l.listing_images || [],
       }))
     );
