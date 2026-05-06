@@ -64,7 +64,24 @@ function ConversationList({ userId, onSelect }: { userId: string; onSelect: (c: 
   const [filter, setFilter] = useState<"all" | "unread">("all");
 
   const filteredConversations = useMemo(() => {
-    let filtered = conversations;
+    // Deduplicate by other user — keep most recent conversation per interlocutor
+    const seen = new Map<string, Conversation>();
+    for (const c of conversations) {
+      const otherId = c.buyer_id === userId ? c.seller_id : c.buyer_id;
+      const existing = seen.get(otherId);
+      if (!existing) {
+        seen.set(otherId, c);
+      } else {
+        const existingTs = new Date(existing.last_message_at || existing.updated_at).getTime();
+        const currentTs = new Date(c.last_message_at || c.updated_at).getTime();
+        if (currentTs > existingTs) {
+          seen.set(otherId, { ...c, unread_count: (c.unread_count || 0) + (existing.unread_count || 0) });
+        } else {
+          seen.set(otherId, { ...existing, unread_count: (existing.unread_count || 0) + (c.unread_count || 0) });
+        }
+      }
+    }
+    let filtered = Array.from(seen.values());
     
     if (filter === "unread") {
       filtered = filtered.filter(c => (c.unread_count || 0) > 0);
@@ -80,7 +97,7 @@ function ConversationList({ userId, onSelect }: { userId: string; onSelect: (c: 
     }
     
     return filtered;
-  }, [conversations, searchQuery, filter]);
+  }, [conversations, searchQuery, filter, userId]);
 
   const totalUnread = useMemo(() => 
     conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0),
