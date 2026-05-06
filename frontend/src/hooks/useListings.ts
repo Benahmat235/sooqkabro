@@ -10,7 +10,6 @@ export interface ListingWithImages {
   subcategory_id: string;
   city_id: string;
   quartier: string | null;
-  phone: string;
   status: string;
   created_at: string;
   user_id: string;
