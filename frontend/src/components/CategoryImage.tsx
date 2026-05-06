@@ -32,12 +32,21 @@ export function CategoryImage({
     );
   }
 
+  const webpSrc = category.image.replace(/\.jpg$/, ".webp");
+
   return (
-    <img
-      src={category.image}
-      alt={category.name}
-      className={cn("object-cover", imgClassName)}
-      onError={() => setHasError(true)}
-    />
+    <picture>
+      <source srcSet={webpSrc} type="image/webp" />
+      <img
+        src={category.image}
+        alt={category.name}
+        width={160}
+        height={160}
+        loading="lazy"
+        decoding="async"
+        className={cn("object-cover", imgClassName)}
+        onError={() => setHasError(true)}
+      />
+    </picture>
   );
 }
