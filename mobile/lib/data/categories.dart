@@ -110,7 +110,7 @@ const categories = <CategoryData>[
     id: 'animaux',
     name: 'Animaux & Élevage',
     translationKey: 'cat.animaux',
-    icon: LucideIcons.pawPrint,
+    icon: LucideIcons.dog,
     color: Color(0xFFEA580C),
     bgColor: Color(0xFFFFF7ED),
     subcategories: [
