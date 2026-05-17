@@ -1,0 +1,53 @@
+name: sooqkabro
+description: "SooqKabro - Petites annonces du Tchad"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Supabase
+  supabase_flutter: ^2.8.0
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # Navigation
+  go_router: ^14.6.2
+
+  # UI / Images
+  cached_network_image: ^3.4.1
+  google_fonts: ^6.2.1
+  shimmer: ^3.0.0
+  lucide_icons: ^0.257.0
+  flutter_svg: ^2.0.10+1
+  photo_view: ^0.15.0
+  carousel_slider: ^5.0.0
+
+  # Utils
+  intl: ^0.20.2
+  image_picker: ^1.1.2
+  url_launcher: ^6.3.1
+  share_plus: ^10.1.2
+  shared_preferences: ^2.3.3
+  permission_handler: ^11.3.1
+  timeago: ^3.7.0
+  uuid: ^4.5.1
+  path_provider: ^2.1.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
