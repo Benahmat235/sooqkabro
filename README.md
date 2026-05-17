@@ -10,7 +10,7 @@
 
 **La plateforme de petites annonces n°1 au Tchad**
 
-[🌐 Demo](https://ad-platform-tc.preview.emergentagent.com) • [📖 Documentation](#documentation) • [🚀 Démarrage](#installation)
+[🌐 Demo](https://sooq-kabro-mobile.preview.emergentagent.com) • [📖 Documentation](#documentation) • [🚀 Démarrage](#installation)
 
 </div>
 
