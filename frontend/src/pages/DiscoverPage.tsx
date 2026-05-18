@@ -4,7 +4,7 @@ import { ChevronRight, Flame, TrendingUp, Clock, Sparkles } from "lucide-react";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import ListingCard from "@/components/ListingCard";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ListingSkeleton } from "@/components/Skeletons";
 import { useListings } from "@/hooks/useListings";
 import { usePersonalizedFeed } from "@/hooks/usePersonalizedFeed";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -115,10 +115,10 @@ const CategoryCollection = ({
 
 const SkeletonSection = () => (
   <div className="mb-6 px-4">
-    <Skeleton className="h-5 w-40 mb-3" />
+    <div className="h-5 w-40 bg-muted animate-pulse rounded-md mb-3" />
     <div className="flex gap-3 overflow-hidden">
       {[1, 2, 3].map((i) => (
-        <Skeleton key={i} className="min-w-[160px] h-[220px] rounded-2xl shrink-0" />
+        <ListingSkeleton key={i} />
       ))}
     </div>
   </div>

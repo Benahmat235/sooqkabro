@@ -7,6 +7,7 @@ import SimilarProducts from "@/components/SimilarProducts";
 import CoViewedProducts from "@/components/CoViewedProducts";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ProfileSkeleton } from "@/components/Skeletons";
 import { Textarea } from "@/components/ui/textarea";
 import { formatPrice } from "@/data/mockListings";
 import { getCityById } from "@/data/cities";
@@ -135,6 +136,7 @@ const ListingDetail = () => {
           <Skeleton className="h-8 w-1/3" />
           <Skeleton className="h-5 w-2/3" />
           <Skeleton className="h-4 w-1/2" />
+          <ProfileSkeleton className="mt-6" />
         </div>
       </div>
     );
