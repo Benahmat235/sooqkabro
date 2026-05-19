@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
-import { ImagePlus, ChevronLeft, X, Loader2, Info, Car, Home, Smartphone, Briefcase, Wrench, PawPrint, Shirt, Sofa, Monitor, UtensilsCrossed } from "lucide-react";
+import { ImagePlus, ChevronLeft, X, Loader2, Info, Car, Home, Smartphone, Briefcase, Wrench, PawPrint, Shirt, Sofa, Monitor, UtensilsCrossed, Package, UserSearch } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import BottomNav from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
@@ -126,10 +126,74 @@ const categoryIcons: Record<string, any> = {
   alimentation: UtensilsCrossed,
 };
 
+const listingTypes = [
+  {
+    id: "sell-product",
+    title: "Vendre un produit",
+    description: "Telephone, meuble, electronique, vetement, animal ou produit alimentaire.",
+    categoryId: "telephones",
+    subcategoryId: "iphone",
+    icon: Package,
+    accent: "bg-primary/10 text-primary",
+    examples: ["Produit d'occasion", "Produit neuf", "Accessoire"],
+  },
+  {
+    id: "vehicle",
+    title: "Vehicule",
+    description: "Voiture, moto, camion, pieces detachees ou location de vehicule.",
+    categoryId: "vehicules",
+    subcategoryId: "voitures",
+    icon: Car,
+    accent: "bg-blue-50 text-blue-700",
+    examples: ["Marque", "Annee", "Kilometrage"],
+  },
+  {
+    id: "property",
+    title: "Immobilier",
+    description: "Maison, appartement, terrain, bureau, commerce ou colocation.",
+    categoryId: "immobilier",
+    subcategoryId: "maisons-vente",
+    icon: Home,
+    accent: "bg-green-50 text-green-700",
+    examples: ["Surface", "Transaction", "Chambres"],
+  },
+  {
+    id: "job",
+    title: "Emploi ou candidat",
+    description: "Offre d'emploi, recherche d'emploi, stage ou formation.",
+    categoryId: "emploi",
+    subcategoryId: "offres-emploi",
+    icon: Briefcase,
+    accent: "bg-amber-50 text-amber-700",
+    examples: ["Contrat", "Secteur", "Experience"],
+  },
+  {
+    id: "service",
+    title: "Service",
+    description: "Travaux, transport, informatique, securite, photo, telecom ou aide a domicile.",
+    categoryId: "services",
+    subcategoryId: "construction",
+    icon: Wrench,
+    accent: "bg-cyan-50 text-cyan-700",
+    examples: ["Disponibilite", "Zone", "Experience"],
+  },
+  {
+    id: "candidate",
+    title: "Profil candidat",
+    description: "Se presenter comme demandeur d'emploi ou prestataire disponible.",
+    categoryId: "emploi",
+    subcategoryId: "recherche-emploi",
+    icon: UserSearch,
+    accent: "bg-purple-50 text-purple-700",
+    examples: ["Competences", "Disponibilite", "Ville"],
+  },
+] as const;
+
 const PublishListing = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [listingType, setListingType] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [subcategoryId, setSubcategoryId] = useState("");
   const [cityId, setCityId] = useState("ndjamena");
@@ -148,6 +212,7 @@ const PublishListing = () => {
   const { phoneValid, validating, validatePhone, resetValidation } = usePhoneValidation();
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
+  const selectedListingType = listingTypes.find((type) => type.id === listingType);
   const selectedCityData = getCityById(cityId);
   const currentCategoryFields = categoryFields[categoryId] || [];
   const CategoryIcon = categoryId ? categoryIcons[categoryId] : null;
@@ -155,7 +220,7 @@ const PublishListing = () => {
   const isPhoneFormatValid = (p: string) => /^\d{8}$/.test(p);
 
   // Calculate form progress
-  const totalSteps = 3;
+  const totalSteps = 4;
   const progress = (step / totalSteps) * 100;
 
   if (loading) return null;
@@ -200,6 +265,24 @@ const PublishListing = () => {
       ? current.filter((o) => o !== option)
       : [...current, option];
     handleCategoryDetailChange(field, updated);
+  };
+
+  const handleListingTypeSelect = (typeId: string) => {
+    const type = listingTypes.find((item) => item.id === typeId);
+    if (!type) return;
+
+    setListingType(type.id);
+    setCategoryId(type.categoryId);
+    setSubcategoryId(type.subcategoryId);
+    setCategoryDetails({});
+  };
+
+  const validateStep0 = () => {
+    if (!listingType) {
+      showError("Choisissez le type d'annonce.", "Champ requis");
+      return false;
+    }
+    return true;
   };
 
   const validateStep1 = () => {
@@ -250,8 +333,9 @@ const PublishListing = () => {
   };
 
   const nextStep = () => {
-    if (step === 1 && validateStep1()) setStep(2);
-    else if (step === 2 && validateStep2()) setStep(3);
+    if (step === 1 && validateStep0()) setStep(2);
+    else if (step === 2 && validateStep1()) setStep(3);
+    else if (step === 3 && validateStep2()) setStep(4);
   };
 
   const prevStep = () => {
@@ -279,10 +363,11 @@ const PublishListing = () => {
           price: finalPrice,
           phone: `+235${phone}`,
           status: "published",
-          metadata: {
-            priceType,
-            categoryDetails,
-          },
+	          metadata: {
+	            listingType,
+	            priceType,
+	            categoryDetails,
+	          },
         })
         .select("id")
         .single();
@@ -371,16 +456,77 @@ const PublishListing = () => {
       <main className="container mx-auto px-4 py-4 max-w-2xl">
         <form onSubmit={handleSubmit} className="space-y-5">
           
-          {/* Step 1: Category Selection */}
-          {step === 1 && (
-            <div className="space-y-5 animate-in fade-in duration-300">
-              <div className="text-center py-4">
-                <h2 className="text-xl font-bold mb-1">Que vendez-vous ?</h2>
-                <p className="text-sm text-muted-foreground">Choisissez la categorie qui correspond le mieux</p>
-              </div>
+	          {/* Step 1: Listing Type */}
+	          {step === 1 && (
+	            <div className="space-y-5 animate-in fade-in duration-300">
+	              <div className="text-center py-4">
+	                <h2 className="text-xl font-bold mb-1">Quel type d'annonce ?</h2>
+	                <p className="text-sm text-muted-foreground">Le formulaire s'adapte ensuite aux informations utiles</p>
+	              </div>
 
-              {/* Category Grid */}
-              <div className="grid grid-cols-2 gap-3">
+	              <div className="grid gap-3 sm:grid-cols-2">
+	                {listingTypes.map((type) => {
+	                  const Icon = type.icon;
+	                  const isSelected = listingType === type.id;
+
+	                  return (
+	                    <button
+	                      key={type.id}
+	                      type="button"
+	                      onClick={() => handleListingTypeSelect(type.id)}
+	                      className={cn(
+	                        "flex min-h-[132px] flex-col items-start gap-3 rounded-2xl border-2 bg-card p-4 text-left transition-all",
+	                        isSelected
+	                          ? "border-primary bg-primary/5 shadow-md"
+	                          : "border-border hover:border-primary/50"
+	                      )}
+	                    >
+	                      <div className="flex w-full items-start gap-3">
+	                        <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl", type.accent)}>
+	                          <Icon className="h-5 w-5" />
+	                        </div>
+	                        <div className="min-w-0">
+	                          <h3 className="font-bold text-foreground">{type.title}</h3>
+	                          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{type.description}</p>
+	                        </div>
+	                      </div>
+	                      <div className="flex flex-wrap gap-1.5">
+	                        {type.examples.map((example) => (
+	                          <span key={example} className="rounded-full bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground">
+	                            {example}
+	                          </span>
+	                        ))}
+	                      </div>
+	                    </button>
+	                  );
+	                })}
+	              </div>
+
+	              <Button
+	                type="button"
+	                onClick={nextStep}
+	                disabled={!listingType}
+	                className="w-full h-12 font-bold text-base rounded-xl"
+	              >
+	                Continuer
+	              </Button>
+	            </div>
+	          )}
+
+	          {/* Step 2: Category Selection */}
+	          {step === 2 && (
+	            <div className="space-y-5 animate-in fade-in duration-300">
+	              <div className="text-center py-4">
+	                <h2 className="text-xl font-bold mb-1">Categorie de l'annonce</h2>
+	                <p className="text-sm text-muted-foreground">
+	                  {selectedListingType
+	                    ? `Basee sur : ${selectedListingType.title}`
+	                    : "Choisissez la categorie qui correspond le mieux"}
+	                </p>
+	              </div>
+
+	              {/* Category Grid */}
+	              <div className="grid grid-cols-2 gap-3">
                 {categories.map((cat) => {
                   const Icon = categoryIcons[cat.id];
                   const isSelected = categoryId === cat.id;
@@ -388,7 +534,7 @@ const PublishListing = () => {
                     <button
                       key={cat.id}
                       type="button"
-                      onClick={() => { setCategoryId(cat.id); setSubcategoryId(""); setCategoryDetails({}); }}
+	                      onClick={() => { setCategoryId(cat.id); setSubcategoryId(""); setCategoryDetails({}); }}
                       className={cn(
                         "flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all",
                         isSelected 
@@ -399,10 +545,10 @@ const PublishListing = () => {
                       <div className={cn("w-12 h-12 rounded-full flex items-center justify-center", cat.bgColor)}>
                         <Icon className={cn("h-6 w-6", cat.color)} />
                       </div>
-                      <span className="text-sm font-semibold text-center">{cat.name}</span>
-                    </button>
-                  );
-                })}
+	                      <span className="text-sm font-semibold text-center">{cat.name}</span>
+	                    </button>
+	                  );
+	                })}
               </div>
 
               {/* Subcategory */}
@@ -429,19 +575,24 @@ const PublishListing = () => {
                 </div>
               )}
 
-              <Button
-                type="button"
-                onClick={nextStep}
-                disabled={!categoryId || !subcategoryId}
-                className="w-full h-12 font-bold text-base rounded-xl"
-              >
-                Continuer
-              </Button>
-            </div>
-          )}
+	              <div className="flex gap-3">
+	                <Button type="button" variant="outline" onClick={prevStep} className="flex-1 h-12 rounded-xl">
+	                  Retour
+	                </Button>
+	                <Button
+	                  type="button"
+	                  onClick={nextStep}
+	                  disabled={!categoryId || !subcategoryId}
+	                  className="flex-1 h-12 font-bold text-base rounded-xl"
+	                >
+	                  Continuer
+	                </Button>
+	              </div>
+	            </div>
+	          )}
 
-          {/* Step 2: Details */}
-          {step === 2 && (
+	          {/* Step 3: Details */}
+	          {step === 3 && (
             <div className="space-y-5 animate-in fade-in duration-300">
               <div className="text-center py-2">
                 <h2 className="text-xl font-bold mb-1">Details de l&apos;annonce</h2>
@@ -492,7 +643,15 @@ const PublishListing = () => {
                 <Input 
                   value={title} 
                   onChange={(e) => setTitle(e.target.value)} 
-                  placeholder="Ex: Toyota Hilux 2020 - Excellent etat" 
+	                  placeholder={
+	                    categoryId === "immobilier"
+	                      ? "Ex: Maison 4 chambres a louer - Chagoua"
+	                      : categoryId === "emploi"
+	                        ? "Ex: Comptable experimente disponible"
+	                        : categoryId === "services"
+	                          ? "Ex: Electricien disponible a N'Djamena"
+	                          : "Ex: Toyota Hilux 2020 - Excellent etat"
+	                  } 
                   maxLength={100} 
                   className="rounded-xl h-12" 
                 />
@@ -625,7 +784,7 @@ const PublishListing = () => {
               </div>
 
               {/* Live quality indicator */}
-              <QualityIndicator
+	              <QualityIndicator
                 variant="detailed"
                 input={{
                   title,
@@ -633,7 +792,40 @@ const PublishListing = () => {
                   price: priceType === "free" ? 0 : parseInt(price) || 0,
                   imageCount: photos.length,
                 }}
-              />
+	              />
+
+	              {(title || selectedCategory || previews[0]) && (
+	                <div className="rounded-2xl border bg-card p-3">
+	                  <div className="mb-3 flex items-center justify-between">
+	                    <h3 className="text-sm font-semibold">Apercu compact</h3>
+	                    <span className="text-[10px] font-medium text-muted-foreground">Avant publication</span>
+	                  </div>
+	                  <div className="flex gap-3">
+	                    <div className="h-20 w-24 shrink-0 overflow-hidden rounded-xl bg-muted">
+	                      {previews[0] ? (
+	                        <img src={previews[0]} alt="" className="h-full w-full object-cover" />
+	                      ) : (
+	                        <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+	                          <ImagePlus className="h-5 w-5" />
+	                        </div>
+	                      )}
+	                    </div>
+	                    <div className="min-w-0 flex-1">
+	                      <p className="line-clamp-2 text-sm font-bold text-foreground">
+	                        {title || "Titre de votre annonce"}
+	                      </p>
+	                      <p className="mt-1 text-sm font-extrabold text-primary">
+	                        {priceType === "free" ? "Gratuit" : `${parseInt(price) || 0} FCFA`}
+	                        {priceType === "negotiable" && " (Neg.)"}
+	                      </p>
+	                      <p className="mt-1 truncate text-xs text-muted-foreground">
+	                        {selectedCategory?.name}
+	                        {subcategoryId ? ` - ${selectedCategory?.subcategories.find((s) => s.id === subcategoryId)?.name}` : ""}
+	                      </p>
+	                    </div>
+	                  </div>
+	                </div>
+	              )}
 
               <div className="flex gap-3">
                 <Button type="button" variant="outline" onClick={prevStep} className="flex-1 h-12 rounded-xl">
@@ -646,8 +838,8 @@ const PublishListing = () => {
             </div>
           )}
 
-          {/* Step 3: Location & Contact */}
-          {step === 3 && (
+	          {/* Step 4: Location & Contact */}
+	          {step === 4 && (
             <div className="space-y-5 animate-in fade-in duration-300">
               <div className="text-center py-2">
                 <h2 className="text-xl font-bold mb-1">Localisation & Contact</h2>
@@ -725,9 +917,13 @@ const PublishListing = () => {
               <div className="p-4 bg-muted/30 rounded-2xl border space-y-3">
                 <h3 className="font-semibold text-sm">Resume de votre annonce</h3>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Categorie</span>
-                    <span className="font-medium">{selectedCategory?.name}</span>
+	                  <div className="flex justify-between">
+	                    <span className="text-muted-foreground">Type</span>
+	                    <span className="font-medium">{selectedListingType?.title}</span>
+	                  </div>
+	                  <div className="flex justify-between">
+	                    <span className="text-muted-foreground">Categorie</span>
+	                    <span className="font-medium">{selectedCategory?.name}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Titre</span>
