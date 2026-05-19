@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Heart, MapPin, Zap, Crown, TrendingDown, TrendingUp } from "lucide-react";
+import { BadgeCheck, CalendarDays, Heart, ImageOff, MapPin, Zap, Crown, TrendingDown, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatPrice } from "@/data/mockListings";
 import { getCityById } from "@/data/cities";
@@ -24,6 +24,21 @@ function optimizeImage(url: string, width: number): string {
   return url;
 }
 
+function formatListingDate(value: string): string {
+  const createdAt = new Date(value);
+  if (Number.isNaN(createdAt.getTime())) return "";
+
+  const diffMs = Date.now() - createdAt.getTime();
+  const diffDays = Math.floor(diffMs / 86_400_000);
+
+  if (diffDays <= 0) return "Aujourd'hui";
+  if (diffDays === 1) return "Hier";
+  if (diffDays < 7) return `${diffDays} j`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} sem`;
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)} mois`;
+  return createdAt.toLocaleDateString("fr-FR", { month: "short", year: "numeric" });
+}
+
 interface ListingCardProps {
   listing: ListingWithImages;
   compact?: boolean;
@@ -37,9 +52,12 @@ const ListingCard = ({ listing, compact = false, priceLevel }: ListingCardProps)
   const isFav = favoriteIds.includes(listing.id);
   const [heartAnim, setHeartAnim] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   const imgSrc = listing.images[0] || "/placeholder.svg";
   const srcSmall = optimizeImage(imgSrc, 300);
+  const locationLabel = [city?.name || listing.city_id, listing.quartier].filter(Boolean).join(" - ");
+  const dateLabel = formatListingDate(listing.created_at);
 
   const handleFav = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -58,7 +76,7 @@ const ListingCard = ({ listing, compact = false, priceLevel }: ListingCardProps)
   return (
     <Link 
       to={`/annonce/${listing.id}`} 
-      className="block"
+      className="group block h-full"
       aria-label={`${listing.title} - ${formatPrice(listing.price)}`}
     >
       <motion.div
@@ -66,28 +84,39 @@ const ListingCard = ({ listing, compact = false, priceLevel }: ListingCardProps)
         initial="initial"
         whileHover="hover"
         whileTap="tap"
-        className="relative rounded-xl overflow-hidden bg-card border border-border/30 shadow-card hover:shadow-card-hover transition-shadow duration-300"
+        className="relative h-full rounded-xl overflow-hidden bg-card border border-border/40 shadow-card hover:shadow-card-hover transition-all duration-300"
       >
         {/* Image Container */}
-        <div className="relative aspect-square bg-muted overflow-hidden">
+        <div className="relative aspect-[4/3] bg-muted overflow-hidden">
           {/* Loading skeleton */}
-          {!imgLoaded && (
+          {!imgLoaded && !imgError && (
             <div className="absolute inset-0 skeleton-shimmer" />
           )}
-          
-          <motion.img
-            src={srcSmall}
-            alt={listing.title}
-            className={cn(
-              "w-full h-full object-cover transition-all duration-500",
-              !imgLoaded && "opacity-0 scale-105"
-            )}
-            loading="lazy"
-            onLoad={() => setImgLoaded(true)}
-            initial={{ scale: 1 }}
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.4 }}
-          />
+
+          {imgError ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-muted text-muted-foreground">
+              <ImageOff className="h-6 w-6" />
+              <span className="text-[10px] font-medium">Image indisponible</span>
+            </div>
+          ) : (
+            <motion.img
+              src={srcSmall}
+              alt={listing.title}
+              className={cn(
+                "w-full h-full object-cover transition-all duration-500",
+                !imgLoaded && "opacity-0 scale-105"
+              )}
+              loading="lazy"
+              onLoad={() => setImgLoaded(true)}
+              onError={() => {
+                setImgError(true);
+                setImgLoaded(true);
+              }}
+              initial={{ scale: 1 }}
+              whileHover={{ scale: 1.04 }}
+              transition={{ duration: 0.4 }}
+            />
+          )}
 
           {/* Gradient overlay for better text readability */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -126,7 +155,7 @@ const ListingCard = ({ listing, compact = false, priceLevel }: ListingCardProps)
 
           {/* Favorite Button */}
           <motion.button
-            className="absolute top-2 right-2 bg-card/90 backdrop-blur-sm rounded-full p-1.5 shadow-lg hover:bg-card transition-colors z-10"
+            className="absolute top-2 right-2 bg-card/95 backdrop-blur-sm rounded-full p-1.5 shadow-lg ring-1 ring-border/50 hover:bg-card transition-colors z-10"
             onClick={handleFav}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -171,10 +200,9 @@ const ListingCard = ({ listing, compact = false, priceLevel }: ListingCardProps)
             </motion.div>
           )}
 
-          {/* Price Overlay */}
-          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent pt-8 pb-2 px-2.5">
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-white text-sm font-extrabold drop-shadow-lg">
+          <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/75 via-black/40 to-transparent pt-8 pb-2 px-2.5">
+            <div className="flex min-w-0 items-baseline gap-1.5">
+              <span className={cn("truncate text-white font-extrabold drop-shadow-lg", compact ? "text-xs" : "text-sm")}>
                 {formatPrice(listing.price)}
               </span>
               {hasDiscount && originalPrice && (
@@ -187,14 +215,28 @@ const ListingCard = ({ listing, compact = false, priceLevel }: ListingCardProps)
         </div>
 
         {/* Card Content */}
-        <div className="p-2">
-          <h3 className="text-[11px] font-semibold text-foreground line-clamp-2 leading-tight mb-1">
-            {listing.title}
-          </h3>
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <MapPin className="h-3 w-3 shrink-0" />
-            <span className="text-[9px] truncate">{city?.name || listing.city_id}</span>
+        <div className={cn("space-y-1.5", compact ? "p-2" : "p-2.5")}>
+          <div className="flex min-w-0 items-start gap-1.5">
+            <h3 className={cn("min-w-0 flex-1 font-semibold text-foreground line-clamp-2 leading-tight", compact ? "text-[11px]" : "text-xs")}>
+              {listing.title}
+            </h3>
+            {listing.is_verified && (
+              <BadgeCheck
+                className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary"
+                aria-label="Vendeur vérifié"
+              />
+            )}
           </div>
+          <div className="flex min-w-0 items-center gap-1 text-muted-foreground">
+            <MapPin className="h-3 w-3 shrink-0" />
+            <span className="truncate text-[10px]">{locationLabel}</span>
+          </div>
+          {dateLabel && (
+            <div className="flex items-center gap-1 text-muted-foreground">
+              <CalendarDays className="h-3 w-3 shrink-0" />
+              <span className="text-[10px]">{dateLabel}</span>
+            </div>
+          )}
         </div>
 
         {/* Hover overlay effect */}

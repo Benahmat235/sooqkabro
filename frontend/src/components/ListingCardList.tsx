@@ -29,7 +29,7 @@ export function ListingCardList({ listings, className, children }: Props) {
   if (children) return <>{children(cards)}</>;
 
   return (
-    <div className={className ?? "grid grid-cols-3 gap-2"}>
+    <div className={className ?? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3"}>
       {cards}
     </div>
   );

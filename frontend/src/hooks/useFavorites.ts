@@ -24,6 +24,7 @@ export function useFavorites() {
 export function useToggleFavorite() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ listingId, isFav }: { listingId: string; isFav: boolean }) => {
@@ -34,7 +35,35 @@ export function useToggleFavorite() {
         await supabase.from("favorites").insert({ user_id: user.id, listing_id: listingId });
       }
     },
-    onSuccess: () => {
+    onMutate: async ({ listingId, isFav }) => {
+      await queryClient.cancelQueries({ queryKey: ["favorites"] });
+      const previousFavorites = queryClient.getQueryData<string[]>(["favorites"]);
+      queryClient.setQueryData<string[]>(["favorites"], (old) => {
+        if (!old) return isFav ? [] : [listingId];
+        return isFav 
+          ? old.filter((id) => id !== listingId) 
+          : [...old, listingId];
+      });
+      return { previousFavorites };
+    },
+    onSuccess: (_, variables) => {
+      toast({
+        title: variables.isFav ? "Retiré des favoris" : "Ajouté aux favoris !",
+        description: variables.isFav ? "L'annonce n'est plus dans vos favoris." : "Nous avons enregistré cette annonce pour vous.",
+        variant: variables.isFav ? "info" : "success",
+      });
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousFavorites) {
+        queryClient.setQueryData(["favorites"], context.previousFavorites);
+      }
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la mise à jour des favoris.",
+        variant: "destructive",
+      });
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["favorites"] });
     },
   });

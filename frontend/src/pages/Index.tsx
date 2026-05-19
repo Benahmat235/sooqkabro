@@ -76,17 +76,18 @@ const Index = () => {
           <section className="py-3">
             <Skeleton className="h-5 w-32 mb-3" />
             <motion.div 
-              className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2"
+              className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"
               variants={containerVariants}
               initial="hidden"
               animate="show"
             >
               {Array.from({ length: 9 }).map((_, i) => (
                 <motion.div key={`skeleton-${i}`} variants={itemVariants} className="rounded-xl overflow-hidden">
-                  <Skeleton className="aspect-square w-full skeleton-shimmer" />
-                  <div className="p-1.5 space-y-1">
+                  <Skeleton className="aspect-[4/3] w-full skeleton-shimmer" />
+                  <div className="p-2 space-y-1.5">
                     <Skeleton className="h-3 w-3/4" />
                     <Skeleton className="h-2.5 w-1/2" />
+                    <Skeleton className="h-2.5 w-1/3" />
                   </div>
                 </motion.div>
               ))}
@@ -154,7 +155,7 @@ const Index = () => {
               </motion.div>
               
               <motion.div 
-                className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2"
+                className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"
                 variants={containerVariants}
                 initial="hidden"
                 animate="show"
@@ -220,7 +221,7 @@ const Index = () => {
                   </div>
                   
                   <motion.div 
-                    className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2"
+                    className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"
                     variants={containerVariants}
                     initial="hidden"
                     whileInView="show"
