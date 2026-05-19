@@ -4,6 +4,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { cities, getCityById } from "@/data/cities";
 import { useTranslation } from "@/i18n/useTranslation";
+import { cn } from "@/lib/utils";
 
 interface FilterPanelProps {
   selectedCity: string;
@@ -18,6 +19,7 @@ interface FilterPanelProps {
   onVerifiedOnlyChange: (v: boolean) => void;
   dateFilter: string;
   onDateFilterChange: (v: string) => void;
+  className?: string;
 }
 
 export default function FilterPanel({
@@ -33,16 +35,17 @@ export default function FilterPanel({
   onVerifiedOnlyChange,
   dateFilter,
   onDateFilterChange,
+  className,
 }: FilterPanelProps) {
   const { t } = useTranslation();
   const cityData = getCityById(selectedCity);
   const quartiers = cityData?.quartiers || [];
 
   return (
-    <div className="p-3 bg-card rounded-2xl shadow-card animate-fade-in space-y-3">
-      <div className="flex flex-wrap gap-2">
+    <div className={cn("p-3 bg-card rounded-2xl shadow-card animate-fade-in space-y-4", className)}>
+      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
         <Select value={selectedCity} onValueChange={onCityChange}>
-          <SelectTrigger className="w-36 h-9 text-xs rounded-full border-border/50">
+          <SelectTrigger className="h-10 w-full text-xs rounded-xl border-border/50 sm:w-36 sm:rounded-full sm:h-9">
             <SelectValue placeholder={t("publish.city")} />
           </SelectTrigger>
           <SelectContent>
@@ -55,7 +58,7 @@ export default function FilterPanel({
 
         {quartiers.length > 0 && (
           <Select value={quartier} onValueChange={onQuartierChange}>
-            <SelectTrigger className="w-36 h-9 text-xs rounded-full border-border/50">
+            <SelectTrigger className="h-10 w-full text-xs rounded-xl border-border/50 sm:w-36 sm:rounded-full sm:h-9">
               <SelectValue placeholder={t("filter.quartier")} />
             </SelectTrigger>
             <SelectContent>
@@ -71,21 +74,21 @@ export default function FilterPanel({
           placeholder={t("filter.minPrice")}
           value={minPrice}
           onChange={(e) => onMinPriceChange(e.target.value)}
-          className="w-28 h-9 text-xs rounded-full bg-muted/50 border-0"
+          className="h-10 w-full text-xs rounded-xl bg-muted/50 border-0 sm:w-28 sm:rounded-full sm:h-9"
           type="number"
         />
         <Input
           placeholder={t("filter.maxPrice")}
           value={maxPrice}
           onChange={(e) => onMaxPriceChange(e.target.value)}
-          className="w-28 h-9 text-xs rounded-full bg-muted/50 border-0"
+          className="h-10 w-full text-xs rounded-xl bg-muted/50 border-0 sm:w-28 sm:rounded-full sm:h-9"
           type="number"
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4">
         <Select value={dateFilter} onValueChange={onDateFilterChange}>
-          <SelectTrigger className="w-32 h-9 text-xs rounded-full border-border/50">
+          <SelectTrigger className="h-10 w-full text-xs rounded-xl border-border/50 sm:w-32 sm:rounded-full sm:h-9">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

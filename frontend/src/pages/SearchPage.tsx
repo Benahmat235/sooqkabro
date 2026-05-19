@@ -1,39 +1,85 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { ArrowLeft, SearchX, Search, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, BadgeCheck, SearchX, Search, SlidersHorizontal, X } from "lucide-react";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import ListingCard from "@/components/ListingCard";
 import FilterPanel from "@/components/FilterPanel";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useSearchListings } from "@/hooks/useListings";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/i18n/useTranslation";
 import { usePriceStatsBatch } from "@/hooks/usePriceStats";
 import { classifyPrice } from "@/lib/pricing";
+import { getCityById } from "@/data/cities";
+
+const defaultFilters = {
+  city: "all",
+  sort: "recent",
+  min: "",
+  max: "",
+  quartier: "all",
+  verified: "0",
+  date: "all",
+};
+
+const dateLabels: Record<string, string> = {
+  today: "Aujourd'hui",
+  "7days": "7 jours",
+  "30days": "30 jours",
+};
 
 const SearchPage = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
-  const cityParam = searchParams.get("city") || "all";
-  const [selectedCity, setSelectedCity] = useState(cityParam);
+  const selectedCity = searchParams.get("city") || defaultFilters.city;
   const [showFilters, setShowFilters] = useState(false);
-  const [sortBy, setSortBy] = useState("recent");
-  const [minPrice, setMinPrice] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
-  const [quartier, setQuartier] = useState("all");
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [dateFilter, setDateFilter] = useState("all");
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const sortBy = searchParams.get("sort") || defaultFilters.sort;
+  const minPrice = searchParams.get("min") || defaultFilters.min;
+  const maxPrice = searchParams.get("max") || defaultFilters.max;
+  const quartier = searchParams.get("quartier") || defaultFilters.quartier;
+  const verifiedOnly = searchParams.get("verified") === "1";
+  const dateFilter = searchParams.get("date") || defaultFilters.date;
   const { t } = useTranslation();
 
   const { data: rawResults = [], isLoading } = useSearchListings(query, selectedCity);
+
+  const updateFilter = (key: string, value: string, defaultValue = "") => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      if (!value || value === defaultValue) next.delete(key);
+      else next.set(key, value);
+      return next;
+    });
+  };
+
+  const resetFilters = () => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      ["city", "sort", "min", "max", "quartier", "verified", "date"].forEach((key) => next.delete(key));
+      return next;
+    });
+  };
+
+  const updateCityFilter = (value: string) => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      if (!value || value === "all") next.delete("city");
+      else next.set("city", value);
+      next.delete("quartier");
+      return next;
+    });
+  };
 
   const results = useMemo(() => {
     let filtered = [...rawResults];
     if (minPrice) filtered = filtered.filter((l) => l.price >= Number(minPrice));
     if (maxPrice) filtered = filtered.filter((l) => l.price <= Number(maxPrice));
     if (quartier !== "all") filtered = filtered.filter((l) => l.quartier === quartier);
+    if (verifiedOnly) filtered = filtered.filter((l) => l.is_verified);
     if (dateFilter !== "all") {
       const now = Date.now();
       const ms = dateFilter === "today" ? 86400000 : dateFilter === "7days" ? 604800000 : 2592000000;
@@ -43,11 +89,75 @@ const SearchPage = () => {
     else if (sortBy === "price-desc") filtered.sort((a, b) => b.price - a.price);
     else if (sortBy === "recent") filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     return filtered;
-  }, [rawResults, minPrice, maxPrice, quartier, dateFilter, sortBy]);
+  }, [rawResults, minPrice, maxPrice, quartier, verifiedOnly, dateFilter, sortBy]);
+
+  const activeFilters = useMemo(() => {
+    const filters: Array<{ key: string; label: string; onRemove: () => void }> = [];
+    if (selectedCity !== "all") {
+      filters.push({
+        key: "city",
+        label: getCityById(selectedCity)?.name || selectedCity,
+        onRemove: () => updateFilter("city", "all", "all"),
+      });
+    }
+    if (quartier !== "all") {
+      filters.push({
+        key: "quartier",
+        label: quartier,
+        onRemove: () => updateFilter("quartier", "all", "all"),
+      });
+    }
+    if (minPrice) {
+      filters.push({
+        key: "min",
+        label: `Min ${Number(minPrice).toLocaleString("fr-FR")} FCFA`,
+        onRemove: () => updateFilter("min", ""),
+      });
+    }
+    if (maxPrice) {
+      filters.push({
+        key: "max",
+        label: `Max ${Number(maxPrice).toLocaleString("fr-FR")} FCFA`,
+        onRemove: () => updateFilter("max", ""),
+      });
+    }
+    if (dateFilter !== "all") {
+      filters.push({
+        key: "date",
+        label: dateLabels[dateFilter] || dateFilter,
+        onRemove: () => updateFilter("date", "all", "all"),
+      });
+    }
+    if (verifiedOnly) {
+      filters.push({
+        key: "verified",
+        label: "Vendeur verifie",
+        onRemove: () => updateFilter("verified", "0", "0"),
+      });
+    }
+    return filters;
+  }, [selectedCity, quartier, minPrice, maxPrice, dateFilter, verifiedOnly, setSearchParams]);
+
+  const filterPanel = (
+    <FilterPanel
+      selectedCity={selectedCity}
+      onCityChange={updateCityFilter}
+      minPrice={minPrice}
+      onMinPriceChange={(value) => updateFilter("min", value)}
+      maxPrice={maxPrice}
+      onMaxPriceChange={(value) => updateFilter("max", value)}
+      quartier={quartier}
+      onQuartierChange={(value) => updateFilter("quartier", value, "all")}
+      verifiedOnly={verifiedOnly}
+      onVerifiedOnlyChange={(value) => updateFilter("verified", value ? "1" : "0", "0")}
+      dateFilter={dateFilter}
+      onDateFilterChange={(value) => updateFilter("date", value, "all")}
+    />
+  );
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <Header selectedCity={selectedCity} onCityChange={setSelectedCity} />
+      <Header selectedCity={selectedCity} onCityChange={updateCityFilter} />
       <main className="container mx-auto px-4 py-3">
         {query && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
@@ -65,11 +175,35 @@ const SearchPage = () => {
               <span className="font-semibold text-foreground">{results.length}</span> {results.length !== 1 ? t("search.resultsPlural") : t("search.results")} {results.length !== 1 ? t("search.foundPlural") : t("search.found")}
             </p>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="rounded-full text-xs gap-1.5 border-border/50" onClick={() => setShowFilters(!showFilters)}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="hidden rounded-full text-xs gap-1.5 border-border/50 sm:inline-flex"
+                onClick={() => setShowFilters((open) => !open)}
+              >
                 <SlidersHorizontal className="h-3.5 w-3.5" />
                 {t("filter.filters")}
+                {activeFilters.length > 0 && (
+                  <span className="ml-0.5 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
+                    {activeFilters.length}
+                  </span>
+                )}
               </Button>
-              <Select value={sortBy} onValueChange={setSortBy}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full text-xs gap-1.5 border-border/50 sm:hidden"
+                onClick={() => setShowMobileFilters(true)}
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                {t("filter.filters")}
+                {activeFilters.length > 0 && (
+                  <span className="ml-0.5 rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-bold text-primary-foreground">
+                    {activeFilters.length}
+                  </span>
+                )}
+              </Button>
+              <Select value={sortBy} onValueChange={(value) => updateFilter("sort", value, "recent")}>
                 <SelectTrigger className="w-32 h-8 text-xs rounded-full border-border/50">
                   <SelectValue />
                 </SelectTrigger>
@@ -83,30 +217,58 @@ const SearchPage = () => {
           </div>
         )}
 
-        {showFilters && (
-          <div className="mb-3">
-            <FilterPanel
-              selectedCity={selectedCity}
-              onCityChange={setSelectedCity}
-              minPrice={minPrice}
-              onMinPriceChange={setMinPrice}
-              maxPrice={maxPrice}
-              onMaxPriceChange={setMaxPrice}
-              quartier={quartier}
-              onQuartierChange={setQuartier}
-              verifiedOnly={verifiedOnly}
-              onVerifiedOnlyChange={setVerifiedOnly}
-              dateFilter={dateFilter}
-              onDateFilterChange={setDateFilter}
-            />
+        {query && activeFilters.length > 0 && (
+          <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+            {activeFilters.map((filter) => (
+              <button
+                key={filter.key}
+                type="button"
+                onClick={filter.onRemove}
+                className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-muted px-3 text-xs font-medium text-foreground hover:bg-muted/80"
+              >
+                {filter.key === "verified" && <BadgeCheck className="h-3 w-3 text-primary" />}
+                <span>{filter.label}</span>
+                <X className="h-3 w-3 text-muted-foreground" />
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="h-8 shrink-0 rounded-full px-2 text-xs font-semibold text-primary hover:underline"
+            >
+              Effacer
+            </button>
           </div>
         )}
+
+        {showFilters && (
+          <div className="mb-3 hidden sm:block">
+            {filterPanel}
+          </div>
+        )}
+
+        <Sheet open={showMobileFilters} onOpenChange={setShowMobileFilters}>
+          <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-2xl p-4 sm:hidden">
+            <SheetHeader className="mb-4 text-left">
+              <SheetTitle>{t("filter.filters")}</SheetTitle>
+            </SheetHeader>
+            {filterPanel}
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <Button variant="outline" className="rounded-xl" onClick={resetFilters}>
+                Effacer
+              </Button>
+              <Button className="rounded-xl" onClick={() => setShowMobileFilters(false)}>
+                Voir {results.length}
+              </Button>
+            </div>
+          </SheetContent>
+        </Sheet>
 
         {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="rounded-2xl overflow-hidden">
-                <Skeleton className="aspect-square w-full" />
+	                <Skeleton className="aspect-[4/3] w-full" />
                 <div className="p-2.5 space-y-2">
                   <Skeleton className="h-3 w-3/4" />
                   <Skeleton className="h-2.5 w-1/2" />

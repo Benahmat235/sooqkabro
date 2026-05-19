@@ -108,6 +108,139 @@ Critères d'acceptation :
 - Le dark mode reste lisible.
 - Les messages de sécurité ne bloquent pas le parcours.
 
+## Benchmark OpenSooq Libye : 10 différences utiles à adapter
+
+Référence observée : `https://ly.opensooq.com/en`. Le site met fortement en avant une logique de marketplace très profonde, avec catégories détaillées, autos, immobilier, emplois, services et guides prix/spécifications. Ces idées doivent être adaptées au marché tchadien, pas copiées telles quelles.
+
+### 1. Navigation par méga-catégories plus profonde
+OpenSooq expose beaucoup de niveaux : autos, immobilier, services, emplois, électronique, maison, business, sport, animaux, mode, alimentation.
+
+Adaptation SooqKabro :
+- Ajouter une vue `Toutes les catégories` avec sous-catégories groupées.
+- Garder l'accueil simple, mais proposer une exploration complète depuis catégorie/recherche.
+- Ajouter une recherche interne de catégorie pour éviter les listes trop longues.
+
+Fichiers probables :
+- `frontend/src/data/categories.ts`
+- `frontend/src/components/CategoryGrid.tsx`
+- `frontend/src/pages/CategoryPage.tsx`
+
+### 2. Pages spécialisées Autos
+OpenSooq sépare voitures, motos, location, pièces, pneus, accessoires, batteries, entretien et engins lourds.
+
+Adaptation SooqKabro :
+- Créer des filtres propres aux véhicules : marque, modèle, année, carburant, kilométrage, transmission.
+- Ajouter des chips rapides : `Voitures`, `Motos`, `Pièces`, `Location`.
+- Prévoir une fiche véhicule plus structurée.
+
+Fichiers probables :
+- `frontend/src/pages/PublishListing.tsx`
+- `frontend/src/pages/SearchPage.tsx`
+- `frontend/src/pages/ListingDetail.tsx`
+
+### 3. Pages spécialisées Immobilier
+OpenSooq distingue vente, location, résidentiel, commercial, terrains, bureaux, magasins, entrepôts.
+
+Adaptation SooqKabro :
+- Ajouter des filtres immobilier : type, surface, chambres, location/vente, quartier.
+- Afficher les champs immobiliers dans les cartes et détails quand la catégorie est immobilier.
+- Ajouter une section `Immobilier à N'Djaména` sur l'accueil si assez d'annonces.
+
+Fichiers probables :
+- `frontend/src/components/ListingCard.tsx`
+- `frontend/src/pages/ListingDetail.tsx`
+- `frontend/src/components/FilterPanel.tsx`
+
+### 4. Guides prix et spécifications
+OpenSooq met en avant des pages de prix/spécifications pour voitures, mobiles et tablettes.
+
+Adaptation SooqKabro :
+- Ajouter un module `Prix du marché` sur téléphone, véhicules et immobilier.
+- Afficher une fourchette et un indicateur `Bon prix`, `Prix moyen`, `Prix élevé`.
+- Ajouter une page simple de référence prix par catégorie populaire.
+
+Fichiers probables :
+- `frontend/src/hooks/usePriceStats.ts`
+- `frontend/src/lib/pricing.ts`
+- `frontend/src/components/QualityIndicator.tsx`
+
+### 5. Services mieux segmentés
+OpenSooq sépare construction, maintenance, transport, nettoyage, beauté, garde, événements, business, IT, éducation.
+
+Adaptation SooqKabro :
+- Détailler la catégorie `Services` avec sous-catégories locales.
+- Ajouter un type d'annonce service avec zone d'intervention, disponibilité et prix indicatif.
+- Rendre les cartes service différentes des cartes produit quand utile.
+
+Fichiers probables :
+- `frontend/src/data/categories.ts`
+- `frontend/src/pages/PublishListing.tsx`
+- `frontend/src/components/ListingCard.tsx`
+
+### 6. Emploi et demandeurs d'emploi séparés
+OpenSooq distingue `Jobs` et `Job Seekers`.
+
+Adaptation SooqKabro :
+- Séparer offres d'emploi et profils candidats.
+- Ajouter des champs emploi : secteur, contrat, expérience, salaire, ville.
+- Ajouter des CTA distincts : `Publier une offre` et `Créer un profil candidat`.
+
+Fichiers probables :
+- `frontend/src/pages/PublishListing.tsx`
+- `frontend/src/pages/CategoryPage.tsx`
+- `frontend/src/data/categories.ts`
+
+### 7. Business et équipements professionnels
+OpenSooq a des catégories pour entreprises, équipements restaurants, médical, générateurs, solaire, construction, logistique.
+
+Adaptation SooqKabro :
+- Ajouter une catégorie `Professionnels & Equipements`.
+- Mettre en avant générateurs, solaire, matériel restaurant, machines, outillage.
+- Prévoir des filtres B2B : neuf/occasion, capacité, livraison, garantie.
+
+Fichiers probables :
+- `frontend/src/data/categories.ts`
+- `frontend/src/components/CategoryNav.tsx`
+- `frontend/src/components/FilterPanel.tsx`
+
+### 8. Accessoires et pièces comme parcours à part entière
+OpenSooq ne limite pas les catégories aux produits principaux : pièces auto, accessoires téléphone, composants PC, câbles, batteries, outils.
+
+Adaptation SooqKabro :
+- Ajouter plus de sous-catégories d'accessoires dans téléphone, électronique et véhicules.
+- Permettre un filtre `Accessoires uniquement` dans certaines catégories.
+- Améliorer le libellé des annonces pour éviter que les accessoires se mélangent aux produits complets.
+
+Fichiers probables :
+- `frontend/src/data/categories.ts`
+- `frontend/src/pages/SearchPage.tsx`
+- `frontend/src/pages/CategoryPage.tsx`
+
+### 9. Exploration horizontale des catégories populaires
+OpenSooq favorise une exploration rapide par grands univers.
+
+Adaptation SooqKabro :
+- Ajouter une barre horizontale `Univers populaires` sous la recherche.
+- Afficher des entrées directes : Autos, Téléphones, Immobilier, Emploi, Services, Maison.
+- Conserver des dimensions stables et des icônes simples pour mobile.
+
+Fichiers probables :
+- `frontend/src/components/CategoryNav.tsx`
+- `frontend/src/pages/Index.tsx`
+
+### 10. Parcours vendeur plus orienté type d'annonce
+La profondeur des catégories OpenSooq implique une publication guidée par type d'annonce.
+
+Adaptation SooqKabro :
+- Faire choisir le type d'annonce avant le formulaire complet.
+- Afficher seulement les champs pertinents selon catégorie : véhicule, immobilier, emploi, service.
+- Ajouter une prévisualisation compacte avant publication.
+
+Fichiers probables :
+- `frontend/src/pages/PublishListing.tsx`
+- `frontend/src/lib/quality.ts`
+- `frontend/src/components/QualityIndicator.tsx`
+
 ## Ordre d'exécution recommandé
 
 1. Corriger les cartes d'annonces.
