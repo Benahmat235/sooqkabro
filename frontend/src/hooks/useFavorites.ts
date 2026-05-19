@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 export function useFavorites() {
   const { user } = useAuth();
@@ -25,6 +26,7 @@ export function useToggleFavorite() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const favoritesQueryKey = ["favorites", user?.id];
 
   return useMutation({
     mutationFn: async ({ listingId, isFav }: { listingId: string; isFav: boolean }) => {
@@ -36,9 +38,9 @@ export function useToggleFavorite() {
       }
     },
     onMutate: async ({ listingId, isFav }) => {
-      await queryClient.cancelQueries({ queryKey: ["favorites"] });
-      const previousFavorites = queryClient.getQueryData<string[]>(["favorites"]);
-      queryClient.setQueryData<string[]>(["favorites"], (old) => {
+      await queryClient.cancelQueries({ queryKey: favoritesQueryKey });
+      const previousFavorites = queryClient.getQueryData<string[]>(favoritesQueryKey);
+      queryClient.setQueryData<string[]>(favoritesQueryKey, (old) => {
         if (!old) return isFav ? [] : [listingId];
         return isFav 
           ? old.filter((id) => id !== listingId) 
@@ -55,7 +57,7 @@ export function useToggleFavorite() {
     },
     onError: (err, variables, context) => {
       if (context?.previousFavorites) {
-        queryClient.setQueryData(["favorites"], context.previousFavorites);
+        queryClient.setQueryData(favoritesQueryKey, context.previousFavorites);
       }
       toast({
         title: "Erreur",
@@ -64,7 +66,7 @@ export function useToggleFavorite() {
       });
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["favorites"] });
+      queryClient.invalidateQueries({ queryKey: favoritesQueryKey });
     },
   });
 }
