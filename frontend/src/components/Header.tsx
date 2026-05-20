@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, MapPin, X, Clock, Trash2, Heart, Bell, Menu, ChevronDown, Sun, Moon, Laptop } from "lucide-react";
+import { Search, MapPin, X, Clock, Trash2, Heart, Bell, Menu, ChevronDown, Sun, Moon, Laptop, Languages, CloudSun, MoonStar } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { cities } from "@/data/cities";
@@ -9,6 +9,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useTheme } from "@/hooks/useTheme";
 import NotificationCenter from "@/components/NotificationCenter";
+import LanguageSwitcher from "@/i18n/LanguageSwitcher";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -27,10 +28,12 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
   const navigate = useNavigate();
   const { history, addSearch, removeSearch, clearHistory } = useSearchHistory();
   const { unreadCount } = useNotifications();
-  const { t } = useTranslation();
+  const { t, locale: language } = useTranslation();
   const { theme, toggleTheme } = useTheme();
   const inputRef = useRef<HTMLInputElement>(null);
   const historyRef = useRef<HTMLDivElement>(null);
+
+  const isRTL = language === 'ar';
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -62,15 +65,30 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
     ? t("filter.allCities") 
     : cities.find(c => c.id === selectedCity)?.name || selectedCity;
 
+  const trendingSearches = ["Toyota", "iPhone 15", "Appartement", "Moto Jakarta", "HP Laptop"];
+
   return (
     <>
     <NotificationCenter isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
     <motion.header 
-      className="bg-card/95 backdrop-blur-md border-b border-border/50 sticky top-0 z-40"
+      className={cn("bg-card/95 backdrop-blur-md border-b border-border/50 sticky top-0 z-40", isRTL && "rtl")}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
     >
+      {/* Top Bar: Weather & Prayer (Utility Widget) */}
+      <div className="bg-primary/5 border-b border-primary/10 py-1">
+        <div className="container mx-auto px-3 flex justify-between items-center text-[10px] font-medium text-muted-foreground">
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1"><CloudSun className="h-3 w-3 text-amber-500" /> N'Djaména 34°C</span>
+            <span className="flex items-center gap-1 border-l pl-3 border-border"><MoonStar className="h-3 w-3 text-indigo-500" /> Prochaine prière: Dhuhr (12:15)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher />
+          </div>
+        </div>
+      </div>
+
       <div className="container mx-auto px-3">
         {/* Row 1: Actions left + Logo right */}
         <div className="flex items-center justify-between py-2.5">
@@ -182,7 +200,7 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
         </motion.div>
 
         {/* Row 3: Search bar */}
-        <div className="pb-3 relative" ref={historyRef}>
+        <div className="pb-1 relative" ref={historyRef}>
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
               <Input
@@ -266,6 +284,22 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
 	            </motion.div>
 	            )}
           </AnimatePresence>
+        </div>
+
+        {/* Row 4: Trending Searches */}
+        <div className="pb-3 flex items-center gap-2 overflow-x-auto no-scrollbar">
+          <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap uppercase tracking-wider">{t("search.recent")}:</span>
+          <div className="flex gap-2">
+            {trendingSearches.map((s) => (
+              <button 
+                key={s}
+                onClick={() => handleHistoryClick(s)}
+                className="text-[10px] bg-muted/60 hover:bg-primary/10 hover:text-primary px-2 py-0.5 rounded-full transition-colors whitespace-nowrap font-medium border border-transparent hover:border-primary/20"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </motion.header>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
 import CategoryGrid from "@/components/CategoryGrid";
 import PublishCTA from "@/components/PublishCTA";
@@ -9,7 +9,7 @@ import Footer from "@/components/Footer";
 import { useListings } from "@/hooks/useListings";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, Clock, ChevronRight, TrendingUp } from "lucide-react";
+import { Sparkles, Clock, ChevronRight, TrendingUp, Calculator, Zap } from "lucide-react";
 import { useGeoLocation } from "@/hooks/useGeoLocation";
 import { categories } from "@/data/categories";
 import { Link } from "react-router-dom";
@@ -18,11 +18,14 @@ import type { ListingWithImages } from "@/hooks/useListings";
 import { containerVariants, itemVariants, fadeInUpVariants } from "@/lib/animations";
 import { usePriceStatsBatch } from "@/hooks/usePriceStats";
 import { classifyPrice } from "@/lib/pricing";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 const Index = () => {
   const [selectedCity, setSelectedCity] = useState("all");
   const { detectedCity } = useGeoLocation();
   const { t } = useTranslation();
+  const [estimatorOpen, setEstimatorOpen] = useState(false);
 
   useEffect(() => {
     if (detectedCity && selectedCity === "all") {
@@ -62,12 +65,67 @@ const Index = () => {
           <CategoryGrid />
         </motion.div>
 
+        {/* Price Estimator Widget (New Feature) */}
+        <motion.div 
+          className="py-2"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+        >
+          <Card className="bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border-indigo-500/20 shadow-sm overflow-hidden">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-indigo-500 rounded-lg text-white">
+                    <Calculator className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-foreground">Estimateur de Prix</h3>
+                    <p className="text-[10px] text-muted-foreground">Estimez la valeur de votre voiture ou mobile</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setEstimatorOpen(!estimatorOpen)}
+                  className="text-xs font-bold text-indigo-600 hover:text-indigo-700"
+                >
+                  {estimatorOpen ? "Fermer" : "Essayer"}
+                </button>
+              </div>
+
+              <AnimatePresence>
+                {estimatorOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="space-y-3 overflow-hidden"
+                  >
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase">Marque</label>
+                        <Input placeholder="Ex: Toyota" className="h-8 text-xs bg-background/50 border-indigo-500/10" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-muted-foreground uppercase">Année</label>
+                        <Input placeholder="Ex: 2020" className="h-8 text-xs bg-background/50 border-indigo-500/10" />
+                      </div>
+                    </div>
+                    <button className="w-full bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
+                      Calculer la valeur <Zap className="h-3 w-3 fill-current" />
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </CardContent>
+          </Card>
+        </motion.div>
+
         {/* Publish CTA with animation */}
         <motion.div 
           className="py-2"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
         >
           <PublishCTA />
         </motion.div>
