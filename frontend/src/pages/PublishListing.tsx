@@ -23,16 +23,32 @@ const MAX_PHOTOS = 5;
 
 // Category-specific field definitions
 const categoryFields: Record<string, { label: string; type: string; options?: string[]; placeholder?: string; required?: boolean }[]> = {
-  vehicules: [
-    { label: "Marque", type: "select", options: ["Toyota", "Nissan", "Mercedes", "BMW", "Peugeot", "Renault", "Hyundai", "Kia", "Honda", "Mitsubishi", "Suzuki", "Ford", "Volkswagen", "Autre"], required: true },
-    { label: "Modele", type: "text", placeholder: "Ex: Hilux, Corolla, Land Cruiser", required: true },
+  "vehicules:voitures": [
+    { label: "Marque", type: "select", options: ["Toyota", "Hyundai", "BMW", "Mercedes", "Renault", "Nissan", "Peugeot", "Kia", "Honda", "Mitsubishi", "Suzuki", "Ford", "Volkswagen", "Autre"], required: true },
+    { label: "Modele", type: "text", placeholder: "Ex: Corolla, Tucson, Serie 3, Clio", required: true },
     { label: "Annee", type: "select", options: Array.from({ length: 35 }, (_, i) => String(2025 - i)), required: true },
-    { label: "Kilometrage", type: "number", placeholder: "Ex: 50000" },
+    { label: "Kilometrage (km)", type: "number", placeholder: "Ex: 50000", required: true },
+    { label: "Etat du vehicule", type: "select", options: ["Neuf", "Tres bon", "Bon", "Accidente", "A reparer"], required: true },
     { label: "Carburant", type: "select", options: ["Essence", "Diesel", "Hybride", "Electrique", "GPL"] },
-    { label: "Transmission", type: "select", options: ["Manuelle", "Automatique"] },
+    { label: "Transmission / vitesse", type: "select", options: ["Manuelle", "Automatique"] },
+    { label: "Type de carrosserie", type: "select", options: ["Berline", "SUV", "Citadine", "Coupe", "Pickup", "Utilitaire"] },
+    { label: "Couleur exterieure", type: "select", options: ["Blanc", "Noir", "Gris", "Argent", "Bleu", "Rouge", "Vert", "Beige", "Marron", "Autre"] },
     { label: "Nombre de portes", type: "select", options: ["2", "3", "4", "5"] },
-    { label: "Couleur", type: "select", options: ["Blanc", "Noir", "Gris", "Argent", "Bleu", "Rouge", "Vert", "Beige", "Autre"] },
-    { label: "Etat", type: "select", options: ["Neuf", "Excellent", "Bon", "Acceptable", "A reparer"], required: true },
+    { label: "Nombre de places", type: "select", options: ["2", "4", "5", "6", "7", "8+"] },
+    { label: "Puissance / moteur", type: "text", placeholder: "Ex: 1.6L, 2.0L, V6" },
+    { label: "Origine", type: "select", options: ["Importee", "Locale", "Premiere main"] },
+    { label: "Dedouanee", type: "select", options: ["Oui", "Non"] },
+    { label: "Documents disponibles", type: "multiselect", options: ["Carte grise", "Controle technique", "Assurance"] },
+    { label: "Historique d'accident", type: "select", options: ["Jamais accidentee", "Accident leger", "Accident majeur"] },
+    { label: "Options", type: "multiselect", options: ["Climatisation", "Camera recul", "GPS", "Toit ouvrant", "Cuir", "Bluetooth", "Radar", "ABS"] },
+    { label: "Localisation precise", type: "text", placeholder: "Ex: N'Djamena, Moursal, pres du marche" },
+    { label: "Disponibilite pour visite", type: "select", options: ["Disponible maintenant", "Sur rendez-vous"] },
+  ],
+  vehicules: [
+    { label: "Marque", type: "text", placeholder: "Ex: Yamaha, Honda, Toyota", required: true },
+    { label: "Modele", type: "text", placeholder: "Ex: Wave, Hilux, Actros", required: true },
+    { label: "Annee", type: "select", options: Array.from({ length: 35 }, (_, i) => String(2025 - i)), required: true },
+    { label: "Etat", type: "select", options: ["Neuf", "Tres bon", "Bon", "Accidente", "A reparer"], required: true },
   ],
   immobilier: [
     { label: "Type de bien", type: "select", options: ["Maison", "Appartement", "Studio", "Villa", "Terrain", "Bureau", "Magasin", "Entrepot"], required: true },
@@ -214,8 +230,10 @@ const PublishListing = () => {
   const selectedCategory = categories.find((c) => c.id === categoryId);
   const selectedListingType = listingTypes.find((type) => type.id === listingType);
   const selectedCityData = getCityById(cityId);
-  const currentCategoryFields = categoryFields[categoryId] || [];
+  const currentCategoryFields = categoryFields[`${categoryId}:${subcategoryId}`] || categoryFields[categoryId] || [];
   const CategoryIcon = categoryId ? categoryIcons[categoryId] : null;
+  const isCarListing = categoryId === "vehicules" && subcategoryId === "voitures";
+  const noPriceLabel = isCarListing ? "Sur demande" : "Gratuit";
 
   const isPhoneFormatValid = (p: string) => /^\d{8}$/.test(p);
 
@@ -764,7 +782,7 @@ const PublishListing = () => {
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="free" id="free" />
-                    <Label htmlFor="free" className="font-normal cursor-pointer">Gratuit</Label>
+                    <Label htmlFor="free" className="font-normal cursor-pointer">{noPriceLabel}</Label>
                   </div>
                 </RadioGroup>
                 
@@ -815,7 +833,7 @@ const PublishListing = () => {
 	                        {title || "Titre de votre annonce"}
 	                      </p>
 	                      <p className="mt-1 text-sm font-extrabold text-primary">
-	                        {priceType === "free" ? "Gratuit" : `${parseInt(price) || 0} FCFA`}
+	                        {priceType === "free" ? noPriceLabel : `${parseInt(price) || 0} FCFA`}
 	                        {priceType === "negotiable" && " (Neg.)"}
 	                      </p>
 	                      <p className="mt-1 truncate text-xs text-muted-foreground">
@@ -932,7 +950,7 @@ const PublishListing = () => {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Prix</span>
                     <span className="font-medium">
-                      {priceType === "free" ? "Gratuit" : `${parseInt(price) || 0} FCFA`}
+                      {priceType === "free" ? noPriceLabel : `${parseInt(price) || 0} FCFA`}
                       {priceType === "negotiable" && " (Neg.)"}
                     </span>
                   </div>
