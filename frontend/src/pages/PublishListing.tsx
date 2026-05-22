@@ -381,11 +381,11 @@ const PublishListing = () => {
           price: finalPrice,
           phone: `+235${phone}`,
           status: "published",
-	          metadata: {
-	            listingType,
-	            priceType,
-	            categoryDetails,
-	          },
+          attributes: {
+            listingType,
+            priceType,
+            categoryDetails,
+          },
         })
         .select("id")
         .single();

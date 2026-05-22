@@ -1,36 +1,23 @@
-import { useState, useEffect } from 'react';
-
-type Theme = 'dark' | 'light' | 'system';
+import { useEffect } from 'react';
 
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window !== 'undefined') {
-      return (localStorage.getItem('theme') as Theme) || 'system';
-    }
-    return 'system';
-  });
-
   useEffect(() => {
     const root = window.document.documentElement;
-    
-    const applyTheme = (themeValue: Theme) => {
+
+    const applySystemTheme = () => {
       root.classList.remove('light', 'dark');
-      
-      if (themeValue === 'system') {
-        const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        root.classList.add(systemTheme);
-      } else {
-        root.classList.add(themeValue);
-      }
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      root.classList.add(systemTheme);
     };
 
-    applyTheme(theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
+    localStorage.removeItem('theme');
+    applySystemTheme();
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : prev === 'light' ? 'system' : 'dark'));
-  };
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    mediaQuery.addEventListener('change', applySystemTheme);
 
-  return { theme, setTheme, toggleTheme };
+    return () => mediaQuery.removeEventListener('change', applySystemTheme);
+  }, []);
+
+  return { theme: 'system' as const };
 }

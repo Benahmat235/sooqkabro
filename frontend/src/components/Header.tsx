@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, MapPin, X, Clock, Trash2, Heart, Bell, Menu, ChevronDown, Sun, Moon, Laptop, Languages, CloudSun, MoonStar } from "lucide-react";
+import { Search, MapPin, X, Clock, Trash2, Heart, Bell, ChevronDown, CloudSun, MoonStar } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { cities } from "@/data/cities";
@@ -11,7 +11,7 @@ import { useTheme } from "@/hooks/useTheme";
 import NotificationCenter from "@/components/NotificationCenter";
 import LanguageSwitcher from "@/i18n/LanguageSwitcher";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { buttonVariants, pulseVariants } from "@/lib/animations";
@@ -29,7 +29,7 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
   const { history, addSearch, removeSearch, clearHistory } = useSearchHistory();
   const { unreadCount } = useNotifications();
   const { t, locale: language } = useTranslation();
-  const { theme, toggleTheme } = useTheme();
+  useTheme();
   const inputRef = useRef<HTMLInputElement>(null);
   const historyRef = useRef<HTMLDivElement>(null);
 
@@ -71,13 +71,13 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
     <>
     <NotificationCenter isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
     <motion.header 
-      className={cn("bg-card/95 backdrop-blur-md border-b border-border/50 sticky top-0 z-40", isRTL && "rtl")}
+      className={cn("bg-card/95 backdrop-blur-md border-b border-border/50 z-40", isRTL && "rtl")}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
     >
       {/* Top Bar: Weather & Prayer (Utility Widget) */}
-      <div className="bg-primary/5 border-b border-primary/10 py-1">
+      <div className="hidden sm:block bg-primary/5 border-b border-primary/10 py-1">
         <div className="container mx-auto px-3 flex justify-between items-center text-[10px] font-medium text-muted-foreground">
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1"><CloudSun className="h-3 w-3 text-amber-500" /> N'Djaména 34°C</span>
@@ -91,26 +91,26 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
 
       <div className="container mx-auto px-3">
         {/* Row 1: Actions left + Logo right */}
-        <div className="flex items-center justify-between py-2.5">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between py-1.5">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link 
                 to="/favoris" 
-                className="p-2 rounded-full hover:bg-muted transition-colors group relative" 
+                className="p-1.5 rounded-full hover:bg-muted transition-colors group relative" 
                 aria-label="Favoris"
               >
-                <Heart className="h-5 w-5 text-foreground group-hover:text-[hsl(var(--chad-red))] transition-colors" />
+                <Heart className="h-[18px] w-[18px] text-foreground group-hover:text-[hsl(var(--chad-red))] transition-colors" />
               </Link>
             </motion.div>
             
             <motion.button 
               onClick={() => setShowNotifications(true)}
-              className="p-2 rounded-full hover:bg-muted transition-colors relative" 
+              className="p-1.5 rounded-full hover:bg-muted transition-colors relative" 
               aria-label="Notifications"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Bell className="h-5 w-5 text-foreground" />
+              <Bell className="h-[18px] w-[18px] text-foreground" />
               <AnimatePresence>
                 {unreadCount > 0 && (
                   <motion.span
@@ -125,27 +125,10 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
                 )}
               </AnimatePresence>
             </motion.button>
-            
-            <motion.button 
-              onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-muted transition-colors"
-              aria-label="Basculer le thème"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              {theme === 'dark' ? ( 
-                <Sun className="h-5 w-5 text-foreground" />
-              ) : theme === 'light' ? (
-                <Moon className="h-5 w-5 text-foreground" />
-              ) : (
-                <Laptop className="h-5 w-5 text-foreground" />
-              )}
-            </motion.button>
-
             <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
               <Link
                 to="/publier"
-                className="bg-gradient-to-r from-primary to-primary/90 text-primary-foreground text-xs font-bold px-4 py-2 rounded-full shadow-sm hover:shadow-md transition-all"
+                className="bg-gradient-to-r from-primary to-primary/90 text-primary-foreground text-xs font-bold px-3 py-1.5 rounded-full shadow-sm hover:shadow-md transition-all"
               >
                 + {t("nav.publish")}
               </Link>
@@ -155,14 +138,14 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Link 
               to="/" 
-              className="flex items-center gap-2 focus-ring rounded-lg"
+              className="flex items-center gap-1.5 focus-ring rounded-lg"
               aria-label="SooqKabro - Accueil"
             >
-              <span className="text-lg font-extrabold text-foreground tracking-tight">
+              <span className="text-base sm:text-lg font-extrabold text-foreground tracking-tight">
                 Sooq<span className="text-primary">Kabro</span>
               </span>
               <motion.div 
-                className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-[hsl(var(--chad-blue))] flex items-center justify-center shadow-sm"
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-primary to-[hsl(var(--chad-blue))] flex items-center justify-center shadow-sm"
                 whileHover={{ rotate: 5 }}
                 transition={{ type: "spring", stiffness: 300 }}
               >
@@ -172,36 +155,31 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
           </motion.div>
         </div>
 
-        {/* Row 2: City selector with flag */}
-        <motion.div 
-          className="pb-2"
+        {/* Row 2: City selector + Search bar */}
+        <motion.div
+          className="pb-1.5 relative"
+          ref={historyRef}
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Select value={selectedCity} onValueChange={onCityChange}>
-            <SelectTrigger 
-              className="w-full h-10 rounded-lg bg-muted/40 border-0 text-sm gap-2 focus:ring-primary/30 justify-start"
-              aria-label="Sélectionner une ville"
-            >
-              <span className="text-base mr-1">🇹🇩</span>
-              <span className="text-foreground font-medium">Tchad</span>
-              <span className="text-muted-foreground mx-1">—</span>
-              <span className="text-muted-foreground truncate">{selectedCityName}</span>
-              <ChevronDown className="h-4 w-4 text-muted-foreground ml-auto" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("filter.allCities")}</SelectItem>
-              {cities.map((city) => (
-                <SelectItem key={city.id} value={city.id}>{city.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </motion.div>
-
-        {/* Row 3: Search bar */}
-        <div className="pb-1 relative" ref={historyRef}>
-          <form onSubmit={handleSearch} className="flex gap-2">
+          <form onSubmit={handleSearch} className="grid grid-cols-[112px_minmax(0,1fr)_40px] gap-1.5 sm:grid-cols-[160px_minmax(0,1fr)_44px] sm:gap-2">
+            <Select value={selectedCity} onValueChange={onCityChange}>
+              <SelectTrigger
+                className="h-9 w-full rounded-lg bg-muted/40 border-0 px-2 text-xs gap-1 focus:ring-primary/30 justify-start sm:h-10 sm:text-sm sm:px-3"
+                aria-label="Sélectionner une ville"
+              >
+                <MapPin className="h-3.5 w-3.5 shrink-0 text-primary sm:h-4 sm:w-4" />
+                <span className="text-muted-foreground truncate">{selectedCityName}</span>
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground ml-auto shrink-0 sm:h-4 sm:w-4" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("filter.allCities")}</SelectItem>
+                {cities.map((city) => (
+                  <SelectItem key={city.id} value={city.id}>{city.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="relative flex-1">
               <Input
                 ref={inputRef}
@@ -209,7 +187,7 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => history.length > 0 && setShowHistory(true)}
-                className="bg-muted/40 border-0 h-11 rounded-lg text-sm pr-10 focus-visible:ring-primary/30 focus-visible:bg-card transition-colors"
+                className="bg-muted/40 border-0 h-9 rounded-lg text-sm pr-10 focus-visible:ring-primary/30 focus-visible:bg-card transition-colors sm:h-10"
                 aria-label={t("search.placeholder")}
                 aria-expanded={showHistory}
                 aria-haspopup="listbox"
@@ -227,7 +205,8 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
             </div>
             <button
               type="submit"
-              className="h-11 px-4 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:bg-primary/90 transition-colors flex items-center gap-1.5"
+              className="h-9 px-3 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:bg-primary/90 transition-colors flex items-center justify-center sm:h-10 sm:px-4"
+              aria-label="Rechercher"
             >
               <Search className="h-4 w-4" />
             </button>
@@ -284,10 +263,10 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
 	            </motion.div>
 	            )}
           </AnimatePresence>
-        </div>
+        </motion.div>
 
-        {/* Row 4: Trending Searches */}
-        <div className="pb-3 flex items-center gap-2 overflow-x-auto no-scrollbar">
+        {/* Row 3: Trending Searches */}
+        <div className="hidden md:flex pb-2 items-center gap-2 overflow-x-auto no-scrollbar">
           <span className="text-[10px] font-bold text-muted-foreground whitespace-nowrap uppercase tracking-wider">{t("search.recent")}:</span>
           <div className="flex gap-2">
             {trendingSearches.map((s) => (

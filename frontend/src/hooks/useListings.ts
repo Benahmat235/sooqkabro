@@ -6,12 +6,19 @@ export interface ListingWithImages {
   title: string;
   description: string;
   price: number;
+  original_price?: number | null;
+  attributes?: {
+    listingType?: string;
+    priceType?: "fixed" | "negotiable" | "free";
+    categoryDetails?: Record<string, string | string[]>;
+  } | null;
   category_id: string;
   subcategory_id: string;
   city_id: string;
   quartier: string | null;
   status: string;
   created_at: string;
+  updated_at?: string;
   user_id: string;
   images: string[];
   badge?: string | null;
@@ -22,7 +29,7 @@ export interface ListingWithImages {
 async function fetchListings(cityId?: string, limit = 50): Promise<ListingWithImages[]> {
   let query = supabase
     .from("listings")
-    .select("id, user_id, title, description, price, original_price, category_id, subcategory_id, city_id, quartier, status, created_at, updated_at, badge, listing_images(image_url, position)")
+    .select("id, user_id, title, description, price, original_price, attributes, category_id, subcategory_id, city_id, quartier, status, created_at, updated_at, badge, listing_images(image_url, position)")
     .eq("status", "published")
     .order("created_at", { ascending: false })
     .range(0, limit - 1);

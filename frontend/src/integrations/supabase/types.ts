@@ -142,6 +142,7 @@ export type Database = {
       listings: {
         Row: {
           badge: string | null
+          attributes: Json
           category_id: string
           city_id: string
           created_at: string
@@ -159,6 +160,7 @@ export type Database = {
         }
         Insert: {
           badge?: string | null
+          attributes?: Json
           category_id: string
           city_id: string
           created_at?: string
@@ -176,6 +178,7 @@ export type Database = {
         }
         Update: {
           badge?: string | null
+          attributes?: Json
           category_id?: string
           city_id?: string
           created_at?: string

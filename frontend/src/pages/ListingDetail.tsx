@@ -1,6 +1,28 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, type ElementType } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { MapPin, Clock, Share2, Heart, ChevronLeft, ChevronRight as ChevronRightIcon, X, BadgeCheck, Star } from "lucide-react";
+import {
+  MapPin,
+  Clock,
+  Share2,
+  Heart,
+  ChevronLeft,
+  ChevronRight as ChevronRightIcon,
+  X,
+  BadgeCheck,
+  Star,
+  Eye,
+  Hash,
+  CalendarDays,
+  RefreshCw,
+  Tag,
+  Info,
+  Shield,
+  Phone,
+  Mail,
+  UserCheck,
+  Timer,
+  ListChecks,
+} from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import ContactActions from "@/components/ContactActions";
 import SimilarProducts from "@/components/SimilarProducts";
@@ -16,6 +38,7 @@ import { useListings } from "@/hooks/useListings";
 import { useFavorites, useToggleFavorite } from "@/hooks/useFavorites";
 import { useAuth } from "@/hooks/useAuth";
 import { useSellerReviews, useSellerRating, useSubmitReview } from "@/hooks/useSellerReviews";
+import { useSellerStats } from "@/hooks/useSellerStats";
 import { useStartConversation } from "@/hooks/useConversations";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -23,6 +46,101 @@ import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useToast } from "@/hooks/use-toast";
+
+type DetailItem = {
+  label: string;
+  value: string | number | string[] | null | undefined;
+  icon?: ElementType;
+};
+
+const emptyValue = "Non renseigné";
+
+const formatDate = (date?: string) => {
+  if (!date) return emptyValue;
+  return new Date(date).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const formatDetailValue = (value: DetailItem["value"]) => {
+  if (value === null || value === undefined || value === "") return emptyValue;
+  if (Array.isArray(value)) return value.length ? value.join(", ") : emptyValue;
+  return String(value);
+};
+
+const priceTypeLabels: Record<string, string> = {
+  fixed: "Prix fixe",
+  negotiable: "Oui",
+  free: "Sans prix",
+};
+
+const getAttributeValue = (
+  details: Record<string, string | string[]>,
+  labels: string[],
+) => labels.map((label) => details[label]).find((value) => {
+  if (Array.isArray(value)) return value.length > 0;
+  return Boolean(value);
+});
+
+const getCharacteristicValue = (
+  details: Record<string, string | string[]>,
+  label: string,
+) => getAttributeValue(details, {
+  "Modèle": ["Modèle", "Modele"],
+  "Année": ["Année", "Annee"],
+  "Kilométrage": ["Kilométrage", "Kilometrage (km)"],
+  "État": ["État", "Etat", "Etat du vehicule"],
+  "Carburant": ["Carburant"],
+  "Boîte": ["Boîte", "Transmission / vitesse"],
+  "Couleur": ["Couleur", "Couleur exterieure"],
+  "Papiers": ["Papiers", "Documents disponibles"],
+  "Stockage": ["Stockage", "Capacite stockage"],
+  "RAM": ["RAM", "Memoire RAM"],
+  "État batterie": ["État batterie", "Batterie"],
+  "Accessoires": ["Accessoires", "Accessoires inclus", "Options"],
+  "Garantie": ["Garantie"],
+  "Surface": ["Surface", "Surface (m2)"],
+  "Chambres": ["Chambres", "Nombre de chambres"],
+  "Salons": ["Salons"],
+  "Toilettes": ["Toilettes", "Nombre de salles de bain"],
+  "Meublé": ["Meublé", "Meuble"],
+  "Eau / électricité": ["Eau / électricité", "Eau courante"],
+  "Type de contrat": ["Type de contrat", "Type d'offre"],
+  "Expérience": ["Expérience", "Experience", "Experience requise"],
+  "Disponibilité": ["Disponibilité", "Disponibilite", "Disponibilite pour visite"],
+  "Tarif": ["Tarif", "Type de service"],
+  "Zone couverte": ["Zone couverte", "Zone d'intervention"],
+  "Type": ["Type", "Type de bien", "Type de service", "Type d'animal", "Type de meuble"],
+  "Race": ["Race"],
+  "Âge": ["Âge", "Age"],
+  "Sexe": ["Sexe"],
+  "Vacciné": ["Vacciné", "Vaccine"],
+  "Quantité": ["Quantité", "Quantite disponible"],
+  "Taille": ["Taille"],
+  "Matière": ["Matière", "Matiere", "Materiau"],
+  "Dimensions": ["Dimensions"],
+  "Origine": ["Origine"],
+  "Date limite": ["Date limite"],
+  "Conditionnement": ["Conditionnement", "Conservation"],
+  "Niveau": ["Niveau", "Niveau d'etudes"],
+  "Salaire": ["Salaire", "Salaire mensuel (FCFA)"],
+  "Lieu de travail": ["Lieu de travail", "Localisation precise"],
+}[label] || [label]);
+
+const categoryCharacteristicLabels: Record<string, string[]> = {
+  vehicules: ["Marque", "Modèle", "Année", "Kilométrage", "Carburant", "Boîte", "Couleur", "Papiers"],
+  telephones: ["Marque", "Modèle", "Stockage", "RAM", "État batterie", "Accessoires", "Garantie"],
+  immobilier: ["Type de bien", "Surface", "Chambres", "Salons", "Toilettes", "Meublé", "Eau / électricité"],
+  emploi: ["Type de contrat", "Expérience", "Niveau", "Disponibilité", "Salaire", "Lieu de travail"],
+  services: ["Type de service", "Zone couverte", "Disponibilité", "Tarif", "Expérience"],
+  animaux: ["Type", "Race", "Âge", "Sexe", "Vacciné", "Quantité"],
+  mode: ["Type", "Marque", "Taille", "Couleur", "État"],
+  maison: ["Type", "Marque", "Matière", "Dimensions", "État"],
+  electronique: ["Marque", "Modèle", "État", "Garantie", "Accessoires"],
+  alimentation: ["Type", "Quantité", "Origine", "Date limite", "Conditionnement"],
+};
 
 const ListingDetail = () => {
   const { id } = useParams();
@@ -38,6 +156,7 @@ const ListingDetail = () => {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [favoriteCount, setFavoriteCount] = useState(0);
   const { t } = useTranslation();
   const { toast } = useToast();
 
@@ -47,6 +166,7 @@ const ListingDetail = () => {
 
   const { data: reviews = [] } = useSellerReviews(listing?.user_id);
   const { avg: sellerAvg, count: reviewCount } = useSellerRating(listing?.user_id);
+  const { data: sellerStats } = useSellerStats(listing?.user_id);
   const submitReview = useSubmitReview();
   const startConversation = useStartConversation();
 
@@ -54,6 +174,15 @@ const ListingDetail = () => {
   const prevImg = useCallback(() => setCurrentImg((p) => (p - 1 + images.length) % images.length), [images.length]);
 
   useEffect(() => { setCurrentImg(0); }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    supabase
+      .from("favorites")
+      .select("id", { count: "exact", head: true })
+      .eq("listing_id", id)
+      .then(({ count }) => setFavoriteCount(count || 0));
+  }, [id, isFav]);
 
   useEffect(() => {
     if (!listing?.user_id) return;
@@ -159,6 +288,8 @@ const ListingDetail = () => {
   const city = getCityById(listing.city_id);
   const category = getCategoryById(listing.category_id);
   const subcategoryName = getSubcategoryName(listing.category_id, listing.subcategory_id);
+  const attributes = listing.attributes || {};
+  const categoryDetails = attributes.categoryDetails || {};
   const cleanPhone = (sellerPhone || "").replace(/\D/g, "");
   const whatsappPhone = cleanPhone;
   const whatsappLink = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(`Bonjour, je suis intéressé par votre annonce "${listing.title}" sur TchadMarket.`)}`;
@@ -167,6 +298,31 @@ const ListingDetail = () => {
     ? `+${cleanPhone.slice(0, 3)} ${cleanPhone.slice(3, 5)} ${cleanPhone.slice(5, 7)} ${cleanPhone.slice(7, 9)} ${cleanPhone.slice(9)}`
     : (sellerPhone || "");
   const timeAgo = formatDistanceToNow(new Date(listing.created_at), { addSuffix: true, locale: fr });
+  const reference = listing.id.slice(0, 8).toUpperCase();
+  const mainInfo: DetailItem[] = [
+    { label: "Référence", value: reference, icon: Hash },
+    { label: "Publié", value: formatDate(listing.created_at), icon: CalendarDays },
+    { label: "Mis à jour", value: formatDate(listing.updated_at || listing.created_at), icon: RefreshCw },
+    { label: "Vues", value: listing.view_count || 0, icon: Eye },
+    { label: "Favoris", value: favoriteCount, icon: Heart },
+    { label: "Type vendeur", value: sellerProfile?.is_verified ? "Vendeur vérifié" : "Particulier", icon: BadgeCheck },
+  ];
+  const detailInfo: DetailItem[] = [
+    { label: "État", value: getAttributeValue(categoryDetails, ["Etat", "État", "Etat du vehicule"]) },
+    { label: "Prix négociable", value: attributes.priceType ? priceTypeLabels[attributes.priceType] : null },
+    { label: "Catégorie", value: category?.name },
+    { label: "Sous-catégorie", value: subcategoryName },
+    { label: "Ville", value: city?.name },
+    { label: "Quartier", value: listing.quartier },
+  ];
+  const characteristicLabels = categoryCharacteristicLabels[listing.category_id] || ["Marque", "Modèle", "État", "Garantie", "Accessoires"];
+  const filledCharacteristics = Object.entries(categoryDetails).filter(([, value]) => {
+    if (Array.isArray(value)) return value.length > 0;
+    return Boolean(value);
+  });
+  const visibleCharacteristics = filledCharacteristics.length > 0
+    ? filledCharacteristics
+    : characteristicLabels.map((label) => [label, getCharacteristicValue(categoryDetails, label)] as [string, string | string[] | undefined]);
 
   const isOwner = user?.id === listing.user_id;
 
@@ -278,6 +434,67 @@ const ListingDetail = () => {
           </span>
         </div>
 
+        {/* Main listing information */}
+        <div className="border rounded-2xl bg-card p-4 mb-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-extrabold text-foreground">Informations principales</h2>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Annonce</span>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {mainInfo.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.label} className="min-w-0 rounded-xl bg-muted/35 px-3 py-2.5">
+                  <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+                    {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
+                    <span className="truncate">{item.label}</span>
+                  </div>
+                  <p className="mt-1 truncate text-sm font-bold text-foreground">{formatDetailValue(item.value)}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Structured details */}
+        <div className="border rounded-2xl bg-card p-4 mb-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-extrabold text-foreground">Détails de l'annonce</h2>
+            <Tag className="h-4 w-4 text-primary" />
+          </div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+            {detailInfo.map((item) => (
+              <div key={item.label} className="min-w-0 border-b border-border/50 pb-2 last:border-b-0">
+                <p className="text-[11px] font-semibold text-muted-foreground">{item.label}</p>
+                <p className={cn("mt-0.5 text-sm font-bold truncate", formatDetailValue(item.value) === emptyValue ? "text-muted-foreground" : "text-foreground")}>
+                  {formatDetailValue(item.value)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Category characteristics */}
+        <div className="border rounded-2xl bg-card p-4 mb-5">
+          <div className="flex items-start gap-2 mb-3">
+            <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+            <div>
+              <h2 className="text-base font-extrabold text-foreground">Caractéristiques</h2>
+              <p className="text-xs text-muted-foreground">Ces champs aideront l'acheteur à comparer l'annonce comme sur OpenSooq.</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {visibleCharacteristics.map(([label, value]) => (
+              <div key={label} className={cn("rounded-xl border px-3 py-2.5", formatDetailValue(value) === emptyValue ? "border-dashed border-border" : "border-border bg-muted/25")}>
+                <p className="text-[11px] font-semibold text-muted-foreground">{label}</p>
+                <p className={cn("mt-0.5 text-sm font-bold", formatDetailValue(value) === emptyValue ? "text-muted-foreground" : "text-foreground")}>
+                  {formatDetailValue(value)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="border-t border-border/50 my-4" />
         
         <p className="text-sm text-foreground/80 leading-relaxed mb-6">{listing.description}</p>
@@ -288,20 +505,34 @@ const ListingDetail = () => {
             to={`/vendeur/${listing?.user_id}`}
             className="block bg-card border rounded-2xl p-4 mb-5 hover:shadow-md transition-shadow"
           >
-            <div className="flex items-center gap-3">
-              <img
-                src={sellerProfile.avatar_url || "/placeholder.svg"}
-                alt=""
-                className="w-12 h-12 rounded-full object-cover bg-muted"
-              />
-              <div className="flex-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-sm text-foreground">{sellerProfile.display_name || t("detail.seller")}</span>
-                  {sellerProfile.is_verified && (
-                    <BadgeCheck className="h-4 w-4 text-primary" />
+            <div className="flex items-start gap-3">
+              <div className="relative shrink-0">
+                <img
+                  src={sellerProfile.avatar_url || "/placeholder.svg"}
+                  alt=""
+                  className="w-14 h-14 rounded-2xl object-cover bg-muted"
+                />
+                {sellerStats?.isOnline && (
+                  <span className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-card bg-green-500" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="font-bold text-sm text-foreground truncate">{sellerProfile.display_name || t("detail.seller")}</span>
+                  {sellerProfile.is_verified && <BadgeCheck className="h-4 w-4 text-primary" />}
+                  {sellerStats && sellerStats.trustScore >= 60 && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                      <Shield className="h-3 w-3" />
+                      {sellerStats.trustScore}/100
+                    </span>
                   )}
                 </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
+                  {sellerStats?.isOnline ? (
+                    <span className="font-medium text-green-600">En ligne</span>
+                  ) : sellerStats?.lastSeen ? (
+                    <span>{sellerStats.lastSeen}</span>
+                  ) : null}
                   {reviewCount > 0 && (
                     <span className="flex items-center gap-0.5">
                       <Star className="h-3 w-3 fill-chad-yellow text-chad-yellow" />
@@ -312,6 +543,52 @@ const ListingDetail = () => {
                 </div>
               </div>
             </div>
+
+            {sellerStats && (
+              <>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {sellerStats.verifications.email && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-[11px] font-semibold text-green-700">
+                      <Mail className="h-3 w-3" />
+                      Email
+                    </span>
+                  )}
+                  {sellerStats.verifications.phone && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-[11px] font-semibold text-green-700">
+                      <Phone className="h-3 w-3" />
+                      Tel vérifié
+                    </span>
+                  )}
+                  {sellerStats.verifications.identity && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary">
+                      <UserCheck className="h-3 w-3" />
+                      Identité
+                    </span>
+                  )}
+                </div>
+
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <div className="rounded-xl bg-muted/35 p-2 text-center">
+                    <div className="flex items-center justify-center gap-1 text-foreground">
+                      <ListChecks className="h-3.5 w-3.5" />
+                      <p className="text-sm font-extrabold">{sellerStats.activeListings}</p>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Annonces</p>
+                  </div>
+                  <div className="rounded-xl bg-muted/35 p-2 text-center">
+                    <p className="text-sm font-extrabold text-green-600">{sellerStats.responseRate}%</p>
+                    <p className="text-[10px] text-muted-foreground">Réponse</p>
+                  </div>
+                  <div className="rounded-xl bg-muted/35 p-2 text-center">
+                    <div className="flex items-center justify-center gap-1 text-[hsl(var(--chad-yellow))]">
+                      <Timer className="h-3.5 w-3.5" />
+                      <p className="text-sm font-extrabold">{sellerStats.avgResponseTime}</p>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">Délai</p>
+                  </div>
+                </div>
+              </>
+            )}
           </Link>
         )}
 
