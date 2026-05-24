@@ -1,9 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { componentTagger } from "lovable-tagger";
 
-// https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   envDir: path.resolve(__dirname, ".."),
   server: {
@@ -13,16 +11,16 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
-  plugins: [
-    react(),
-    mode === "development" && componentTagger(),
-  ].filter(Boolean),
+  plugins: [react()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
   build: {
+    target: "es2020",
+    cssMinify: true,
+    sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -33,5 +31,8 @@ export default defineConfig(({ mode }) => ({
         },
       },
     },
+  },
+  esbuild: {
+    drop: mode === "production" ? ["console", "debugger"] : [],
   },
 }));
