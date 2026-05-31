@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, type ElementType } from "react";
+import { useEffect, useRef, useState, useCallback, type ElementType } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   MapPin,
@@ -22,6 +22,7 @@ import {
   UserCheck,
   Timer,
   ListChecks,
+  Flag,
 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import ContactActions from "@/components/ContactActions";
@@ -51,6 +52,13 @@ type DetailItem = {
   label: string;
   value: string | number | string[] | null | undefined;
   icon?: ElementType;
+};
+
+type SellerProfileInfo = {
+  display_name: string | null;
+  avatar_url: string | null;
+  is_verified: boolean;
+  created_at: string;
 };
 
 const emptyValue = "Non renseigné";
@@ -152,11 +160,13 @@ const ListingDetail = () => {
   const [sellerPhone, setSellerPhone] = useState<string | null>(null);
   const [currentImg, setCurrentImg] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
-  const [sellerProfile, setSellerProfile] = useState<any>(null);
+  const [sellerProfile, setSellerProfile] = useState<SellerProfileInfo | null>(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [favoriteCount, setFavoriteCount] = useState(0);
+  const [isReporting, setIsReporting] = useState(false);
+  const touchStartX = useRef<number | null>(null);
   const { t } = useTranslation();
   const { toast } = useToast();
 
@@ -172,6 +182,20 @@ const ListingDetail = () => {
 
   const nextImg = useCallback(() => setCurrentImg((p) => (p + 1) % images.length), [images.length]);
   const prevImg = useCallback(() => setCurrentImg((p) => (p - 1 + images.length) % images.length), [images.length]);
+
+  const handleTouchStart = (clientX: number) => {
+    touchStartX.current = clientX;
+  };
+
+  const handleTouchEnd = (clientX: number) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - clientX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) nextImg();
+      else prevImg();
+    }
+    touchStartX.current = null;
+  };
 
   useEffect(() => { setCurrentImg(0); }, [id]);
 
@@ -257,6 +281,56 @@ const ListingDetail = () => {
     setReviewComment("");
   };
 
+  const handleReportListing = async () => {
+    if (!listing) return;
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    if (user.id === listing.user_id) {
+      toast({
+        title: "Action impossible",
+        description: "Vous ne pouvez pas signaler votre propre annonce.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsReporting(true);
+    const { error } = await supabase.from("listing_flags").insert({
+      listing_id: listing.id,
+      reporter_id: user.id,
+      reason: "user_report",
+      details: {
+        source: "listing_detail",
+        listing_title: listing.title,
+        seller_id: listing.user_id,
+      },
+    });
+    setIsReporting(false);
+
+    if (error) {
+      if (error.code === "23505") {
+        toast({
+          title: "Déjà signalé",
+          description: "Votre signalement pour cette annonce a déjà été pris en compte.",
+        });
+        return;
+      }
+      toast({
+        title: "Erreur",
+        description: "Le signalement n'a pas pu être envoyé.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Annonce signalée",
+      description: "Merci, notre équipe va examiner ce produit.",
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -308,12 +382,12 @@ const ListingDetail = () => {
     { label: "Type vendeur", value: sellerProfile?.is_verified ? "Vendeur vérifié" : "Particulier", icon: BadgeCheck },
   ];
   const detailInfo: DetailItem[] = [
-    { label: "État", value: getAttributeValue(categoryDetails, ["Etat", "État", "Etat du vehicule"]) },
-    { label: "Prix négociable", value: attributes.priceType ? priceTypeLabels[attributes.priceType] : null },
-    { label: "Catégorie", value: category?.name },
-    { label: "Sous-catégorie", value: subcategoryName },
-    { label: "Ville", value: city?.name },
-    { label: "Quartier", value: listing.quartier },
+    { label: "État", value: getAttributeValue(categoryDetails, ["Etat", "État", "Etat du vehicule"]), icon: Shield },
+    { label: "Prix négociable", value: attributes.priceType ? priceTypeLabels[attributes.priceType] : null, icon: Tag },
+    { label: "Catégorie", value: category?.name, icon: ListChecks },
+    { label: "Sous-catégorie", value: subcategoryName, icon: Info },
+    { label: "Ville", value: city?.name, icon: MapPin },
+    { label: "Quartier", value: listing.quartier, icon: MapPin },
   ];
   const characteristicLabels = categoryCharacteristicLabels[listing.category_id] || ["Marque", "Modèle", "État", "Garantie", "Accessoires"];
   const filledCharacteristics = Object.entries(categoryDetails).filter(([, value]) => {
@@ -335,14 +409,8 @@ const ListingDetail = () => {
           </button>
           <div
             className="flex-1 flex items-center justify-center relative"
-            onTouchStart={(e) => { (e.currentTarget as any)._touchStartX = e.touches[0].clientX; }}
-            onTouchEnd={(e) => {
-              const startX = (e.currentTarget as any)._touchStartX;
-              if (startX === undefined) return;
-              const diff = startX - e.changedTouches[0].clientX;
-              if (Math.abs(diff) > 50) { diff > 0 ? nextImg() : prevImg(); }
-              delete (e.currentTarget as any)._touchStartX;
-            }}
+            onTouchStart={(e) => handleTouchStart(e.touches[0].clientX)}
+            onTouchEnd={(e) => handleTouchEnd(e.changedTouches[0].clientX)}
           >
             {images.length > 1 && (
               <>
@@ -365,14 +433,8 @@ const ListingDetail = () => {
         <div
           className="aspect-[4/3] bg-muted cursor-pointer overflow-hidden"
           onClick={() => setFullscreen(true)}
-          onTouchStart={(e) => { (e.currentTarget as any)._touchStartX = e.touches[0].clientX; }}
-          onTouchEnd={(e) => {
-            const startX = (e.currentTarget as any)._touchStartX;
-            if (startX === undefined) return;
-            const diff = startX - e.changedTouches[0].clientX;
-            if (Math.abs(diff) > 50) { diff > 0 ? nextImg() : prevImg(); }
-            delete (e.currentTarget as any)._touchStartX;
-          }}
+          onTouchStart={(e) => handleTouchStart(e.touches[0].clientX)}
+          onTouchEnd={(e) => handleTouchEnd(e.changedTouches[0].clientX)}
         >
           <img src={images[currentImg]} alt={listing.title} className="w-full h-full object-cover" />
         </div>
@@ -435,21 +497,42 @@ const ListingDetail = () => {
         </div>
 
         {/* Main listing information */}
-        <div className="border rounded-2xl bg-card p-4 mb-5">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-extrabold text-foreground">Informations principales</h2>
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide">Annonce</span>
+        <div className="mb-5 overflow-hidden rounded-2xl border bg-card shadow-card">
+          <div className="bg-primary px-4 py-3 text-primary-foreground">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wide opacity-80">Annonce</p>
+                <h2 className="text-base font-extrabold">Informations principales</h2>
+              </div>
+              <div className="rounded-xl bg-primary-foreground/15 p-2">
+                <BadgeCheck className="h-5 w-5" />
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            {mainInfo.map((item) => {
+          <div className="grid grid-cols-2 gap-px bg-border/70">
+            {mainInfo.map((item, index) => {
               const Icon = item.icon;
+              const isFeatured = index < 2;
               return (
-                <div key={item.label} className="min-w-0 rounded-xl bg-muted/35 px-3 py-2.5">
-                  <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
-                    {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
-                    <span className="truncate">{item.label}</span>
+                <div
+                  key={item.label}
+                  className={cn(
+                    "min-w-0 bg-card p-3",
+                    isFeatured && "col-span-2 xs:col-span-1 bg-accent/45"
+                  )}
+                >
+                  <div className="flex items-start gap-2.5">
+                    <div className={cn(
+                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl",
+                      isFeatured ? "bg-primary text-primary-foreground" : "bg-muted text-primary"
+                    )}>
+                      {Icon && <Icon className="h-4 w-4" />}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-[11px] font-bold uppercase text-muted-foreground">{item.label}</p>
+                      <p className="mt-0.5 truncate text-sm font-extrabold text-foreground">{formatDetailValue(item.value)}</p>
+                    </div>
                   </div>
-                  <p className="mt-1 truncate text-sm font-bold text-foreground">{formatDetailValue(item.value)}</p>
                 </div>
               );
             })}
@@ -457,41 +540,63 @@ const ListingDetail = () => {
         </div>
 
         {/* Structured details */}
-        <div className="border rounded-2xl bg-card p-4 mb-5">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-extrabold text-foreground">Détails de l'annonce</h2>
-            <Tag className="h-4 w-4 text-primary" />
+        <div className="mb-5 rounded-2xl border bg-card p-4 shadow-card">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase text-primary">Fiche produit</p>
+              <h2 className="text-base font-extrabold text-foreground">Détails de l'annonce</h2>
+            </div>
+            <Tag className="h-5 w-5 text-primary" />
           </div>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-            {detailInfo.map((item) => (
-              <div key={item.label} className="min-w-0 border-b border-border/50 pb-2 last:border-b-0">
-                <p className="text-[11px] font-semibold text-muted-foreground">{item.label}</p>
-                <p className={cn("mt-0.5 text-sm font-bold truncate", formatDetailValue(item.value) === emptyValue ? "text-muted-foreground" : "text-foreground")}>
-                  {formatDetailValue(item.value)}
-                </p>
-              </div>
-            ))}
+          <div className="space-y-2">
+            {detailInfo.map((item) => {
+              const Icon = item.icon;
+              const value = formatDetailValue(item.value);
+              return (
+                <div key={item.label} className="flex min-w-0 items-center gap-3 rounded-xl bg-muted/30 px-3 py-2.5">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-card text-primary shadow-card">
+                    {Icon && <Icon className="h-4 w-4" />}
+                  </div>
+                  <p className="min-w-0 flex-1 truncate text-sm font-semibold text-muted-foreground">{item.label}</p>
+                  <p className={cn("max-w-[55%] truncate text-right text-sm font-extrabold", value === emptyValue ? "text-muted-foreground" : "text-foreground")}>
+                    {value}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
 
         {/* Category characteristics */}
-        <div className="border rounded-2xl bg-card p-4 mb-5">
-          <div className="flex items-start gap-2 mb-3">
-            <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-            <div>
+        <div className="mb-5 rounded-2xl border bg-card p-4 shadow-card">
+          <div className="mb-4 flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
+              <Info className="h-5 w-5" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase text-primary">Comparaison</p>
               <h2 className="text-base font-extrabold text-foreground">Caractéristiques</h2>
-              <p className="text-xs text-muted-foreground">Ces champs aideront l'acheteur à comparer l'annonce comme sur OpenSooq.</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            {visibleCharacteristics.map(([label, value]) => (
-              <div key={label} className={cn("rounded-xl border px-3 py-2.5", formatDetailValue(value) === emptyValue ? "border-dashed border-border" : "border-border bg-muted/25")}>
-                <p className="text-[11px] font-semibold text-muted-foreground">{label}</p>
-                <p className={cn("mt-0.5 text-sm font-bold", formatDetailValue(value) === emptyValue ? "text-muted-foreground" : "text-foreground")}>
-                  {formatDetailValue(value)}
-                </p>
-              </div>
-            ))}
+          <div className="grid grid-cols-2 gap-2.5">
+            {visibleCharacteristics.map(([label, value]) => {
+              const formattedValue = formatDetailValue(value);
+              const isEmpty = formattedValue === emptyValue;
+              return (
+                <div
+                  key={label}
+                  className={cn(
+                    "min-h-[76px] rounded-xl border px-3 py-2.5",
+                    isEmpty ? "border-dashed bg-muted/15" : "border-primary/15 bg-accent/35"
+                  )}
+                >
+                  <p className="truncate text-[11px] font-bold uppercase text-muted-foreground">{label}</p>
+                  <p className={cn("mt-1 line-clamp-2 text-sm font-extrabold leading-snug", isEmpty ? "text-muted-foreground" : "text-foreground")}>
+                    {formattedValue}
+                  </p>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -603,6 +708,15 @@ const ListingDetail = () => {
           >
             <Heart className={cn("h-4 w-4", isFav && "fill-chad-red")} />
             {isFav ? t("detail.saved") : t("detail.save")}
+          </Button>
+          <Button
+            variant="outline"
+            className="col-span-2 gap-2 rounded-2xl h-11 text-destructive hover:text-destructive"
+            onClick={handleReportListing}
+            disabled={isReporting || isOwner}
+          >
+            <Flag className="h-4 w-4" />
+            Signaler
           </Button>
         </div>
       </div>

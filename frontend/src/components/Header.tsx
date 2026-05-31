@@ -7,7 +7,6 @@ import { cities } from "@/data/cities";
 import { useSearchHistory } from "@/hooks/useSearchHistory";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useTranslation } from "@/i18n/useTranslation";
-import { useTheme } from "@/hooks/useTheme";
 import NotificationCenter from "@/components/NotificationCenter";
 import LanguageSwitcher from "@/i18n/LanguageSwitcher";
 import {
@@ -29,7 +28,6 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
   const { history, addSearch, removeSearch, clearHistory } = useSearchHistory();
   const { unreadCount } = useNotifications();
   const { t, locale: language } = useTranslation();
-  useTheme();
   const inputRef = useRef<HTMLInputElement>(null);
   const historyRef = useRef<HTMLDivElement>(null);
 

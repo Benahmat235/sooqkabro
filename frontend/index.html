@@ -10,8 +10,18 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="SooqKabro" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="theme-color" content="#2563eb" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#2563eb" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0d111c" />
     
+    <script>
+      (function () {
+        var root = document.documentElement;
+        var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        root.classList.remove('light', 'dark');
+        root.classList.add(isDark ? 'dark' : 'light');
+        root.style.colorScheme = isDark ? 'dark' : 'light';
+      })();
+    </script>
     <title>SooqKabro - Petites Annonces au Tchad</title>
     <meta name="description" content="Plateforme des petites annonces destinée aux tchadiens.">
     <meta name="author" content="Lovable" />

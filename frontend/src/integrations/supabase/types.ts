@@ -110,6 +110,54 @@ export type Database = {
           },
         ]
       }
+      listing_flags: {
+        Row: {
+          details: Json
+          flagged_at: string
+          id: string
+          listing_id: string
+          reason: string
+          reporter_id: string | null
+          reviewed: boolean
+          reviewed_at: string | null
+        }
+        Insert: {
+          details?: Json
+          flagged_at?: string
+          id?: string
+          listing_id: string
+          reason: string
+          reporter_id?: string | null
+          reviewed?: boolean
+          reviewed_at?: string | null
+        }
+        Update: {
+          details?: Json
+          flagged_at?: string
+          id?: string
+          listing_id?: string
+          reason?: string
+          reporter_id?: string | null
+          reviewed?: boolean
+          reviewed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_flags_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "listing_flags_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       listing_views: {
         Row: {
           created_at: string

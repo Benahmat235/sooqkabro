@@ -30,7 +30,7 @@ function useListingFlags() {
     queryKey: ["listing-flags"],
     queryFn: async (): Promise<FlaggedRow[]> => {
       const { data, error } = await supabase
-        .from("listing_flags" as any)
+        .from("listing_flags")
         .select("id, listing_id, reason, details, flagged_at, reviewed")
         .order("flagged_at", { ascending: false })
         .limit(200);
@@ -262,6 +262,7 @@ const AdminPage = () => {
 };
 
 const reasonLabels: Record<string, string> = {
+  user_report: "Signalement utilisateur",
   shared_phone_multiple_users: "Téléphone partagé par plusieurs comptes",
   abnormally_low_price: "Prix anormalement bas",
 };
@@ -273,7 +274,7 @@ function FlagsList() {
   const markReviewed = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from("listing_flags" as any)
+        .from("listing_flags")
         .update({ reviewed: true, reviewed_at: new Date().toISOString() })
         .eq("id", id);
       if (error) throw error;
@@ -355,4 +356,3 @@ function FlagsList() {
 }
 
 export default AdminPage;
-

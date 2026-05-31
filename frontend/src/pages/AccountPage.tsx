@@ -613,7 +613,7 @@ const AccountPage = () => {
                 { q: "Comment contacter un vendeur ?", a: "Sur la page d'une annonce, utilisez le bouton 'Contacter' pour envoyer un message." },
                 { q: "Comment modifier mon profil ?", a: "Allez dans Mon Compte, puis cliquez sur 'Modifier le profil' pour changer vos informations." },
                 { q: "Est-ce que SooqKabro est gratuit ?", a: "Oui, la publication d'annonces est entierement gratuite." },
-                { q: "Comment signaler une annonce ?", a: "Sur la page de l'annonce, utilisez le menu '...' puis 'Signaler'." },
+                { q: "Comment signaler une annonce ?", a: "Sur la page de l'annonce, utilisez le bouton 'Signaler'." },
               ].map((faq, i) => (
                 <AccordionItem key={i} value={`faq-${i}`} className="border rounded-xl px-3">
                   <AccordionTrigger className="text-sm font-semibold text-foreground hover:no-underline">{faq.q}</AccordionTrigger>

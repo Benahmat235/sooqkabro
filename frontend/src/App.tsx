@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { I18nProvider } from "@/i18n/useTranslation";
 import { useUpdateLastSeen } from "@/hooks/useUpdateLastSeen";
+import { useTheme } from "@/hooks/useTheme";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import OfflineIndicator from "@/components/OfflineIndicator";
 import Index from "./pages/Index";
@@ -40,43 +41,47 @@ const PageLoader = () => (
   </div>
 );
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <I18nProvider>
-      <AuthProvider>
-        <LastSeenTracker />
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <OfflineIndicator />
-          <PWAInstallPrompt />
-          <BrowserRouter>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/decouvrir" element={<DiscoverPage />} />
-                <Route path="/categorie/:categoryId" element={<CategoryPage />} />
-                <Route path="/categorie/:categoryId/:subId" element={<CategoryPage />} />
-                <Route path="/annonce/:id" element={<ListingDetail />} />
-                <Route path="/search" element={<SearchPage />} />
-                <Route path="/publier" element={<PublishListing />} />
-                <Route path="/auth" element={<AuthPage />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/compte" element={<AccountPage />} />
-                <Route path="/mes-annonces" element={<MyListings />} />
-                <Route path="/modifier/:id" element={<EditListing />} />
-                <Route path="/favoris" element={<FavoritesPage />} />
-                <Route path="/messages" element={<MessagesPage />} />
-                <Route path="/vendeur/:sellerId" element={<SellerProfile />} />
-                <Route path="/admin" element={<AdminPage />} />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Suspense>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </I18nProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  useTheme();
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <I18nProvider>
+        <AuthProvider>
+          <LastSeenTracker />
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <OfflineIndicator />
+            <PWAInstallPrompt />
+            <BrowserRouter>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/decouvrir" element={<DiscoverPage />} />
+                  <Route path="/categorie/:categoryId" element={<CategoryPage />} />
+                  <Route path="/categorie/:categoryId/:subId" element={<CategoryPage />} />
+                  <Route path="/annonce/:id" element={<ListingDetail />} />
+                  <Route path="/search" element={<SearchPage />} />
+                  <Route path="/publier" element={<PublishListing />} />
+                  <Route path="/auth" element={<AuthPage />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/compte" element={<AccountPage />} />
+                  <Route path="/mes-annonces" element={<MyListings />} />
+                  <Route path="/modifier/:id" element={<EditListing />} />
+                  <Route path="/favoris" element={<FavoritesPage />} />
+                  <Route path="/messages" element={<MessagesPage />} />
+                  <Route path="/vendeur/:sellerId" element={<SellerProfile />} />
+                  <Route path="/admin" element={<AdminPage />} />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Suspense>
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </I18nProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
