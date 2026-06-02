@@ -195,7 +195,7 @@ const AuthPage = () => {
       <div className="relative min-h-screen bg-background overflow-hidden flex flex-col">
         <AuthBlobs variant="top" />
 
-        <div className="flex-1 flex flex-col px-6 pt-8 pb-8 max-w-md mx-auto w-full">
+        <div className="relative z-10 flex-1 flex flex-col px-6 pt-8 pb-8 max-w-md mx-auto w-full">
           <div className="flex-1 flex flex-col justify-end">
             <h1 className="text-6xl font-extrabold text-foreground tracking-tight leading-none">
               Connexion
@@ -270,7 +270,7 @@ const AuthPage = () => {
       <div className="relative min-h-screen bg-background overflow-hidden flex flex-col">
         <AuthBlobs variant="top" />
 
-        <div className="flex-1 flex flex-col items-center px-6 pt-16 pb-8 max-w-md mx-auto w-full">
+        <div className="relative z-10 flex-1 flex flex-col items-center px-6 pt-16 pb-8 max-w-md mx-auto w-full">
           {/* Avatar */}
           <div className="relative">
             <div className="w-28 h-28 rounded-full bg-gradient-to-br from-secondary to-primary border-4 border-card shadow-warm flex items-center justify-center">
@@ -339,7 +339,7 @@ const AuthPage = () => {
       <div className="relative min-h-screen bg-background overflow-hidden flex flex-col">
         <AuthBlobs variant="top" />
 
-        <div className="flex-1 flex flex-col px-6 pt-10 pb-8 max-w-md mx-auto w-full">
+        <div className="relative z-10 flex-1 flex flex-col px-6 pt-10 pb-8 max-w-md mx-auto w-full">
           <h1 className="text-5xl font-extrabold text-foreground tracking-tight leading-none">
             Créer un<br />compte
           </h1>
@@ -455,7 +455,7 @@ const AuthPage = () => {
     <div className="relative min-h-screen bg-background overflow-hidden flex flex-col">
       <AuthBlobs variant="top" />
 
-      <div className="flex-1 flex flex-col items-center px-6 pt-16 pb-8 max-w-md mx-auto w-full">
+      <div className="relative z-10 flex-1 flex flex-col items-center px-6 pt-16 pb-8 max-w-md mx-auto w-full">
         {/* Avatar */}
         <div className="w-28 h-28 rounded-full bg-gradient-to-br from-secondary to-primary border-4 border-card shadow-warm flex items-center justify-center">
           <Mail className="h-12 w-12 text-primary-foreground" />

@@ -58,7 +58,7 @@ const ResetPassword = () => {
     <div className="relative min-h-screen bg-background overflow-hidden flex flex-col">
       <AuthBlobs variant="top" />
 
-      <div className="flex-1 flex flex-col items-center px-6 pt-16 pb-8 max-w-md mx-auto w-full">
+      <div className="relative z-10 flex-1 flex flex-col items-center px-6 pt-16 pb-8 max-w-md mx-auto w-full">
         <div className="w-28 h-28 rounded-full bg-gradient-to-br from-secondary to-primary border-4 border-card shadow-warm flex items-center justify-center">
           <KeyRound className="h-12 w-12 text-primary-foreground" />
         </div>

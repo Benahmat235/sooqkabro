@@ -68,7 +68,7 @@ const OnboardingPage = () => {
         Passer
       </button>
 
-      <div className="flex-1 flex flex-col items-center px-6 pt-16 pb-8 max-w-md mx-auto w-full">
+      <div className="relative z-10 flex-1 flex flex-col items-center px-6 pt-16 pb-8 max-w-md mx-auto w-full">
         {/* Image card */}
         <div className="w-full rounded-3xl overflow-hidden shadow-warm bg-card animate-fade-in" key={index}>
           <img
