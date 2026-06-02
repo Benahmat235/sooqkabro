@@ -1,107 +1,61 @@
 
-# Plan Phase 2 — Algorithmes intelligents
+## Objectif
 
-Implémentation progressive par étapes ordonnées du plus fort impact visible au plus complexe. Chaque étape est livrable indépendamment.
+Appliquer le langage visuel des 12 écrans Shoppe à la phase d'inscription/onboarding, en gardant la palette SooqKabro existante (bleu Tchad, sable, Cairo).
 
-## Étape 1 — Score qualité d'annonce + boost classement (priorité 1)
+## Langage visuel à reproduire
 
-Calcul d'un score 0-100 par annonce, utilisé pour le classement dans le feed et affiché aux vendeurs pour les inciter à améliorer leurs annonces.
+- Grandes formes organiques (blobs) bleu primary + bleu clair (accent) en haut/coin de l'écran
+- Titres très larges (text-5xl/6xl) en Cairo bold, alignés à gauche
+- Inputs pilule (rounded-full), fond muted, sans bordure, h-14, padding généreux
+- Bouton primary pilule pleine largeur, h-14
+- Lien "Cancel" texte sous le CTA
+- Avatar circulaire blanc-bordé centré comme point focal
+- OTP : 4 cases carrées arrondies (rounded-2xl) `bg-muted`
+- Carrousel d'onboarding avec dots au bas de l'écran
 
-### Critères de scoring
-- Photos : nombre (5 = max), résolution
-- Description : longueur, mots-clés (>50 chars = bon, >150 chars = excellent)
-- Prix renseigné > 0
-- Quartier renseigné
-- Téléphone valide (Numverify déjà existant)
-- Vendeur vérifié (`profiles.is_verified`) → bonus +15
-- Note moyenne vendeur (>4★ → bonus)
+## Écrans livrés
 
-### Intégration
-- Calculer côté Edge Function `getPersonalizedFeed` à la volée (pas de stockage initial)
-- Ajouter `qualityScore` dans la pondération du feed (nouveau ratio : 25% pop / 25% recency / 30% affinity / 20% qualité)
-- Sur `MyListings.tsx` : badge "Score qualité : 75/100" + suggestions ("Ajoutez 2 photos", "Allongez la description")
-- Sur `PublishListing.tsx` : indicateur live du score pendant la rédaction
+1. **OnboardingPage** (nouveau, `/onboarding`)
+   - Carrousel 2 slides : "Hello" + "Ready?" (images shopping libres)
+   - Dots indicator en bas, bouton "Let's Start" → `/auth`
+   - Sauté si l'utilisateur a déjà vu (localStorage `sk_onboarded`)
+   - Redirection depuis `/` vers `/onboarding` à la 1ère visite (logique dans `App.tsx`)
 
-## Étape 2 — Pricing intelligence
+2. **AuthPage** refonte complète (`/auth`)
+   - **Vue Login étape 1** : blob bleu en haut, titre "Login" + "Good to see you back ❤", champ Email pilule, bouton "Next" + "Cancel"
+   - **Vue Login étape 2** : avatar de l'user récupéré via email (fallback initiales), "Hello, {name}!!", champ password pilule, bouton flèche → ; "Not you?" pour revenir
+   - **Vue Register** : titre "Create Account", upload photo cercle pointillé (Camera icon, drag-drop fichier vers Cloudinary), Email, Password (avec œil), Téléphone avec drapeau 🇹🇩 (+235 préfixe lock), bouton "Done"
+   - **Vue Forgot** : "Password Recovery" + avatar, message "How would you like to restore your password?" — **uniquement option Email** (constraint mémoire : pas de SMS) sous forme de carte pilule sélectionnée, bouton "Next" envoie reset password
+   - Boutons Google & Apple conservés en haut (style outline pilule), divider "or"
 
-Analyse statistique des prix par catégorie pour guider acheteurs et vendeurs.
+3. **ResetPassword** (`/reset-password`) restylé
+   - Avatar en haut, titre "Setup New Password", sous-titre, 2 champs pilule (password / confirmer), bouton "Save"
 
-### Backend
-- Nouvelle Edge Function `getPriceStats` : prend `category_id` (et optionnellement `subcategory_id`), retourne `{ min, max, p25, median, p75, count }` calculés sur `listings` publiées
-- Cache 1h en mémoire pour limiter les requêtes
+## Détails techniques
 
-### Frontend
-- `PublishListing.tsx` : à la sélection de catégorie, afficher fourchette suggérée ("Prix typiques : 50 000 – 150 000 FCFA, médiane 90 000")
-- `ListingCard.tsx` : badge `Bon prix` (≤ p25), `Prix élevé` (≥ p75) — couleur verte / orange
-- `ListingDetail.tsx` : section comparaison "Prix par rapport au marché"
+- Nouveau composant `<AuthBlobs />` (SVG décoratif blobs bleu) réutilisable par AuthPage / OnboardingPage / ResetPassword
+- Nouveau composant `<PillInput />` wrapper de `Input` avec classes pilule h-14 muted, slot icône droite
+- Nouveau composant `<PillButton />` (variant CVA dans `button.tsx`) `rounded-full h-14`
+- Carrousel onboarding via `embla-carousel-react` (déjà installé via shadcn carousel)
+- Étape Login 2 : appel à RPC légère `get_public_profile_by_email(email)` → renvoie `display_name + avatar_url` ; **à créer en SECURITY DEFINER avec rate-limit côté client (3/min)** pour éviter l'énumération brute. Si pas trouvé, affiche fallback "Hello !".
+- Constraints respectés : aucun SMS, palette bleu Tchad + or préservée, Cairo, RTL ok (les blobs miroir via `rtl:scale-x-[-1]`)
 
-## Étape 3 — Détection spam & duplicatas
+## Fichiers touchés
 
-Protection contre la pollution du feed.
+- `frontend/src/pages/OnboardingPage.tsx` (nouveau)
+- `frontend/src/pages/AuthPage.tsx` (refonte)
+- `frontend/src/pages/ResetPassword.tsx` (restyle)
+- `frontend/src/components/auth/AuthBlobs.tsx` (nouveau)
+- `frontend/src/components/auth/PillInput.tsx` (nouveau)
+- `frontend/src/components/ui/button.tsx` (ajout variant `pill`)
+- `frontend/src/App.tsx` (route `/onboarding` + redirection 1ère visite)
+- `frontend/src/i18n/translations.ts` (clés onboarding + 2-step login)
+- 1 migration SQL : RPC `get_public_profile_by_email(email text)` SECURITY DEFINER
+- 2 images d'onboarding : générées via imagegen (femmes shopping, fond rose/bleu) → `src/assets/`
 
-### Anti-doublon (côté serveur)
-- Trigger SQL avant `INSERT` sur `listings` : refuser si même `user_id` + même `title` + même `phone` dans les dernières 24h
-- Hash SHA-256 du titre + description normalisés (lowercase, sans espaces) → colonne `content_hash`, index unique partiel par utilisateur
+## Non inclus (intentionnel)
 
-### Patterns suspects (Edge Function)
-- Nouvelle fonction `flagSuspiciousListing` appelée après publication :
-  - Plus de 5 annonces actives avec le même `phone` provenant d'utilisateurs différents → flag
-  - Prix anormalement bas (< 10% médiane catégorie) → flag
-- Nouvelle table `listing_flags(listing_id, reason, flagged_at, reviewed)` visible dans `AdminPage.tsx`
-
-### Score de confiance vendeur
-- Calcul à la demande dans `useSellerStats` :
-  - +20 si email vérifié, +20 si téléphone vérifié, +20 si avis ≥ 4★ (avec ≥ 3 avis), +20 si compte > 30 jours, +20 si pas de flag
-- Affichage badge "Vendeur de confiance 80/100" sur `SellerProfile.tsx`
-
-## Étape 4 — Recommandations améliorées (collaborative filtering léger)
-
-Améliore `getPersonalizedFeed` existant.
-
-### Suggestions "Produits similaires"
-- Composant `SimilarProducts.tsx` existe déjà — l'enrichir :
-  - Fetch annonces de la même `subcategory_id`, ville prioritaire, ±30% du prix
-  - Trier par score qualité (étape 1)
-
-### "Vu également par d'autres acheteurs"
-- Nouvelle Edge Function `getCoViewedListings(listing_id)` :
-  - Trouver les `viewer_id` qui ont vu cette annonce
-  - Récupérer les autres annonces vues par ces utilisateurs
-  - Top 6 par fréquence
-
-## Détails techniques par fichier
-
-| Fichier | Modification |
-|---|---|
-| `frontend/supabase/migrations/<new>.sql` | Table `listing_flags`, colonne `content_hash` sur `listings`, trigger anti-doublon |
-| `frontend/supabase/functions/getPersonalizedFeed/index.ts` | Ajouter calcul `qualityScore` + pondération |
-| `frontend/supabase/functions/getPriceStats/index.ts` | Nouvelle fonction (publique, verify_jwt=false) |
-| `frontend/supabase/functions/flagSuspiciousListing/index.ts` | Nouvelle fonction (verify_jwt=true) |
-| `frontend/supabase/functions/getCoViewedListings/index.ts` | Nouvelle fonction (publique) |
-| `frontend/src/lib/quality.ts` | Nouveau — fonction `computeListingQuality(listing)` partagée client/serveur |
-| `frontend/src/lib/pricing.ts` | Nouveau — helpers badge bon prix / prix élevé |
-| `frontend/src/pages/PublishListing.tsx` | Indicateur qualité live + fourchette de prix |
-| `frontend/src/pages/MyListings.tsx` | Badge score + suggestions amélioration |
-| `frontend/src/pages/ListingDetail.tsx` | Section comparaison prix marché |
-| `frontend/src/components/ListingCard.tsx` | Badge "Bon prix" / "Prix élevé" |
-| `frontend/src/components/SimilarProducts.tsx` | Logique enrichie (subcat + prix + ville) |
-| `frontend/src/hooks/useSellerStats.ts` | Score de confiance vendeur |
-| `frontend/src/pages/SellerProfile.tsx` | Badge "Vendeur de confiance" |
-| `frontend/src/pages/AdminPage.tsx` | Onglet "Annonces signalées" (lecture `listing_flags`) |
-
-## Ordre d'exécution recommandé
-
-1. **Étape 1** (score qualité) — visible immédiatement, gros impact UX
-2. **Étape 2** (pricing) — utile à la publication, simple à implémenter
-3. **Étape 3** (anti-spam) — protection plateforme, nécessite migration DB
-4. **Étape 4** (reco co-viewing) — amélioration progressive, dépend des données
-
-## Hors scope (non inclus)
-
-- ML embeddings (vectoriels) — trop lourd pour ce stade
-- Auto-modération par IA — sera traité dans une phase ultérieure si besoin
-- Refonte complète UI (Phase 4 du README)
-
-## Confirmation
-
-À l'approbation, j'exécute **l'Étape 1 en priorité** puis enchaîne dans l'ordre sauf instruction contraire.
+- Pas d'écran OTP/SMS (interdit par la mémoire projet)
+- Pas de clavier custom (les keyboards rendus dans le PDF sont natifs iOS)
+- Pas de changement aux pages métier (Home, Listing, Search, etc.) — uniquement la phase d'inscription
