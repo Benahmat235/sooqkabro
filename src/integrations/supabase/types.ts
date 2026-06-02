@@ -183,7 +183,6 @@ export type Database = {
       listings: {
         Row: {
           badge: string | null
-          attributes: Json
           category_id: string
           city_id: string
           content_hash: string | null
@@ -202,7 +201,6 @@ export type Database = {
         }
         Insert: {
           badge?: string | null
-          attributes?: Json
           category_id: string
           city_id: string
           content_hash?: string | null
@@ -221,7 +219,6 @@ export type Database = {
         }
         Update: {
           badge?: string | null
-          attributes?: Json
           category_id?: string
           city_id?: string
           content_hash?: string | null
