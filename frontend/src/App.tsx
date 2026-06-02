@@ -23,6 +23,7 @@ const ListingDetail = lazy(() => import("./pages/ListingDetail"));
 const SearchPage = lazy(() => import("./pages/SearchPage"));
 const PublishListing = lazy(() => import("./pages/PublishListing"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
+const OnboardingPage = lazy(() => import("./pages/OnboardingPage"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const AccountPage = lazy(() => import("./pages/AccountPage"));
 const MyListings = lazy(() => import("./pages/MyListings"));
@@ -65,6 +66,7 @@ const App = () => {
                   <Route path="/search" element={<SearchPage />} />
                   <Route path="/publier" element={<PublishListing />} />
                   <Route path="/auth" element={<AuthPage />} />
+                  <Route path="/onboarding" element={<OnboardingPage />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/compte" element={<AccountPage />} />
                   <Route path="/mes-annonces" element={<MyListings />} />

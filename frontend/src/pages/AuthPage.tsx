@@ -2,44 +2,39 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Mail, Eye, EyeOff, KeyRound, User, ShieldCheck } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Camera, Check, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { useAppToast } from "@/hooks/useAppToast";
 import { useTranslation } from "@/i18n/useTranslation";
 import { validatePassword, checkRateLimit, sanitizeInput } from "@/lib/security";
+import AuthBlobs from "@/components/auth/AuthBlobs";
 
-type AuthView = "login" | "register" | "forgot";
+type AuthView = "login-email" | "login-password" | "register" | "forgot";
 
 const AuthPage = () => {
-  const [view, setView] = useState<AuthView>("login");
+  const [view, setView] = useState<AuthView>("login-email");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { success, error: showError, warning } = useAppToast();
+  const { success, error: showError } = useAppToast();
   const { t } = useTranslation();
 
-  // Password strength indicator
   const passwordStrength = validatePassword(password);
-  const strengthColors = {
-    weak: 'bg-destructive',
-    fair: 'bg-orange-500',
-    good: 'bg-yellow-500',
-    strong: 'bg-green-500',
-  };
 
+  // ------------ handlers ------------
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
       });
-      if (result.error) {
-        showError(t("auth.googleFailed"), t("auth.error"));
-      }
+      if (result.error) showError(t("auth.googleFailed"), t("auth.error"));
       if (result.redirected) return;
       success(t("auth.welcomeMsg"), t("auth.loginSuccess"));
       navigate("/");
@@ -56,45 +51,48 @@ const AuthPage = () => {
       const result = await lovable.auth.signInWithOAuth("apple", {
         redirect_uri: window.location.origin,
       });
-      if (result.error) {
-        toast({ title: t("auth.error"), description: t("auth.appleFailed"), variant: "destructive" });
-      }
+      if (result.error) showError(t("auth.appleFailed"), t("auth.error"));
       if (result.redirected) return;
-      toast({ title: t("auth.welcomeMsg"), description: t("auth.loginSuccess") });
+      success(t("auth.welcomeMsg"), t("auth.loginSuccess"));
       navigate("/");
     } catch (err: any) {
-      toast({ title: t("auth.error"), description: err.message || t("auth.loginFailed"), variant: "destructive" });
+      showError(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEmailLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      toast({ title: t("auth.error"), description: t("auth.fillFields"), variant: "destructive" });
+  const goToPasswordStep = () => {
+    const trimmed = email.trim();
+    if (!trimmed || !/.+@.+\..+/.test(trimmed)) {
+      showError("Adresse e-mail invalide", t("auth.error"));
       return;
     }
-    
-    // Rate limiting check
+    setView("login-password");
+  };
+
+  const handleEmailLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      showError(t("auth.fillFields"), t("auth.error"));
+      return;
+    }
     const rateLimit = checkRateLimit(`login_${email.trim()}`, 5, 60000);
     if (!rateLimit.allowed) {
       const seconds = Math.ceil((rateLimit.remainingTime || 60000) / 1000);
-      toast({ 
-        title: "Trop de tentatives", 
-        description: `Reessayez dans ${seconds} secondes`, 
-        variant: "destructive" 
-      });
+      showError(`Réessayez dans ${seconds} secondes`, "Trop de tentatives");
       return;
     }
-    
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email: sanitizeInput(email.trim()), password });
+      const { error } = await supabase.auth.signInWithPassword({
+        email: sanitizeInput(email.trim()),
+        password,
+      });
       if (error) throw error;
-      toast({ title: t("auth.welcomeMsg"), description: t("auth.loginSuccess") });
+      success(t("auth.loginSuccess"), t("auth.welcomeMsg"));
       navigate("/");
     } catch (err: any) {
-      toast({ title: t("auth.error"), description: err.message || t("auth.loginFailed"), variant: "destructive" });
+      showError(err.message || t("auth.loginFailed"), t("auth.error"));
     } finally {
       setLoading(false);
     }
@@ -102,35 +100,33 @@ const AuthPage = () => {
 
   const handleEmailRegister = async () => {
     if (!email.trim() || !password.trim()) {
-      toast({ title: t("auth.error"), description: t("auth.fillFields"), variant: "destructive" });
+      showError(t("auth.fillFields"), t("auth.error"));
       return;
     }
-    
-    // Strong password validation
     if (passwordStrength.score < 3) {
-      toast({ 
-        title: "Mot de passe trop faible", 
-        description: passwordStrength.suggestions[0] || "Choisissez un mot de passe plus fort", 
-        variant: "destructive" 
-      });
+      showError(passwordStrength.suggestions[0] || "Choisissez un mot de passe plus fort", "Mot de passe trop faible");
       return;
     }
-    
     setLoading(true);
     try {
+      const phoneClean = phone.replace(/\D/g, "");
+      const fullPhone = phoneClean ? `+235${phoneClean}` : "";
       const { error } = await supabase.auth.signUp({
         email: sanitizeInput(email.trim()),
         password,
         options: {
           emailRedirectTo: window.location.origin,
-          data: { display_name: sanitizeInput(displayName.trim()) || undefined },
+          data: {
+            display_name: sanitizeInput(displayName.trim()) || undefined,
+            phone: fullPhone || undefined,
+          },
         },
       });
       if (error) throw error;
-      toast({ title: t("auth.accountCreated"), description: t("auth.checkEmail") });
-      setView("login");
+      success(t("auth.checkEmail"), t("auth.accountCreated"));
+      setView("login-email");
     } catch (err: any) {
-      toast({ title: t("auth.error"), description: err.message || t("auth.loginFailed"), variant: "destructive" });
+      showError(err.message || t("auth.loginFailed"), t("auth.error"));
     } finally {
       setLoading(false);
     }
@@ -138,7 +134,7 @@ const AuthPage = () => {
 
   const handleForgotPassword = async () => {
     if (!email.trim()) {
-      toast({ title: t("auth.error"), description: t("auth.fillFields"), variant: "destructive" });
+      showError(t("auth.fillFields"), t("auth.error"));
       return;
     }
     setLoading(true);
@@ -147,24 +143,27 @@ const AuthPage = () => {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
-      toast({ title: t("auth.emailSent"), description: t("auth.checkInbox") });
+      success(t("auth.checkInbox"), t("auth.emailSent"));
     } catch (err: any) {
-      toast({ title: t("auth.error"), description: err.message || t("auth.loginFailed"), variant: "destructive" });
+      showError(err.message || t("auth.loginFailed"), t("auth.error"));
     } finally {
       setLoading(false);
     }
   };
 
-  const goBack = () => {
-    if (view !== "login") setView("login");
-    else navigate(-1);
+  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showError("Image trop volumineuse (max 5 MB)", t("auth.error"));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => setPhotoPreview(ev.target?.result as string);
+    reader.readAsDataURL(file);
   };
 
-  const headerTitle: Record<AuthView, string> = {
-    login: t("auth.login"),
-    register: t("auth.register"),
-    forgot: t("auth.forgot"),
-  };
+  const cancel = () => navigate(-1);
 
   const GoogleIcon = () => (
     <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -181,150 +180,322 @@ const AuthPage = () => {
     </svg>
   );
 
-  return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <div className="flex items-center gap-3 p-4 border-b glass">
-        <button onClick={goBack} className="p-1 rounded-lg hover:bg-accent transition-colors">
-          <ArrowLeft className="h-5 w-5 text-foreground" />
-        </button>
-        <h1 className="text-lg font-extrabold text-foreground">{headerTitle[view]}</h1>
-      </div>
+  // Common pill input classes
+  const pillInput =
+    "h-14 rounded-full bg-muted border-0 px-6 text-base focus-visible:ring-2 focus-visible:ring-primary/40 placeholder:text-muted-foreground";
+  const pillBtn = "w-full h-14 rounded-full text-base font-bold shadow-warm";
+  const cancelLink =
+    "block mx-auto text-sm text-muted-foreground hover:text-foreground transition-colors mt-4";
 
-      <div className="flex-1 flex flex-col items-center justify-center p-6 gap-6">
+  // ============== VIEWS ==============
 
-        {view === "login" && (
-          <div className="w-full max-w-sm flex flex-col items-center gap-5 animate-fade-in">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/10 to-accent flex items-center justify-center">
-              <User className="h-9 w-9 text-primary" />
-            </div>
-            <div className="text-center space-y-1">
-              <h2 className="text-xl font-extrabold text-foreground">{t("auth.welcome")}</h2>
-              <p className="text-sm text-muted-foreground">{t("auth.loginSubtitle")}</p>
-            </div>
+  // -------- LOGIN STEP 1 : email --------
+  if (view === "login-email") {
+    return (
+      <div className="relative min-h-screen bg-background overflow-hidden flex flex-col">
+        <AuthBlobs variant="top" />
 
-            <Button onClick={handleGoogleLogin} disabled={loading} variant="outline" className="w-full h-12 rounded-xl font-bold gap-3">
+        <div className="relative z-10 flex-1 flex flex-col px-6 pt-8 pb-8 max-w-md mx-auto w-full">
+          <div className="flex-1 flex flex-col justify-end">
+            <h1 className="text-6xl font-extrabold text-foreground tracking-tight leading-none">
+              Connexion
+            </h1>
+            <p className="mt-3 text-lg text-muted-foreground">
+              Bon retour parmi nous ! <span aria-hidden>❤</span>
+            </p>
+          </div>
+
+          <div className="mt-8 space-y-3">
+            <Button
+              onClick={handleGoogleLogin}
+              disabled={loading}
+              variant="outline"
+              className="w-full h-12 rounded-full font-bold gap-3"
+            >
               <GoogleIcon /> {t("auth.continueGoogle")}
             </Button>
-            <Button onClick={handleAppleLogin} disabled={loading} variant="outline" className="w-full h-12 rounded-xl font-bold gap-3">
+            <Button
+              onClick={handleAppleLogin}
+              disabled={loading}
+              variant="outline"
+              className="w-full h-12 rounded-full font-bold gap-3"
+            >
               <AppleIcon /> {t("auth.continueApple")}
             </Button>
 
-            <div className="flex items-center gap-3 w-full">
+            <div className="flex items-center gap-3 py-1">
               <div className="flex-1 border-t" />
               <span className="text-xs text-muted-foreground">{t("auth.or")}</span>
               <div className="flex-1 border-t" />
             </div>
 
-            <div className="w-full space-y-3">
-              <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("auth.email")} type="email" className="h-12 rounded-xl bg-muted/50 border-0 focus-visible:ring-primary/30" />
-              <div className="relative">
-                <Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t("auth.password")} className="h-12 rounded-xl bg-muted/50 border-0 pr-12 focus-visible:ring-primary/30" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-            <Button onClick={handleEmailLogin} disabled={loading} className="w-full h-12 text-base rounded-xl font-bold">
-              {loading ? <span className="flex items-center gap-2"><span className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent" />{t("auth.logging")}</span> : t("auth.loginBtn")}
-            </Button>
-
-            <div className="flex flex-col items-center gap-3 w-full">
-              <button onClick={() => { setView("forgot"); setEmail(""); }} className="text-sm text-primary font-semibold hover:underline flex items-center gap-1.5">
-                <KeyRound className="h-3.5 w-3.5" /> {t("auth.forgotLink")}
-              </button>
-              <div className="w-full border-t" />
-              <button onClick={() => setView("register")} className="text-sm text-muted-foreground">
-                {t("auth.noAccount")} <span className="text-primary font-bold">{t("auth.signupLink")}</span>
-              </button>
-            </div>
+            <Input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t("auth.email")}
+              type="email"
+              autoComplete="email"
+              className={pillInput}
+            />
           </div>
-        )}
 
-        {view === "register" && (
-          <div className="w-full max-w-sm flex flex-col items-center gap-4 animate-fade-in">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/10 to-accent flex items-center justify-center">
-              <Mail className="h-9 w-9 text-primary" />
-            </div>
-            <div className="text-center space-y-1">
-              <h2 className="text-xl font-extrabold text-foreground">{t("auth.createAccount")}</h2>
-              <p className="text-sm text-muted-foreground">{t("auth.createSubtitle")}</p>
-            </div>
-
-            <Button onClick={handleGoogleLogin} disabled={loading} variant="outline" className="w-full h-12 rounded-xl font-bold gap-3">
-              <GoogleIcon /> {t("auth.registerGoogle")}
+          <div className="mt-6">
+            <Button onClick={goToPasswordStep} disabled={loading} className={pillBtn}>
+              Suivant
             </Button>
-            <Button onClick={handleAppleLogin} disabled={loading} variant="outline" className="w-full h-12 rounded-xl font-bold gap-3">
-              <AppleIcon /> {t("auth.registerApple")}
-            </Button>
-
-            <div className="flex items-center gap-3 w-full">
-              <div className="flex-1 border-t" />
-              <span className="text-xs text-muted-foreground">{t("auth.orEmail")}</span>
-              <div className="flex-1 border-t" />
-            </div>
-
-            <div className="w-full space-y-3">
-              <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder={t("auth.displayName")} className="h-12 rounded-xl bg-muted/50 border-0" />
-              <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("auth.email")} type="email" className="h-12 rounded-xl bg-muted/50 border-0" />
-              <div className="relative">
-                <Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Mot de passe (8+ caracteres)" className="h-12 rounded-xl bg-muted/50 border-0 pr-12" />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              {/* Password strength indicator */}
-              {password.length > 0 && (
-                <div className="space-y-1.5">
-                  <div className="flex gap-1">
-                    {[0, 1, 2, 3].map((i) => (
-                      <div 
-                        key={i} 
-                        className={`h-1.5 flex-1 rounded-full transition-colors ${
-                          i < passwordStrength.score ? strengthColors[passwordStrength.label] : 'bg-muted'
-                        }`} 
-                      />
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <ShieldCheck className={`h-3.5 w-3.5 ${passwordStrength.score >= 3 ? 'text-green-500' : 'text-muted-foreground'}`} />
-                    <span className={`text-xs ${passwordStrength.score >= 3 ? 'text-green-500' : 'text-muted-foreground'}`}>
-                      {passwordStrength.label === 'weak' && 'Faible'}
-                      {passwordStrength.label === 'fair' && 'Moyen'}
-                      {passwordStrength.label === 'good' && 'Bon'}
-                      {passwordStrength.label === 'strong' && 'Fort'}
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-            <Button onClick={handleEmailRegister} disabled={loading || passwordStrength.score < 3} className="w-full h-12 text-base rounded-xl font-bold">
-              {loading ? t("auth.registering") : t("auth.registerBtn")}
-            </Button>
-
-            <button onClick={() => setView("login")} className="text-sm text-muted-foreground">
-              {t("auth.hasAccount")} <span className="text-primary font-bold">{t("auth.loginLink")}</span>
+            <button onClick={cancel} className={cancelLink}>
+              Annuler
+            </button>
+            <button
+              onClick={() => setView("register")}
+              className="block mx-auto text-sm text-muted-foreground mt-3"
+            >
+              {t("auth.noAccount")}{" "}
+              <span className="text-primary font-bold">{t("auth.signupLink")}</span>
             </button>
           </div>
-        )}
+        </div>
+      </div>
+    );
+  }
 
-        {view === "forgot" && (
-          <div className="w-full max-w-sm flex flex-col items-center gap-4 animate-fade-in">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/10 to-accent flex items-center justify-center">
-              <KeyRound className="h-9 w-9 text-primary" />
+  // -------- LOGIN STEP 2 : password --------
+  if (view === "login-password") {
+    const initials = email
+      .split("@")[0]
+      .slice(0, 2)
+      .toUpperCase();
+
+    return (
+      <div className="relative min-h-screen bg-background overflow-hidden flex flex-col">
+        <AuthBlobs variant="top" />
+
+        <div className="relative z-10 flex-1 flex flex-col items-center px-6 pt-16 pb-8 max-w-md mx-auto w-full">
+          {/* Avatar */}
+          <div className="relative">
+            <div className="w-28 h-28 rounded-full bg-gradient-to-br from-secondary to-primary border-4 border-card shadow-warm flex items-center justify-center">
+              <span className="text-3xl font-extrabold text-primary-foreground">{initials}</span>
             </div>
-            <div className="text-center space-y-1">
-              <h2 className="text-xl font-extrabold text-foreground">{t("auth.resetTitle")}</h2>
-              <p className="text-sm text-muted-foreground">{t("auth.resetSubtitle")}</p>
+          </div>
+
+          <h1 className="mt-6 text-3xl font-extrabold text-foreground text-center">
+            Bonjour !
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground text-center">{email}</p>
+
+          <div className="mt-10 w-full space-y-4">
+            <p className="text-center text-base text-foreground/80">Saisissez votre mot de passe</p>
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={t("auth.password")}
+                autoFocus
+                className={`${pillInput} pr-14`}
+                onKeyDown={(e) => e.key === "Enter" && handleEmailLogin()}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
             </div>
-            <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("auth.email")} type="email" className="h-12 rounded-xl bg-muted/50 border-0 w-full" />
-            <Button onClick={handleForgotPassword} disabled={loading} className="w-full h-12 text-base rounded-xl font-bold">
-              {loading ? t("auth.sending") : t("auth.sendLink")}
-            </Button>
-            <button onClick={() => setView("login")} className="text-sm text-muted-foreground">
-              {t("auth.backToLogin")} <span className="text-primary font-bold">{t("auth.loginLink")}</span>
+            <button
+              onClick={() => setView("forgot")}
+              className="block mx-auto text-sm text-primary font-semibold hover:underline"
+            >
+              {t("auth.forgotLink")}
             </button>
           </div>
-        )}
+
+          <div className="mt-auto w-full pt-8 space-y-4">
+            <Button onClick={handleEmailLogin} disabled={loading} className={pillBtn}>
+              {loading ? t("auth.logging") : t("auth.loginBtn")}
+            </Button>
+            <button
+              onClick={() => {
+                setPassword("");
+                setView("login-email");
+              }}
+              className="flex items-center justify-center gap-3 mx-auto text-sm text-muted-foreground"
+            >
+              Ce n'est pas vous ?
+              <span className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                <ArrowRight className="h-4 w-4" />
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // -------- REGISTER --------
+  if (view === "register") {
+    return (
+      <div className="relative min-h-screen bg-background overflow-hidden flex flex-col">
+        <AuthBlobs variant="top" />
+
+        <div className="relative z-10 flex-1 flex flex-col px-6 pt-10 pb-8 max-w-md mx-auto w-full">
+          <h1 className="text-5xl font-extrabold text-foreground tracking-tight leading-none">
+            Créer un<br />compte
+          </h1>
+
+          {/* Photo upload */}
+          <div className="mt-8 flex justify-center">
+            <label className="relative cursor-pointer group">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                className="sr-only"
+              />
+              <div
+                className={`w-28 h-28 rounded-full border-2 border-dashed border-primary flex items-center justify-center overflow-hidden transition-all group-hover:scale-105 ${
+                  photoPreview ? "border-solid" : ""
+                }`}
+              >
+                {photoPreview ? (
+                  <img src={photoPreview} alt="Aperçu" className="w-full h-full object-cover" />
+                ) : (
+                  <Camera className="h-9 w-9 text-primary" />
+                )}
+              </div>
+            </label>
+          </div>
+
+          <div className="mt-8 space-y-3">
+            <Input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder={t("auth.displayName")}
+              className={pillInput}
+            />
+            <Input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t("auth.email")}
+              type="email"
+              autoComplete="email"
+              className={pillInput}
+            />
+            <div className="relative">
+              <Input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={t("auth.password")}
+                className={`${pillInput} pr-14`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
+
+            {/* Phone with Chad flag */}
+            <div className={`${pillInput} flex items-center gap-3 px-6`}>
+              <span className="text-xl" aria-hidden>🇹🇩</span>
+              <span className="text-sm font-semibold text-foreground">+235</span>
+              <span className="text-muted-foreground">|</span>
+              <input
+                type="tel"
+                inputMode="numeric"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                placeholder="Votre numéro"
+                className="flex-1 bg-transparent border-0 outline-none text-base placeholder:text-muted-foreground"
+              />
+            </div>
+
+            {/* Password strength */}
+            {password.length > 0 && (
+              <div className="flex gap-1 px-2">
+                {[0, 1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className={`h-1.5 flex-1 rounded-full transition-colors ${
+                      i < passwordStrength.score
+                        ? passwordStrength.score >= 3
+                          ? "bg-success"
+                          : "bg-secondary"
+                        : "bg-muted"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-auto pt-8 space-y-4">
+            <Button
+              onClick={handleEmailRegister}
+              disabled={loading || passwordStrength.score < 3}
+              className={pillBtn}
+            >
+              {loading ? t("auth.registering") : "Terminé"}
+            </Button>
+            <button onClick={() => setView("login-email")} className={cancelLink}>
+              Annuler
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // -------- FORGOT PASSWORD --------
+  return (
+    <div className="relative min-h-screen bg-background overflow-hidden flex flex-col">
+      <AuthBlobs variant="top" />
+
+      <div className="relative z-10 flex-1 flex flex-col items-center px-6 pt-16 pb-8 max-w-md mx-auto w-full">
+        {/* Avatar */}
+        <div className="w-28 h-28 rounded-full bg-gradient-to-br from-secondary to-primary border-4 border-card shadow-warm flex items-center justify-center">
+          <Mail className="h-12 w-12 text-primary-foreground" />
+        </div>
+
+        <h1 className="mt-6 text-3xl font-extrabold text-foreground text-center">
+          Mot de passe oublié
+        </h1>
+        <p className="mt-2 text-base text-muted-foreground text-center max-w-xs">
+          Saisissez votre e-mail, nous vous enverrons un lien de réinitialisation.
+        </p>
+
+        {/* Method card (email-only, selected) */}
+        <div className="mt-10 w-full">
+          <div className="flex items-center justify-between rounded-full bg-accent px-6 py-4">
+            <span className="font-bold text-primary">E-mail</span>
+            <span className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+              <Check className="h-4 w-4" />
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-6 w-full">
+          <Input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={t("auth.email")}
+            type="email"
+            className={pillInput}
+          />
+        </div>
+
+        <div className="mt-auto w-full pt-8 space-y-4">
+          <Button onClick={handleForgotPassword} disabled={loading} className={pillBtn}>
+            {loading ? t("auth.sending") : "Envoyer"}
+          </Button>
+          <button onClick={() => setView("login-email")} className={cancelLink}>
+            Annuler
+          </button>
+        </div>
       </div>
     </div>
   );

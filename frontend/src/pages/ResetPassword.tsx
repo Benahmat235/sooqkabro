@@ -5,9 +5,11 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { KeyRound, Eye, EyeOff } from "lucide-react";
+import AuthBlobs from "@/components/auth/AuthBlobs";
 
 const ResetPassword = () => {
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [ready, setReady] = useState(false);
@@ -16,21 +18,23 @@ const ResetPassword = () => {
 
   useEffect(() => {
     const hash = window.location.hash;
-    if (hash.includes("type=recovery")) {
-      setReady(true);
-    }
+    if (hash.includes("type=recovery")) setReady(true);
   }, []);
 
   const handleReset = async () => {
-    if (password.length < 6) {
-      toast({ title: "Erreur", description: "Le mot de passe doit contenir au moins 6 caractères", variant: "destructive" });
+    if (password.length < 8) {
+      toast({ title: "Erreur", description: "Le mot de passe doit contenir au moins 8 caractères", variant: "destructive" });
+      return;
+    }
+    if (password !== confirm) {
+      toast({ title: "Erreur", description: "Les mots de passe ne correspondent pas", variant: "destructive" });
       return;
     }
     setLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-      toast({ title: "Succès", description: "Mot de passe mis à jour avec succès" });
+      toast({ title: "Succès", description: "Mot de passe mis à jour" });
       navigate("/");
     } catch (err: any) {
       toast({ title: "Erreur", description: err.message, variant: "destructive" });
@@ -39,30 +43,74 @@ const ResetPassword = () => {
     }
   };
 
+  const pillInput =
+    "h-14 rounded-full bg-muted border-0 px-6 text-base focus-visible:ring-2 focus-visible:ring-primary/40";
+
   if (!ready) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
+      <div className="min-h-screen flex items-center justify-center p-6 bg-background">
         <p className="text-muted-foreground">Lien invalide ou expiré.</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-background">
-      <div className="w-full max-w-sm flex flex-col items-center gap-5">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/10 to-accent flex items-center justify-center">
-          <KeyRound className="h-9 w-9 text-primary" />
+    <div className="relative min-h-screen bg-background overflow-hidden flex flex-col">
+      <AuthBlobs variant="top" />
+
+      <div className="relative z-10 flex-1 flex flex-col items-center px-6 pt-16 pb-8 max-w-md mx-auto w-full">
+        <div className="w-28 h-28 rounded-full bg-gradient-to-br from-secondary to-primary border-4 border-card shadow-warm flex items-center justify-center">
+          <KeyRound className="h-12 w-12 text-primary-foreground" />
         </div>
-        <h2 className="text-xl font-extrabold text-foreground">Nouveau mot de passe</h2>
-        <div className="relative w-full">
-          <Input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Nouveau mot de passe (min. 6 caractères)" className="h-12 rounded-xl bg-muted/50 border-0 pr-12" />
-          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+
+        <h1 className="mt-6 text-3xl font-extrabold text-foreground text-center">
+          Nouveau mot de passe
+        </h1>
+        <p className="mt-2 text-base text-muted-foreground text-center max-w-xs">
+          Choisissez un mot de passe sécurisé pour votre compte.
+        </p>
+
+        <div className="mt-10 w-full space-y-3">
+          <div className="relative">
+            <Input
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Nouveau mot de passe"
+              className={`${pillInput} pr-14`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-5 top-1/2 -translate-y-1/2 text-muted-foreground"
+            >
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          </div>
+          <Input
+            type={showPassword ? "text" : "password"}
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            placeholder="Confirmer le mot de passe"
+            className={pillInput}
+          />
+        </div>
+
+        <div className="mt-auto w-full pt-8 space-y-4">
+          <Button
+            onClick={handleReset}
+            disabled={loading}
+            className="w-full h-14 rounded-full text-base font-bold shadow-warm"
+          >
+            {loading ? "Mise à jour..." : "Enregistrer"}
+          </Button>
+          <button
+            onClick={() => navigate("/auth")}
+            className="block mx-auto text-sm text-muted-foreground hover:text-foreground"
+          >
+            Annuler
           </button>
         </div>
-        <Button onClick={handleReset} disabled={loading} className="w-full h-12 rounded-xl font-bold">
-          {loading ? "Mise à jour..." : "Mettre à jour"}
-        </Button>
       </div>
     </div>
   );
