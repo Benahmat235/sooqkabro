@@ -10,7 +10,7 @@ type Props = {
 const AuthBlobs = ({ variant = "top", className = "" }: Props) => {
   if (variant === "minimal") {
     return (
-      <div className={`pointer-events-none absolute inset-x-0 top-0 -z-10 h-48 overflow-hidden ${className}`}>
+      <div className={`pointer-events-none absolute inset-x-0 top-0 z-0 h-48 overflow-hidden ${className}`}>
         <svg viewBox="0 0 390 200" preserveAspectRatio="none" className="h-full w-full">
           <path
             d="M0,0 L390,0 L390,120 C300,180 200,40 90,140 C50,170 20,150 0,180 Z"
@@ -28,7 +28,7 @@ const AuthBlobs = ({ variant = "top", className = "" }: Props) => {
 
   if (variant === "side") {
     return (
-      <div className={`pointer-events-none absolute inset-0 -z-10 overflow-hidden ${className}`}>
+      <div className={`pointer-events-none absolute inset-0 z-0 overflow-hidden ${className}`}>
         <svg viewBox="0 0 390 844" preserveAspectRatio="xMidYMid slice" className="h-full w-full">
           <path
             d="M390,0 L390,400 C320,420 280,300 250,200 C220,80 320,40 390,0 Z"
@@ -46,7 +46,7 @@ const AuthBlobs = ({ variant = "top", className = "" }: Props) => {
 
   // top (default) — large organic blob covering ~45% of screen, used on Login & Hello-* screens
   return (
-    <div className={`pointer-events-none absolute inset-x-0 top-0 -z-10 h-[55%] overflow-hidden ${className}`}>
+    <div className={`pointer-events-none absolute inset-x-0 top-0 z-0 h-[55%] overflow-hidden ${className}`}>
       <svg viewBox="0 0 390 500" preserveAspectRatio="none" className="h-full w-full">
         {/* Light accent blob */}
         <path
