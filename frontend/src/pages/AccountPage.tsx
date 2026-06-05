@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { SectionList, SectionRow } from "@/components/ui/section-list";
 import { 
   User, LogOut, Phone, ChevronRight, Eye, FileText, Heart, Pencil, Check, X, Camera, 
   ShieldCheck, BadgeCheck, Star, MapPin, Calendar, Share2, Settings, Bell, Globe, 
