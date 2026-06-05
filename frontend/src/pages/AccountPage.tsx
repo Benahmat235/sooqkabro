@@ -441,32 +441,85 @@ const AccountPage = () => {
           )}
         </div>
       ) : (
-        /* Settings Tab */
-        <div className="p-4 space-y-4">
-          <div className="space-y-2">
-            <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wide px-1">Parametres</h3>
-            {[
-              { label: "Notifications", icon: Bell, description: "Gerer vos alertes", key: "notifications" as const },
-              { label: "Langue", icon: Globe, description: t("language") || "Francais", key: "langue" as const },
-              { label: "Securite", icon: Lock, description: "Mot de passe et connexion", key: "securite" as const },
-              { label: "Aide et support", icon: HelpCircle, description: "FAQ et contact", key: "aide" as const },
-            ].map((item) => (
-              <button 
-                key={item.label}
-                onClick={() => setOpenSheet(item.key)}
-                className="w-full flex items-center gap-3 p-3.5 bg-card rounded-2xl shadow-sm border hover:shadow-md transition-all text-left"
-              >
-                <div className="p-2.5 rounded-xl bg-muted">
-                  <item.icon className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <div className="flex-1">
-                  <span className="font-semibold text-foreground block">{item.label}</span>
-                  <span className="text-xs text-muted-foreground">{item.description}</span>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </button>
-            ))}
-          </div>
+        /* Settings Tab — Shoppe-style grouped list */
+        <div className="p-4 space-y-5">
+          {/* Personal */}
+          <SectionList title="Personal">
+            <SectionRow
+              icon={<User className="h-4 w-4" />}
+              label="Profile"
+              value={displayName}
+              onClick={() => setEditing(true)}
+            />
+            <SectionRow
+              icon={<Phone className="h-4 w-4" />}
+              label={t("account.phone")}
+              value={displayPhone || "—"}
+              onClick={() => setEditing(true)}
+            />
+            <SectionRow
+              icon={<MapPin className="h-4 w-4" />}
+              label="Ville"
+              value="N'Djaména"
+              onClick={() => setEditing(true)}
+            />
+          </SectionList>
+
+          {/* Shop */}
+          <SectionList title="Shop">
+            <SectionRow
+              icon={<FileText className="h-4 w-4" />}
+              label={t("account.myListings")}
+              onClick={() => navigate("/mes-annonces")}
+            />
+            <SectionRow
+              icon={<Heart className="h-4 w-4" />}
+              label={t("account.myFavorites")}
+              onClick={() => navigate("/favoris")}
+            />
+            <SectionRow
+              icon={<MessageSquare className="h-4 w-4" />}
+              label="Messages"
+              onClick={() => navigate("/messages")}
+            />
+            <SectionRow
+              icon={<TrendingUp className="h-4 w-4" />}
+              label="Ma boutique"
+              onClick={() => navigate(`/vendeur/${user?.id}`)}
+            />
+          </SectionList>
+
+          {/* Account */}
+          <SectionList title="Account">
+            <SectionRow
+              icon={<Bell className="h-4 w-4" />}
+              label="Notifications"
+              onClick={() => setOpenSheet("notifications")}
+            />
+            <SectionRow
+              icon={<Globe className="h-4 w-4" />}
+              label="Langue"
+              value={locale === "fr" ? "Français" : locale === "en" ? "English" : "العربية"}
+              onClick={() => setOpenSheet("langue")}
+            />
+            <SectionRow
+              icon={<Lock className="h-4 w-4" />}
+              label="Sécurité"
+              onClick={() => setOpenSheet("securite")}
+            />
+            <SectionRow
+              icon={<HelpCircle className="h-4 w-4" />}
+              label="Aide et support"
+              onClick={() => setOpenSheet("aide")}
+            />
+            {isAdmin && (
+              <SectionRow
+                icon={<ShieldCheck className="h-4 w-4" />}
+                label={t("account.admin")}
+                onClick={() => navigate("/admin")}
+              />
+            )}
+          </SectionList>
 
           {/* Verification Status */}
           {!profile?.is_verified && (
@@ -476,15 +529,21 @@ const AccountPage = () => {
                   <BadgeCheck className="h-5 w-5 text-amber-600" />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-bold text-amber-900">Verifiez votre compte</h4>
-                  <p className="text-xs text-amber-700 mt-0.5">Obtenez le badge verifie pour gagner la confiance des acheteurs</p>
-                  <Button size="sm" className="mt-3 rounded-xl bg-amber-600 hover:bg-amber-700">
+                  <h4 className="font-bold text-amber-900">Vérifiez votre compte</h4>
+                  <p className="text-xs text-amber-700 mt-0.5">Obtenez le badge vérifié pour gagner la confiance des acheteurs</p>
+                  <Button size="sm" className="mt-3 rounded-full bg-amber-600 hover:bg-amber-700 h-9 px-5">
                     Commencer
                   </Button>
                 </div>
               </div>
             </div>
           )}
+
+          {/* App footer info — Shoppe-style */}
+          <div className="text-center pt-4 pb-2">
+            <p className="text-xs font-bold text-muted-foreground tracking-wider">SOOQKABRO</p>
+            <p className="text-[10px] text-muted-foreground/70 mt-0.5">Version 1.0</p>
+          </div>
         </div>
       )}
 
