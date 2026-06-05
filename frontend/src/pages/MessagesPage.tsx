@@ -574,7 +574,7 @@ function ChatView({ conversation, userId, onBack }: { conversation: Conversation
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder={t("messages.placeholder")}
-              className="rounded-2xl bg-muted/50 border-0 pr-20 min-h-[44px] resize-none"
+              className="rounded-full bg-muted/60 border-0 pr-20 pl-5 h-12 resize-none focus-visible:ring-primary/30"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
