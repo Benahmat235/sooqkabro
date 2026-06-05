@@ -574,7 +574,7 @@ function ChatView({ conversation, userId, onBack }: { conversation: Conversation
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder={t("messages.placeholder")}
-              className="rounded-2xl bg-muted/50 border-0 pr-20 min-h-[44px] resize-none"
+              className="rounded-full bg-muted/60 border-0 pr-20 pl-5 h-12 resize-none focus-visible:ring-primary/30"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
@@ -618,41 +618,39 @@ function ChatView({ conversation, userId, onBack }: { conversation: Conversation
   );
 }
 
-function MessageBubble({ 
-  message, 
-  isMine, 
-  showTail 
-}: { 
-  message: Message; 
-  isMine: boolean; 
+function MessageBubble({
+  message,
+  isMine,
+  showTail,
+}: {
+  message: Message;
+  isMine: boolean;
   showTail: boolean;
 }) {
   return (
     <div className={cn("flex", isMine ? "justify-end" : "justify-start")}>
-      <div className={cn(
-        "max-w-[80%] px-3.5 py-2 text-sm",
-        isMine
-          ? "bg-primary text-primary-foreground"
-          : "bg-muted text-foreground",
-        showTail 
-          ? isMine 
-            ? "rounded-2xl rounded-br-md" 
-            : "rounded-2xl rounded-bl-md"
-          : "rounded-2xl"
-      )}>
-        <p className="whitespace-pre-wrap break-words">{message.content}</p>
-        <div className={cn(
-          "flex items-center justify-end gap-1 mt-0.5",
-          isMine ? "text-primary-foreground/60" : "text-muted-foreground"
-        )}>
-          <span className="text-[9px]">
-            {format(new Date(message.created_at), "HH:mm")}
-          </span>
-          {isMine && (
-            message.read 
-              ? <CheckCheck className="h-3 w-3" />
-              : <Check className="h-3 w-3" />
+      <div
+        className={cn(
+          "max-w-[78%] px-4 py-2.5 text-sm shadow-sm",
+          isMine
+            ? "bg-primary text-primary-foreground"
+            : "bg-muted text-foreground",
+          showTail
+            ? isMine
+              ? "rounded-3xl rounded-br-lg"
+              : "rounded-3xl rounded-bl-lg"
+            : "rounded-3xl",
+        )}
+      >
+        <p className="whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
+        <div
+          className={cn(
+            "flex items-center justify-end gap-1 mt-1",
+            isMine ? "text-primary-foreground/60" : "text-muted-foreground",
           )}
+        >
+          <span className="text-[10px]">{format(new Date(message.created_at), "HH:mm")}</span>
+          {isMine && (message.read ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />)}
         </div>
       </div>
     </div>

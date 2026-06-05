@@ -1,61 +1,66 @@
+## Phase 2 — Design Shoppe sur les pages existantes
 
-## Objectif
+Le PDF couvre 40 écrans Shoppe (Settings hub, Profil, Adresse, Paiements, Langue/Pays/Devise, Activité/Vouchers/Commandes, Chat support, Avis/Notation, Suivi commande, Delete account).
 
-Appliquer le langage visuel des 12 écrans Shoppe à la phase d'inscription/onboarding, en gardant la palette SooqKabro existante (bleu Tchad, sable, Cairo).
+Comme **SooqKabro est une marketplace de petites annonces (pas e-commerce)**, j'adapte le langage visuel Shoppe sans copier les concepts non pertinents (panier, paiements, devises USD, adresse de livraison, vouchers, tracking colis). Je redesigne d'abord les pages existantes qui ont un équivalent direct dans Shoppe, en conservant la palette **SooqKabro** (bleu Tchad, or, Cairo, FCFA, RTL) et les composants pills/blobs créés en phase 1.
 
-## Langage visuel à reproduire
+### Mapping écrans Shoppe → pages SooqKabro existantes
 
-- Grandes formes organiques (blobs) bleu primary + bleu clair (accent) en haut/coin de l'écran
-- Titres très larges (text-5xl/6xl) en Cairo bold, alignés à gauche
-- Inputs pilule (rounded-full), fond muted, sans bordure, h-14, padding généreux
-- Bouton primary pilule pleine largeur, h-14
-- Lien "Cancel" texte sous le CTA
-- Avatar circulaire blanc-bordé centré comme point focal
-- OTP : 4 cases carrées arrondies (rounded-2xl) `bg-muted`
-- Carrousel d'onboarding avec dots au bas de l'écran
+| Shoppe | Page existante | Action |
+|---|---|---|
+| Settings hub (p.15-16) | `AccountPage.tsx` — onglet Settings | Refonte liste groupée Personal / Shop / Account |
+| Your Profile (p.14) | `AccountPage.tsx` — édition profil | Avatar circulaire + champs pills + "Save Changes" |
+| Language (p.5) | Sheet Langue | Liste radio FR/EN/AR style Shoppe |
+| Country (p.6) | Sheet Ville (Tchad — 13 villes) | Liste alphabétique avec lettre d'index |
+| Delete account (p.2) | Confirm dialog | Modal centré icône ⚠️ + 2 boutons pills |
+| Chat / Customer Care (p.23-34) | `MessagesPage.tsx` + détail conversation | Bulles arrondies, header avatar + "Typing...", cartes commande/voucher → cartes **annonce** |
+| Rate Service (p.22, 35, 36) | `RateSellerDialog.tsx` | 5 étoiles XL + textarea pill + écran "Done!" |
+| My Activity / Hello (p.17, 21, 38, 40) | `AccountPage.tsx` — header + onglet Stats | Header "Hello, {prénom}!" + carte stats mensuelle + carrousel "Vus récemment" |
+| Order History / Recently viewed (p.37) | `FavoritesPage.tsx` + section "Vus récemment" | Liste verticale avec image carrée + titre + référence annonce |
 
-## Écrans livrés
+### Écrans Shoppe **ignorés** (hors périmètre marketplace)
+- Shipping Address (p.7-8), Payment Methods (p.9-13), Edit/Add Card, Currency USD/EUR, Vouchers (p.18-20), Sizes US/EU/UK, Order tracking colis (p.39).
 
-1. **OnboardingPage** (nouveau, `/onboarding`)
-   - Carrousel 2 slides : "Hello" + "Ready?" (images shopping libres)
-   - Dots indicator en bas, bouton "Let's Start" → `/auth`
-   - Sauté si l'utilisateur a déjà vu (localStorage `sk_onboarded`)
-   - Redirection depuis `/` vers `/onboarding` à la 1ère visite (logique dans `App.tsx`)
+### Nouveaux composants UI partagés
 
-2. **AuthPage** refonte complète (`/auth`)
-   - **Vue Login étape 1** : blob bleu en haut, titre "Login" + "Good to see you back ❤", champ Email pilule, bouton "Next" + "Cancel"
-   - **Vue Login étape 2** : avatar de l'user récupéré via email (fallback initiales), "Hello, {name}!!", champ password pilule, bouton flèche → ; "Not you?" pour revenir
-   - **Vue Register** : titre "Create Account", upload photo cercle pointillé (Camera icon, drag-drop fichier vers Cloudinary), Email, Password (avec œil), Téléphone avec drapeau 🇹🇩 (+235 préfixe lock), bouton "Done"
-   - **Vue Forgot** : "Password Recovery" + avatar, message "How would you like to restore your password?" — **uniquement option Email** (constraint mémoire : pas de SMS) sous forme de carte pilule sélectionnée, bouton "Next" envoie reset password
-   - Boutons Google & Apple conservés en haut (style outline pilule), divider "or"
+| Fichier | Rôle |
+|---|---|
+| `components/ui/section-list.tsx` | Liste groupée style iOS (titre section + items chevron) — réutilisé Settings & Account |
+| `components/ui/list-item.tsx` | Ligne "label + valeur + chevron" cliquable |
+| `components/chat/ChatBubble.tsx` | Bulle message arrondie (variant sent/received) avec timestamp |
+| `components/chat/ChatHeader.tsx` | Header avatar + nom + statut "Typing…/En ligne" + back |
+| `components/chat/ListingCardInChat.tsx` | Carte annonce intégrée dans la conversation (remplace voucher/order Shoppe) |
+| `components/account/ActivityCard.tsx` | Carte stats mensuelle dégradée (vues / messages / favoris reçus) |
+| `components/account/HelloHeader.tsx` | Header "Hello, {prénom}!" + avatar + cloche notifications |
+| `components/RatingDoneScreen.tsx` | État succès "Merci pour votre avis" 5 étoiles animées |
 
-3. **ResetPassword** (`/reset-password`) restylé
-   - Avatar en haut, titre "Setup New Password", sous-titre, 2 champs pilule (password / confirmer), bouton "Save"
+### Fichiers modifiés
 
-## Détails techniques
+| Fichier | Changement |
+|---|---|
+| `pages/AccountPage.tsx` | Refonte complète : `HelloHeader` + onglet **Activité** (ActivityCard + Vus récemment + Mes annonces récentes) + onglet **Paramètres** (SectionList groupée Personal/Shop/Account) ; remplace les 4 boutons actuels |
+| `pages/MessagesPage.tsx` | Liste conversations style Shoppe (avatar + last message + timestamp + badge unread) ; vue détail conversation = `ChatHeader` + `ChatBubble[]` + composer pill |
+| `components/RateSellerDialog.tsx` | Refonte étoiles XL + textarea "Say it!" + écran final "Done!" |
+| `pages/FavoritesPage.tsx` | Restyle header pill + grille cartes carrées arrondies |
+| `pages/EditListing.tsx` | Champs pills + bouton "Save Changes" full-width (cohérence form Shoppe) |
+| `i18n/translations.ts` | Ajout clés: `account.hello`, `account.activity`, `chat.typing`, `chat.online`, `rating.done`, `rating.thanks`, `settings.personal`, `settings.shop`, `settings.account`, `settings.deleteWarning` |
 
-- Nouveau composant `<AuthBlobs />` (SVG décoratif blobs bleu) réutilisable par AuthPage / OnboardingPage / ResetPassword
-- Nouveau composant `<PillInput />` wrapper de `Input` avec classes pilule h-14 muted, slot icône droite
-- Nouveau composant `<PillButton />` (variant CVA dans `button.tsx`) `rounded-full h-14`
-- Carrousel onboarding via `embla-carousel-react` (déjà installé via shadcn carousel)
-- Étape Login 2 : appel à RPC légère `get_public_profile_by_email(email)` → renvoie `display_name + avatar_url` ; **à créer en SECURITY DEFINER avec rate-limit côté client (3/min)** pour éviter l'énumération brute. Si pas trouvé, affiche fallback "Hello !".
-- Constraints respectés : aucun SMS, palette bleu Tchad + or préservée, Cairo, RTL ok (les blobs miroir via `rtl:scale-x-[-1]`)
+### Détails design Shoppe → SooqKabro
 
-## Fichiers touchés
+- **SectionList** : fond `bg-card`, padding `px-5 py-4`, titre section uppercase `text-[11px] text-muted-foreground tracking-wider`, séparateurs `border-b border-border/40`, chevron `lucide ChevronRight`.
+- **Bulles chat** : `rounded-3xl px-4 py-2.5`, sent = `bg-primary text-primary-foreground rounded-br-md`, received = `bg-muted rounded-bl-md`. Timestamp `text-[10px] text-muted-foreground` sous chaque groupe.
+- **Composer chat** : input pill `h-12 rounded-full bg-muted` + icônes pièce-jointe/emoji à gauche + bouton send circulaire `bg-primary`.
+- **Rate dialog** : 5 étoiles `h-10 w-10` cliquables avec animation `scale + fill` au tap, textarea `rounded-3xl min-h-[120px] p-4 bg-muted`, bouton "Next" pill full-width.
+- **Delete account confirm** : `AlertDialog` centré, icône warning dans cercle `bg-destructive/10`, 2 boutons `flex-1` pills (Cancel outline + Delete destructive).
+- **HelloHeader** : padding généreux `px-5 pt-6 pb-4`, avatar `h-12 w-12 ring-2 ring-primary/20`, titre `text-2xl font-extrabold`, sous-titre date du jour.
+- **ActivityCard** : `rounded-3xl bg-gradient-to-br from-primary/10 to-primary/5 p-5`, grille 3 colonnes (Vues / Messages / Favoris), grand chiffre `text-3xl font-extrabold text-primary`.
 
-- `frontend/src/pages/OnboardingPage.tsx` (nouveau)
-- `frontend/src/pages/AuthPage.tsx` (refonte)
-- `frontend/src/pages/ResetPassword.tsx` (restyle)
-- `frontend/src/components/auth/AuthBlobs.tsx` (nouveau)
-- `frontend/src/components/auth/PillInput.tsx` (nouveau)
-- `frontend/src/components/ui/button.tsx` (ajout variant `pill`)
-- `frontend/src/App.tsx` (route `/onboarding` + redirection 1ère visite)
-- `frontend/src/i18n/translations.ts` (clés onboarding + 2-step login)
-- 1 migration SQL : RPC `get_public_profile_by_email(email text)` SECURITY DEFINER
-- 2 images d'onboarding : générées via imagegen (femmes shopping, fond rose/bleu) → `src/assets/`
+### Hors périmètre
 
-## Non inclus (intentionnel)
+- Pas de Home/Listing detail/Categories/Search/Publish — ces écrans sont déjà refondus ou seront traités en phase ultérieure (sur demande).
+- Pas de paiement/panier/livraison/vouchers — non applicable au modèle marketplace P2P.
+- Pas de modification de la logique métier (RLS, hooks, edge functions).
 
-- Pas d'écran OTP/SMS (interdit par la mémoire projet)
-- Pas de clavier custom (les keyboards rendus dans le PDF sont natifs iOS)
-- Pas de changement aux pages métier (Home, Listing, Search, etc.) — uniquement la phase d'inscription
+### Validation
+
+Après implémentation : screenshots des 4 routes refondues (`/compte`, `/messages`, `/favoris`, dialog rating ouvert) pour comparer avec les pages Shoppe correspondantes.

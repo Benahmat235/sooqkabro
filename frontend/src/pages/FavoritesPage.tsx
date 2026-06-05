@@ -19,12 +19,16 @@ const FavoritesPage = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       <div className="sticky top-0 z-40 glass border-b px-4 py-3 flex items-center gap-3">
-        <Link to="/">
+        <Link
+          to="/"
+          aria-label="Retour"
+          className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-muted/70 transition-colors"
+        >
           <ArrowLeft className="h-5 w-5 text-foreground" />
         </Link>
-        <h1 className="text-lg font-extrabold text-foreground">Mes favoris</h1>
+        <h1 className="text-xl font-extrabold text-foreground">Mes favoris</h1>
         {favoriteListings.length > 0 && (
-          <span className="ml-auto text-xs font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+          <span className="ml-auto text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
             {favoriteListings.length}
           </span>
         )}
