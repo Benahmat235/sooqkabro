@@ -43,9 +43,11 @@ interface ListingCardProps {
   listing: ListingWithImages;
   compact?: boolean;
   priceLevel?: PriceLevel;
+  variant?: "default" | "square";
 }
 
-const ListingCard = ({ listing, compact = false, priceLevel }: ListingCardProps) => {
+const ListingCard = ({ listing, compact = false, priceLevel, variant = "default" }: ListingCardProps) => {
+
   const city = getCityById(listing.city_id);
   const { favoriteIds } = useFavorites();
   const toggleFav = useToggleFavorite();
