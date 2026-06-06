@@ -26,7 +26,8 @@ const Index = () => {
   const [selectedCity, setSelectedCity] = useState("all");
   const { detectedCity } = useGeoLocation();
   const { t } = useTranslation();
-  const [estimatorOpen, setEstimatorOpen] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+
 
   useEffect(() => {
     if (detectedCity && selectedCity === "all") {
