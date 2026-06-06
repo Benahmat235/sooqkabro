@@ -230,19 +230,17 @@ const Index = () => {
                     </Link>
                   </div>
                   
-                  <motion.div 
-                    className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3"
-                    variants={containerVariants}
-                    initial="hidden"
-                    whileInView="show"
-                    viewport={{ once: true, margin: "-50px" }}
-                  >
+                  <div className="flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-3 px-3 pb-1">
                     {catListings.map((listing) => (
-                      <motion.div key={listing.id} variants={itemVariants}>
-                        <ListingCard listing={listing} priceLevel={levelFor(listing)} />
-                      </motion.div>
+                      <ListingCard
+                        key={listing.id}
+                        listing={listing}
+                        priceLevel={levelFor(listing)}
+                        variant="square"
+                      />
                     ))}
-                  </motion.div>
+                  </div>
+
                 </motion.section>
               );
             })}
