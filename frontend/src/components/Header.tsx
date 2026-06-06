@@ -161,14 +161,14 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <form onSubmit={handleSearch} className="grid grid-cols-[112px_minmax(0,1fr)_40px] gap-1.5 sm:grid-cols-[160px_minmax(0,1fr)_44px] sm:gap-2">
+          <form onSubmit={handleSearch} className="grid grid-cols-[110px_minmax(0,1fr)_44px] gap-2 sm:grid-cols-[160px_minmax(0,1fr)_44px]">
             <Select value={selectedCity} onValueChange={onCityChange}>
               <SelectTrigger
-                className="h-9 w-full rounded-lg bg-muted/40 border-0 px-2 text-xs gap-1 focus:ring-primary/30 justify-start sm:h-10 sm:text-sm sm:px-3"
+                className="h-11 w-full rounded-full bg-muted/60 border-0 px-3 text-xs gap-1 focus:ring-primary/30 justify-start sm:text-sm"
                 aria-label="Sélectionner une ville"
               >
                 <MapPin className="h-3.5 w-3.5 shrink-0 text-primary sm:h-4 sm:w-4" />
-                <span className="text-muted-foreground truncate">{selectedCityName}</span>
+                <span className="text-foreground truncate font-medium">{selectedCityName}</span>
                 <ChevronDown className="h-3.5 w-3.5 text-muted-foreground ml-auto shrink-0 sm:h-4 sm:w-4" />
               </SelectTrigger>
               <SelectContent>
@@ -179,22 +179,26 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
               </SelectContent>
             </Select>
             <div className="relative flex-1">
+              <Search className={cn("absolute top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none", isRTL ? "right-4" : "left-4")} />
               <Input
                 ref={inputRef}
                 placeholder={t("search.placeholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => history.length > 0 && setShowHistory(true)}
-                className="bg-muted/40 border-0 h-9 rounded-lg text-sm pr-10 focus-visible:ring-primary/30 focus-visible:bg-card transition-colors sm:h-10"
+                className={cn(
+                  "bg-muted/60 border-0 h-11 rounded-full text-sm focus-visible:ring-primary/30 focus-visible:bg-card transition-colors",
+                  isRTL ? "pr-11 pl-10" : "pl-11 pr-10"
+                )}
                 aria-label={t("search.placeholder")}
                 aria-expanded={showHistory}
                 aria-haspopup="listbox"
               />
               {searchQuery && (
-                <button 
-                  type="button" 
-                  onClick={() => setSearchQuery("")} 
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted transition-colors"
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className={cn("absolute top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted transition-colors", isRTL ? "left-3" : "right-3")}
                   aria-label="Effacer la recherche"
                 >
                   <X className="h-4 w-4 text-muted-foreground" />
@@ -203,12 +207,13 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
             </div>
             <button
               type="submit"
-              className="h-9 px-3 rounded-lg bg-primary text-primary-foreground font-bold text-sm hover:bg-primary/90 transition-colors flex items-center justify-center sm:h-10 sm:px-4"
+              className="h-11 w-11 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 transition-colors flex items-center justify-center shadow-sm"
               aria-label="Rechercher"
             >
               <Search className="h-4 w-4" />
             </button>
           </form>
+
 
           {/* Search history dropdown */}
           <AnimatePresence>
