@@ -81,7 +81,81 @@ const ListingCard = ({ listing, compact = false, priceLevel, variant = "default"
   const isVIP = listing.id === "1" || (listing as any).is_vip;
   const isTurbo = listing.id === "3" || (listing as any).is_turbo;
 
+  if (variant === "square") {
+    return (
+      <Link
+        to={`/annonce/${listing.id}`}
+        className={cn("group block w-[150px] shrink-0 snap-start", isRTL && "rtl text-right")}
+        aria-label={`${listing.title} - ${formatPrice(listing.price)}`}
+      >
+        <motion.div
+          whileHover={{ y: -3 }}
+          whileTap={{ scale: 0.97 }}
+          className="relative rounded-3xl overflow-hidden bg-card shadow-card"
+        >
+          <div className="relative aspect-square bg-muted overflow-hidden">
+            {!imgError ? (
+              <img
+                src={srcSmall}
+                alt={listing.title}
+                loading="lazy"
+                onLoad={() => setImgLoaded(true)}
+                onError={() => setImgError(true)}
+                className={cn(
+                  "w-full h-full object-cover transition-transform duration-500 group-hover:scale-105",
+                  !imgLoaded && "opacity-0"
+                )}
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+                <ImageOff className="h-6 w-6" />
+              </div>
+            )}
+
+            <button
+              onClick={handleFav}
+              className={cn(
+                "absolute top-2 bg-card/95 backdrop-blur-sm rounded-full p-1.5 shadow-md ring-1 ring-border/50 z-10",
+                isRTL ? "left-2" : "right-2"
+              )}
+              aria-label={isFav ? "Retirer des favoris" : "Ajouter aux favoris"}
+            >
+              <Heart
+                className={cn(
+                  "h-3.5 w-3.5 transition-colors",
+                  isFav ? "fill-[hsl(var(--chad-red))] text-[hsl(var(--chad-red))]" : "text-foreground/70"
+                )}
+              />
+            </button>
+
+            {showBadge === "discount" && (
+              <div className={cn("absolute top-2 bg-destructive text-destructive-foreground text-[9px] font-extrabold px-2 py-0.5 rounded-full shadow", isRTL ? "right-2" : "left-2")}>
+                -{discountPercent}%
+              </div>
+            )}
+          </div>
+
+          <div className="p-2.5 space-y-1">
+            <h3 className="text-xs font-semibold text-foreground line-clamp-1 leading-tight">
+              {listing.title}
+            </h3>
+            <p className="text-sm font-extrabold text-primary leading-tight">
+              {formatPrice(listing.price)}
+            </p>
+            {city && (
+              <div className={cn("flex items-center gap-1 text-muted-foreground", isRTL && "flex-row-reverse")}>
+                <MapPin className="h-2.5 w-2.5 shrink-0" />
+                <span className="truncate text-[10px]">{city.name}</span>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </Link>
+    );
+  }
+
   return (
+
     <Link 
       to={`/annonce/${listing.id}`} 
       className={cn("group block h-full", isRTL && "rtl text-right")}
