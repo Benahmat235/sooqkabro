@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import Header from "@/components/Header";
 import CategoryGrid from "@/components/CategoryGrid";
 import PublishCTA from "@/components/PublishCTA";
 import ListingCard from "@/components/ListingCard";
 import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
+import HelloHeader from "@/components/account/HelloHeader";
+import NotificationCenter from "@/components/NotificationCenter";
 import { useListings } from "@/hooks/useListings";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, Clock, ChevronRight, TrendingUp, Calculator, Zap } from "lucide-react";
+import { Sparkles, Clock, ChevronRight, TrendingUp } from "lucide-react";
 import { useGeoLocation } from "@/hooks/useGeoLocation";
 import { categories } from "@/data/categories";
 import { Link } from "react-router-dom";
@@ -18,8 +20,7 @@ import type { ListingWithImages } from "@/hooks/useListings";
 import { containerVariants, itemVariants, fadeInUpVariants } from "@/lib/animations";
 import { usePriceStatsBatch } from "@/hooks/usePriceStats";
 import { classifyPrice } from "@/lib/pricing";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+
 
 const Index = () => {
   const [selectedCity, setSelectedCity] = useState("all");
