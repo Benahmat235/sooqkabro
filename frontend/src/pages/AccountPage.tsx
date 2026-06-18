@@ -89,17 +89,18 @@ const AccountPage = () => {
     });
 
     const fetchStats = async () => {
-      const { count: listingCount } = await supabase.from("listings").select("id", { count: "exact", head: true }).eq("user_id", user.id);
-      const { data: userListings } = await supabase.from("listings").select("id, title, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(3);
-      const ids = (userListings || []).map((l: any) => l.id);
-      let totalViews = 0, totalFavorites = 0;
-      if (ids.length > 0) {
-        const { count: viewCount } = await supabase.from("listing_views").select("id", { count: "exact", head: true }).in("listing_id", ids);
-        const { count: favCount } = await supabase.from("favorites").select("id", { count: "exact", head: true }).in("listing_id", ids);
-        totalViews = viewCount || 0;
-        totalFavorites = favCount || 0;
+      const { data: statsData } = await supabase.rpc("get_user_listing_stats", { p_user_id: user.id });
+      if (statsData) {
+        setStats({
+          totalListings: statsData.total_listings || 0,
+          totalViews: statsData.total_views || 0,
+          totalFavorites: statsData.total_favorites || 0
+        });
+      } else {
+        setStats({ totalListings: 0, totalViews: 0, totalFavorites: 0 });
       }
-      setStats({ totalListings: listingCount || 0, totalViews, totalFavorites });
+
+      const { data: userListings } = await supabase.from("listings").select("id, title, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(3);
 
       // Build recent activity
       const activities: RecentActivity[] = [];
