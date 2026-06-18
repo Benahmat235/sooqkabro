@@ -43,27 +43,43 @@ export function useConversations() {
 
       if (error) throw error;
 
+      if (!convos || convos.length === 0) return [];
+
+      const listingIds = [...new Set(convos.map((c) => c.listing_id))];
+      const otherIds = [...new Set(convos.map((c) => c.buyer_id === user.id ? c.seller_id : c.buyer_id))];
+      const convoIds = convos.map((c) => c.id);
+
+      const [listingsRes, profilesRes] = await Promise.all([
+        supabase.from("listings").select("id, title, listing_images(image_url, position)").in("id", listingIds),
+        supabase.from("profiles").select("id, display_name, avatar_url").in("id", otherIds),
+      ]);
+
+      const listingsMap = new Map((listingsRes.data || []).map((l: any) => [l.id, l]));
+      const profilesMap = new Map((profilesRes.data || []).map((p: any) => [p.id, p]));
+
       // Enrich with listing info, other user info, and last message
+      // We still need to fetch messages individually to get limit(1) and count without fetching entire histories
       const enriched: Conversation[] = await Promise.all(
-        (convos || []).map(async (c: any) => {
+        convos.map(async (c: any) => {
           const otherId = c.buyer_id === user.id ? c.seller_id : c.buyer_id;
 
-          const [listingRes, profileRes, msgRes, unreadRes] = await Promise.all([
-            supabase.from("listings").select("title, listing_images(image_url, position)").eq("id", c.listing_id).maybeSingle(),
-            supabase.from("profiles").select("display_name, avatar_url").eq("id", otherId).maybeSingle(),
+          const listingData = listingsMap.get(c.listing_id);
+          const profileData = profilesMap.get(otherId);
+
+          const [msgRes, unreadRes] = await Promise.all([
             supabase.from("messages").select("content, created_at").eq("conversation_id", c.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
             supabase.from("messages").select("id", { count: "exact", head: true }).eq("conversation_id", c.id).eq("read", false).neq("sender_id", user.id),
           ]);
 
-          const images = (listingRes.data as any)?.listing_images || [];
+          const images = listingData?.listing_images || [];
           const sortedImages = [...images].sort((a: any, b: any) => a.position - b.position);
 
           return {
             ...c,
-            listing_title: listingRes.data?.title || "Annonce",
+            listing_title: listingData?.title || "Annonce",
             listing_image: sortedImages[0]?.image_url || "/placeholder.svg",
-            other_user_name: profileRes.data?.display_name || "Utilisateur",
-            other_user_avatar: profileRes.data?.avatar_url,
+            other_user_name: profileData?.display_name || "Utilisateur",
+            other_user_avatar: profileData?.avatar_url,
             last_message: msgRes.data?.content,
             last_message_at: msgRes.data?.created_at,
             unread_count: unreadRes.count || 0,
