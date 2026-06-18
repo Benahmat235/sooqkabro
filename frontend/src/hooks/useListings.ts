@@ -24,6 +24,8 @@ export interface ListingWithImages {
   badge?: string | null;
   view_count?: number;
   is_verified?: boolean;
+  is_vip?: boolean;
+  is_turbo?: boolean;
 }
 
 async function fetchListings(cityId?: string, limit = 50): Promise<ListingWithImages[]> {

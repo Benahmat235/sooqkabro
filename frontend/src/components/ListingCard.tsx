@@ -72,14 +72,14 @@ const ListingCard = ({ listing, compact = false, priceLevel, variant = "default"
   };
 
   const badge = listing.badge;
-  const originalPrice = (listing as any).original_price as number | null;
+  const originalPrice = listing.original_price;
   const hasDiscount = originalPrice && originalPrice > listing.price;
   const discountPercent = hasDiscount ? Math.round(((originalPrice - listing.price) / originalPrice) * 100) : 0;
   const showBadge = hasDiscount ? "discount" : badge === "urgent" ? "urgent" : badge === "premium" ? "premium" : null;
 
   // Premium statuses for demo
-  const isVIP = listing.id === "1" || (listing as any).is_vip;
-  const isTurbo = listing.id === "3" || (listing as any).is_turbo;
+  const isVIP = listing.id === "1" || listing.is_vip;
+  const isTurbo = listing.id === "3" || listing.is_turbo;
 
   if (variant === "square") {
     return (
