@@ -28,11 +28,6 @@ export const PWAInstallPrompt = () => {
 
     window.addEventListener('beforeinstallprompt', handler);
 
-    // Détection si déjà installé
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      console.log('PWA already installed');
-    }
-
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
