@@ -152,6 +152,7 @@ const EditListing = () => {
 
       // Upload new photos
       const startPosition = existingImages.length;
+      const newListingImages = [];
       for (let i = 0; i < newPhotos.length; i++) {
         const file = newPhotos[i];
         const ext = file.name.split(".").pop() || "jpg";
@@ -167,11 +168,15 @@ const EditListing = () => {
           .from("listing-photos")
           .getPublicUrl(filePath);
 
-        await supabase.from("listing_images").insert({
+        newListingImages.push({
           listing_id: id!,
           image_url: urlData.publicUrl,
           position: startPosition + i,
         });
+      }
+
+      if (newListingImages.length > 0) {
+        await supabase.from("listing_images").insert(newListingImages);
       }
 
       success("Annonce modifiee !", "Les changements ont ete enregistres.");
