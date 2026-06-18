@@ -1,5 +1,6 @@
 import * as React from "react";
 import * as RechartsPrimitive from "recharts";
+import DOMPurify from "dompurify";
 
 import { cn } from "@/lib/utils";
 
@@ -65,12 +66,9 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null;
   }
 
-  return (
-    <style
-      dangerouslySetInnerHTML={{
-        __html: Object.entries(THEMES)
-          .map(
-            ([theme, prefix]) => `
+  const cssString = Object.entries(THEMES)
+    .map(
+      ([theme, prefix]) => `
 ${prefix} [data-chart=${id}] {
 ${colorConfig
   .map(([key, itemConfig]) => {
@@ -80,11 +78,17 @@ ${colorConfig
   .join("\n")}
 }
 `,
-          )
-          .join("\n"),
-      }}
-    />
-  );
+    )
+    .join("\n");
+
+  // DOMPurify removes <style> tags by default. We configure it to allow <style> and its content.
+  // Although we are just sanitizing the content and returning it in a style tag via dangerouslySetInnerHTML
+  const sanitizedHTML = DOMPurify.sanitize(`<style>${cssString}</style>`, {
+    ADD_TAGS: ["style"],
+    FORCE_BODY: true,
+  });
+
+  return <div style={{ display: "none" }} dangerouslySetInnerHTML={{ __html: sanitizedHTML }} />;
 };
 
 const ChartTooltip = RechartsPrimitive.Tooltip;
