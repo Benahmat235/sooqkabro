@@ -24,21 +24,34 @@ export function useSellerReviews(sellerId: string | undefined) {
         .order("created_at", { ascending: false });
       if (error) throw error;
 
-      // Enrich with reviewer names
-      const enriched = await Promise.all(
-        (data || []).map(async (r: any) => {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("display_name, avatar_url")
-            .eq("id", r.reviewer_id)
-            .maybeSingle();
-          return {
-            ...r,
-            reviewer_name: profile?.display_name || "Utilisateur",
-            reviewer_avatar: profile?.avatar_url,
-          };
-        })
+      if (!data || data.length === 0) return [];
+
+      // Extract unique reviewer IDs
+      const reviewerIds = [...new Set(data.map((r) => r.reviewer_id))];
+
+      // Fetch all profiles in one go
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url")
+        .in("id", reviewerIds);
+
+      if (profilesError) throw profilesError;
+
+      // Create a map for fast lookup
+      const profileMap = new Map(
+        (profiles || []).map((p) => [p.id, p])
       );
+
+      // Enrich with reviewer names
+      const enriched = data.map((r) => {
+        const profile = profileMap.get(r.reviewer_id);
+        return {
+          ...r,
+          reviewer_name: profile?.display_name || "Utilisateur",
+          reviewer_avatar: profile?.avatar_url,
+        };
+      });
+
       return enriched as SellerReview[];
     },
     enabled: !!sellerId,
