@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { PriceStats } from "@/lib/pricing";
 
@@ -32,6 +32,7 @@ export function usePriceStats(categoryId?: string | null, subcategoryId?: string
  * and return a Map keyed by `${category}::${subcategory||''}`.
  */
 export function usePriceStatsBatch(pairs: Array<{ category_id: string; subcategory_id?: string | null }>) {
+  const queryClient = useQueryClient();
   const uniqueKeys = Array.from(
     new Set(pairs.map((p) => `${p.category_id}::${p.subcategory_id ?? ""}`))
   );
@@ -46,7 +47,12 @@ export function usePriceStatsBatch(pairs: Array<{ category_id: string; subcatego
       await Promise.all(
         uniqueKeys.map(async (key) => {
           const [cat, sub] = key.split("::");
-          const stats = await fetchPriceStats(cat, sub || undefined);
+          const subcategory_id = sub || undefined;
+          const stats = await queryClient.fetchQuery({
+            queryKey: ["price-stats", cat, subcategory_id],
+            queryFn: () => fetchPriceStats(cat, subcategory_id),
+            staleTime: 60 * 60 * 1000,
+          });
           if (stats) map.set(key, stats);
         })
       );
