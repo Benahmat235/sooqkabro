@@ -30,7 +30,7 @@ export const PWAInstallPrompt = () => {
 
     // Détection si déjà installé
     if (window.matchMedia('(display-mode: standalone)').matches) {
-      console.log('PWA already installed');
+      console.info('PWA already installed');
     }
 
     return () => window.removeEventListener('beforeinstallprompt', handler);
@@ -43,7 +43,7 @@ export const PWAInstallPrompt = () => {
     const choiceResult = await deferredPrompt.userChoice;
 
     if (choiceResult.outcome === 'accepted') {
-      console.log('User accepted the install prompt');
+      console.info('User accepted the install prompt');
     } else {
       localStorage.setItem('pwa-install-declined', 'true');
     }
