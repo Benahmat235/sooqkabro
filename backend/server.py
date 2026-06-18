@@ -58,7 +58,7 @@ app.include_router(api_router)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_origins=[origin for origin in os.environ.get('CORS_ORIGINS', '').split(',') if origin],
     allow_methods=["*"],
     allow_headers=["*"],
 )
