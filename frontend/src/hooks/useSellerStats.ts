@@ -61,7 +61,7 @@ export function useSellerStats(sellerId: string | undefined) {
       let hasFlag = false;
       if (sellerListingIds.length > 0) {
         const { data: flags } = await supabase
-          .from("listing_flags" as any)
+          .from("listing_flags")
           .select("id")
           .in("listing_id", sellerListingIds)
           .limit(1);
