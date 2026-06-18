@@ -18,9 +18,10 @@ import { buttonVariants, pulseVariants } from "@/lib/animations";
 interface HeaderProps {
   selectedCity: string;
   onCityChange: (city: string) => void;
+  hideSearch?: boolean;
 }
 
-const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
+const Header = ({ selectedCity, onCityChange, hideSearch = false }: HeaderProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showHistory, setShowHistory] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -126,9 +127,9 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
             <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
               <Link
                 to="/publier"
-                className="bg-gradient-to-r from-primary to-primary/90 text-primary-foreground text-xs font-bold px-3 py-1.5 rounded-full shadow-sm hover:shadow-md transition-all"
+                className="bg-primary text-primary-foreground text-sm font-bold px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-all flex items-center gap-1.5"
               >
-                + {t("nav.publish")}
+                Post an Ad
               </Link>
             </motion.div>
           </div>
@@ -153,6 +154,8 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
           </motion.div>
         </div>
 
+        {!hideSearch && (
+          <>
         {/* Row 2: City selector + Search bar */}
         <motion.div
           className="pb-1.5 relative"
@@ -283,6 +286,8 @@ const Header = ({ selectedCity, onCityChange }: HeaderProps) => {
             ))}
           </div>
         </div>
+          </>
+        )}
       </div>
     </motion.header>
     </>
