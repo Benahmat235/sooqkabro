@@ -1,17 +1,16 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import Header from "@/components/Header";
 import CategoryGrid from "@/components/CategoryGrid";
-import PublishCTA from "@/components/PublishCTA";
 import ListingCard from "@/components/ListingCard";
 import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
-import HelloHeader from "@/components/account/HelloHeader";
 import NotificationCenter from "@/components/NotificationCenter";
 import { useListings } from "@/hooks/useListings";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, Clock, ChevronRight, TrendingUp } from "lucide-react";
+import { Sparkles, Clock } from "lucide-react";
 import { useGeoLocation } from "@/hooks/useGeoLocation";
 import { categories } from "@/data/categories";
 import { Link } from "react-router-dom";
@@ -20,10 +19,14 @@ import type { ListingWithImages } from "@/hooks/useListings";
 import { containerVariants, itemVariants, fadeInUpVariants } from "@/lib/animations";
 import { usePriceStatsBatch } from "@/hooks/usePriceStats";
 import { classifyPrice } from "@/lib/pricing";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 
 const Index = () => {
   const [selectedCity, setSelectedCity] = useState("all");
+  const [heroSearchQuery, setHeroSearchQuery] = useState("");
+  const navigate = useNavigate();
   const { detectedCity } = useGeoLocation();
   const { t } = useTranslation();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -34,18 +37,11 @@ const Index = () => {
       setSelectedCity(detectedCity);
     }
   }, [detectedCity]);
+
   const { user } = useAuth();
-
-  const { data: listings = [], isLoading } = useListings(selectedCity);
-
   const isLoggedIn = !!user;
 
-  const listingsByCategory = categories.reduce<Record<string, ListingWithImages[]>>((acc, cat) => {
-    acc[cat.id] = listings.filter((l) => l.category_id === cat.id).slice(0, 6);
-    return acc;
-  }, {});
-
-  const popularCategories = categories.filter((cat) => (listingsByCategory[cat.id]?.length || 0) > 0).slice(0, 5);
+  const { data: listings = [], isLoading } = useListings(selectedCity);
 
   const { data: priceStatsMap } = usePriceStatsBatch(
     listings.map((l) => ({ category_id: l.category_id, subcategory_id: l.subcategory_id }))
@@ -53,13 +49,50 @@ const Index = () => {
   const levelFor = (l: ListingWithImages) =>
     classifyPrice(l.price, priceStatsMap?.get(`${l.category_id}::${l.subcategory_id ?? ""}`));
 
+  const handleHeroSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (heroSearchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(heroSearchQuery.trim())}&city=${selectedCity}`);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
-      <Header selectedCity={selectedCity} onCityChange={setSelectedCity} />
+      <Header selectedCity={selectedCity} onCityChange={setSelectedCity} hideSearch={true} />
 
-      <main className="container mx-auto px-3">
-        {isLoggedIn && <HelloHeader onBellClick={() => setShowNotifications(true)} />}
+      <main className="container mx-auto px-3 space-y-6">
         <NotificationCenter isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
+
+        {/* Hero Section */}
+        <motion.section
+          className="pt-8 pb-6 text-center"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground mb-3 tracking-tight">
+            Find exactly what you need
+          </h1>
+          <p className="text-sm sm:text-base text-muted-foreground mb-6">
+            The best local marketplace to buy and sell items quickly and safely.
+          </p>
+          <form onSubmit={handleHeroSearch} className="max-w-2xl mx-auto relative flex items-center">
+            <Search className="absolute left-4 h-5 w-5 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="What are you looking for?"
+              value={heroSearchQuery}
+              onChange={(e) => setHeroSearchQuery(e.target.value)}
+              className="h-14 pl-12 pr-14 rounded-full text-base shadow-sm border-border bg-card focus-visible:ring-primary focus-visible:ring-offset-2"
+            />
+            <button
+              type="submit"
+              className="absolute right-2 h-10 px-4 rounded-full bg-primary text-primary-foreground font-bold hover:bg-primary/90 transition-colors"
+            >
+              Search
+            </button>
+          </form>
+        </motion.section>
 
         {/* Category Grid with animation */}
         <motion.div
@@ -68,18 +101,6 @@ const Index = () => {
           transition={{ duration: 0.4 }}
         >
           <CategoryGrid />
-        </motion.div>
-
-
-
-        {/* Publish CTA with animation */}
-        <motion.div 
-          className="py-2"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
-        >
-          <PublishCTA />
         </motion.div>
 
         {isLoading ? (
@@ -178,72 +199,6 @@ const Index = () => {
               </motion.div>
             </motion.section>
 
-            {/* Category sections */}
-            {popularCategories.map((cat, categoryIndex) => {
-              const catListings = listingsByCategory[cat.id];
-              if (!catListings || catListings.length === 0) return null;
-              const Icon = cat.icon;
-              
-              return (
-                <motion.section 
-                  key={cat.id} 
-                  className="py-3"
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ duration: 0.5, delay: categoryIndex * 0.1 }}
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <motion.div 
-                        className="p-1.5 rounded-lg bg-accent shadow-sm"
-                        whileHover={{ scale: 1.05, rotate: -5 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <Icon className="h-4 w-4 text-accent-foreground" />
-                      </motion.div>
-                      <h2 className="text-sm font-extrabold text-foreground">
-                        {t(`cat.${cat.id}`).split(" ")[0]}
-                      </h2>
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.2 }}
-                        className="flex items-center gap-1 text-[9px] font-semibold text-muted-foreground"
-                      >
-                        <TrendingUp className="h-2.5 w-2.5" />
-                        <span>{catListings.length}</span>
-                      </motion.div>
-                    </div>
-                    <Link 
-                      to={`/categorie/${cat.id}`} 
-                      className="group text-primary text-xs font-semibold flex items-center gap-0.5 hover:underline"
-                    >
-                      {t("listings.seeMore")} 
-                      <motion.div
-                        whileHover={{ x: 3 }}
-                        transition={{ type: "spring", stiffness: 400 }}
-                      >
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      </motion.div>
-                    </Link>
-                  </div>
-                  
-                  <div className="flex gap-3 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-3 px-3 pb-1">
-                    {catListings.map((listing) => (
-                      <ListingCard
-                        key={listing.id}
-                        listing={listing}
-                        priceLevel={levelFor(listing)}
-                        variant="square"
-                      />
-                    ))}
-                  </div>
-
-                </motion.section>
-              );
-            })}
           </>
         )}
       </main>

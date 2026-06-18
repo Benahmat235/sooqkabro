@@ -58,8 +58,9 @@ const ListingCard = ({ listing, compact = false, priceLevel, variant = "default"
   const { locale: language } = useTranslation();
   const isRTL = language === 'ar';
 
-  const imgSrc = listing.images[0] || "/placeholder.svg";
-  const srcSmall = optimizeImage(imgSrc, 300);
+  const defaultPlaceholder = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop"; // Abstract design meeting constraints
+  const imgSrc = listing.images && listing.images.length > 0 ? listing.images[0] : defaultPlaceholder;
+  const srcSmall = imgSrc === defaultPlaceholder ? defaultPlaceholder : optimizeImage(imgSrc, 300);
   const locationLabel = [city?.name || listing.city_id, listing.quartier].filter(Boolean).join(" - ");
   const dateLabel = formatListingDate(listing.created_at);
 
@@ -306,25 +307,27 @@ const ListingCard = ({ listing, compact = false, priceLevel, variant = "default"
           </div>
         </div>
 
-        <div className={cn("space-y-1.5", compact ? "p-2" : "p-2.5")}>
+        <div className={cn("space-y-2", compact ? "p-3" : "p-4")}>
           <div className={cn("flex min-w-0 items-start gap-1.5", isRTL && "flex-row-reverse")}>
-            <h3 className={cn("min-w-0 flex-1 font-semibold text-foreground line-clamp-2 leading-tight", compact ? "text-[11px]" : "text-xs")}>
+            <h3 className={cn("min-w-0 flex-1 font-semibold text-foreground line-clamp-1 leading-tight", compact ? "text-xs" : "text-sm")}>
               {listing.title}
             </h3>
             {listing.is_verified && (
-              <BadgeCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" aria-label="Vendeur vérifié" />
+              <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-label="Vendeur vérifié" />
             )}
           </div>
-          <div className={cn("flex min-w-0 items-center gap-1 text-muted-foreground", isRTL && "flex-row-reverse")}>
-            <MapPin className="h-3 w-3 shrink-0" />
-            <span className="truncate text-[10px]">{locationLabel}</span>
-          </div>
-          {dateLabel && (
-            <div className={cn("flex items-center gap-1 text-muted-foreground", isRTL && "flex-row-reverse")}>
-              <CalendarDays className="h-3 w-3 shrink-0" />
-              <span className="text-[10px]">{dateLabel}</span>
+
+          <div className={cn("flex items-center justify-between", isRTL && "flex-row-reverse")}>
+            <div className={cn("flex min-w-0 items-baseline gap-1.5", isRTL && "flex-row-reverse")}>
+              <span className={cn("truncate font-extrabold text-primary", compact ? "text-sm" : "text-base")}>
+                {formatPrice(listing.price)}
+              </span>
             </div>
-          )}
+
+            <button className="text-xs font-bold bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground px-3 py-1.5 rounded-full transition-colors">
+              View Details
+            </button>
+          </div>
         </div>
         <div className="absolute inset-0 border-2 border-primary/0 hover:border-primary/20 rounded-xl transition-colors duration-300 pointer-events-none" />
       </motion.div>
