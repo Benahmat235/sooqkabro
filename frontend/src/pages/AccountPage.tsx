@@ -25,6 +25,7 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { z } from "zod";
 
 interface Stats {
   totalListings: number;
@@ -63,8 +64,17 @@ const AccountPage = () => {
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [activeTab, setActiveTab] = useState<"overview" | "settings">("overview");
   const [openSheet, setOpenSheet] = useState<"notifications" | "langue" | "securite" | "aide" | null>(null);
-  const [notifPrefs, setNotifPrefs] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("sooq_notif_prefs") || "{}"); } catch { return {}; }
+  const [notifPrefs, setNotifPrefs] = useState<Record<string, boolean>>(() => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem("sooq_notif_prefs") || "{}");
+      const result = z.record(z.boolean()).safeParse(parsed);
+      if (result.success) {
+        return result.data;
+      }
+      return {};
+    } catch {
+      return {};
+    }
   });
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
