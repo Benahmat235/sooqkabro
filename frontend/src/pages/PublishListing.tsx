@@ -392,6 +392,7 @@ const PublishListing = () => {
 
       if (listingError) throw listingError;
 
+      const imagesToInsert = [];
       for (let i = 0; i < photos.length; i++) {
         const file = photos[i];
         try {
@@ -413,13 +414,21 @@ const PublishListing = () => {
           const uploadData = await res.json();
           if (!res.ok || !uploadData.url) continue;
 
-          await supabase.from("listing_images").insert({
+          imagesToInsert.push({
             listing_id: listing.id,
             image_url: uploadData.url,
             position: i,
           });
         } catch {
           continue;
+        }
+      }
+
+      if (imagesToInsert.length > 0) {
+        try {
+          await supabase.from("listing_images").insert(imagesToInsert);
+        } catch {
+          // Ignore insertion errors to match previous behavior
         }
       }
 
