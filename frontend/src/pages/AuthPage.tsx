@@ -93,7 +93,7 @@ const AuthPage = () => {
       success(t("auth.loginSuccess"), t("auth.welcomeMsg"));
       navigate("/");
     } catch (err: unknown) {
-      showError(err.message || t("auth.loginFailed"), t("auth.error"));
+      showError(getErrorMessage(err, t("auth.loginFailed")), t("auth.error"));
     } finally {
       setLoading(false);
     }
@@ -127,7 +127,7 @@ const AuthPage = () => {
       success(t("auth.checkEmail"), t("auth.accountCreated"));
       setView("login-email");
     } catch (err: unknown) {
-      showError(err.message || t("auth.loginFailed"), t("auth.error"));
+      showError(getErrorMessage(err, t("auth.loginFailed")), t("auth.error"));
     } finally {
       setLoading(false);
     }
@@ -146,7 +146,7 @@ const AuthPage = () => {
       if (error) throw error;
       success(t("auth.checkInbox"), t("auth.emailSent"));
     } catch (err: unknown) {
-      showError(err.message || t("auth.loginFailed"), t("auth.error"));
+      showError(getErrorMessage(err, t("auth.loginFailed")), t("auth.error"));
     } finally {
       setLoading(false);
     }
