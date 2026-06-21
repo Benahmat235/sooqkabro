@@ -44,8 +44,9 @@ export function useConversations() {
       if (error) throw error;
 
       // Enrich with listing info, other user info, and last message
+      type RawConvo = { id: string; buyer_id: string; seller_id: string; listing_id: string } & Record<string, unknown>;
       const enriched: Conversation[] = await Promise.all(
-        (convos || []).map(async (c: any) => {
+        (convos || []).map(async (c: RawConvo) => {
           const otherId = c.buyer_id === user.id ? c.seller_id : c.buyer_id;
 
           const [listingRes, profileRes, msgRes, unreadRes] = await Promise.all([
@@ -55,8 +56,9 @@ export function useConversations() {
             supabase.from("messages").select("id", { count: "exact", head: true }).eq("conversation_id", c.id).eq("read", false).neq("sender_id", user.id),
           ]);
 
-          const images = (listingRes.data as any)?.listing_images || [];
-          const sortedImages = [...images].sort((a: any, b: any) => a.position - b.position);
+          const listingData = listingRes.data as { title?: string; listing_images?: { image_url: string; position: number }[] } | null;
+          const images = listingData?.listing_images || [];
+          const sortedImages = [...images].sort((a, b) => a.position - b.position);
 
           return {
             ...c,

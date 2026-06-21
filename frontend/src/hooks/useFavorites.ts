@@ -14,7 +14,7 @@ export function useFavorites() {
         .from("favorites")
         .select("listing_id")
         .eq("user_id", user.id);
-      return (data || []).map((f: any) => f.listing_id as string);
+      return (data || []).map((f: { listing_id: string }) => f.listing_id);
     },
     enabled: !!user,
   });

@@ -41,16 +41,19 @@ async function fetchListings(cityId?: string, limit = 50): Promise<ListingWithIm
   const { data, error } = await query;
   if (error) throw error;
 
-  const listings = (data || []).map((l: any) => ({
+  type RawListing = Omit<ListingWithImages, "images" | "view_count" | "is_verified"> & {
+    listing_images?: { image_url: string; position: number }[];
+  };
+  const listings = ((data || []) as RawListing[]).map((l) => ({
     ...l,
     images: (l.listing_images || [])
-      .sort((a: any, b: any) => a.position - b.position)
-      .map((img: any) => img.image_url),
+      .sort((a, b) => a.position - b.position)
+      .map((img) => img.image_url),
   }));
 
   if (listings.length > 0) {
-    const ids = listings.map((l: any) => l.id);
-    const userIds = [...new Set(listings.map((l: any) => l.user_id))];
+    const ids = listings.map((l) => l.id);
+    const userIds = [...new Set(listings.map((l) => l.user_id))];
 
     // Batch view counts — single query, count client-side
     const { data: viewRows } = await supabase
@@ -59,7 +62,7 @@ async function fetchListings(cityId?: string, limit = 50): Promise<ListingWithIm
       .in("listing_id", ids);
 
     const viewCounts = new Map<string, number>();
-    (viewRows || []).forEach((r: any) => {
+    ((viewRows || []) as { listing_id: string }[]).forEach((r) => {
       viewCounts.set(r.listing_id, (viewCounts.get(r.listing_id) || 0) + 1);
     });
 
@@ -69,9 +72,11 @@ async function fetchListings(cityId?: string, limit = 50): Promise<ListingWithIm
       .select("id, is_verified")
       .in("id", userIds);
 
-    const verifiedMap = new Map((profiles || []).map((p: any) => [p.id, p.is_verified]));
+    const verifiedMap = new Map(
+      ((profiles || []) as { id: string; is_verified: boolean | null }[]).map((p) => [p.id, p.is_verified])
+    );
 
-    return listings.map((l: any) => ({
+    return listings.map((l) => ({
       ...l,
       view_count: viewCounts.get(l.id) || 0,
       is_verified: verifiedMap.get(l.user_id) || false,

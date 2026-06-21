@@ -26,7 +26,7 @@ export function useSellerReviews(sellerId: string | undefined) {
 
       // Enrich with reviewer names
       const enriched = await Promise.all(
-        (data || []).map(async (r: any) => {
+        (data || []).map(async (r: { reviewer_id: string } & Record<string, unknown>) => {
           const { data: profile } = await supabase
             .from("profiles")
             .select("display_name, avatar_url")

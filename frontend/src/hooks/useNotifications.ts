@@ -93,7 +93,7 @@ export function useNotifications() {
       try {
         const parsed = JSON.parse(stored);
         setNotifications(
-          parsed.map((n: any) => ({
+          parsed.map((n: { createdAt: string } & Record<string, unknown>) => ({
             ...n,
             createdAt: new Date(n.createdAt),
           }))

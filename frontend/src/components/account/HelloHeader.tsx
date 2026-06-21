@@ -22,14 +22,15 @@ const HelloHeader = ({ onBellClick }: HelloHeaderProps) => {
   const { unreadCount } = useNotifications();
   const { locale } = useTranslation();
 
-  const fullName =
-    (user?.user_metadata as any)?.full_name ||
-    (user?.user_metadata as any)?.name ||
-    user?.email?.split("@")[0] ||
-    "";
+  const meta = (user?.user_metadata ?? {}) as {
+    full_name?: string;
+    name?: string;
+    avatar_url?: string;
+  };
+  const fullName = meta.full_name || meta.name || user?.email?.split("@")[0] || "";
   const firstName = fullName.split(" ")[0] || "";
   const initials = firstName.slice(0, 2).toUpperCase() || "SK";
-  const avatarUrl = (user?.user_metadata as any)?.avatar_url;
+  const avatarUrl = meta.avatar_url;
 
   const subtitle =
     locale === "ar"

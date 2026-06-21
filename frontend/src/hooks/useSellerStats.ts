@@ -52,16 +52,16 @@ export function useSellerStats(sellerId: string | undefined) {
       ]);
 
       const listings = listingsRes.data || [];
-      const profile = profileRes.data as any;
+      const profile = profileRes.data as { created_at?: string; is_verified?: boolean } | null;
       const conversations = conversationsRes.data || [];
       const reviews = (reviewsRes.data || []) as { rating: number }[];
 
       // Trust score (max 100)
-      const sellerListingIds = listings.map((l: any) => l.id);
+      const sellerListingIds = listings.map((l: { id: string }) => l.id);
       let hasFlag = false;
       if (sellerListingIds.length > 0) {
         const { data: flags } = await supabase
-          .from("listing_flags" as any)
+          .from("listing_flags")
           .select("id")
           .in("listing_id", sellerListingIds)
           .limit(1);
