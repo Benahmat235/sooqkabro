@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { BadgeCheck, CalendarDays, Heart, ImageOff, MapPin, Zap, Crown, TrendingDown, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
-import { formatPrice } from "@/data/mockListings";
+import { formatPrice } from "@/lib/pricing";
 import { getCityById } from "@/data/cities";
 import type { ListingWithImages } from "@/hooks/useListings";
 import { useFavorites, useToggleFavorite } from "@/hooks/useFavorites";

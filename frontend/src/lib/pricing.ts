@@ -29,3 +29,12 @@ export const priceLevelLabel: Record<PriceLevel, string> = {
   normal: "Prix juste",
   unknown: "",
 };
+
+/**
+ * Format a price in FCFA with French locale grouping.
+ * Returns "Gratuit" for 0.
+ */
+export function formatPrice(price: number): string {
+  if (price === 0) return "Gratuit";
+  return price.toLocaleString("fr-FR") + " FCFA";
+}

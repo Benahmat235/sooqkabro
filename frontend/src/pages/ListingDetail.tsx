@@ -32,7 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ProfileSkeleton } from "@/components/Skeletons";
 import { Textarea } from "@/components/ui/textarea";
-import { formatPrice } from "@/data/mockListings";
+import { formatPrice } from "@/lib/pricing";
 import { getCityById } from "@/data/cities";
 import { getCategoryById, getSubcategoryName } from "@/data/categories";
 import { useListings } from "@/hooks/useListings";
