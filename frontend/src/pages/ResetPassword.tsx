@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/supabaseErrors";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -36,8 +37,8 @@ const ResetPassword = () => {
       if (error) throw error;
       toast({ title: "Succès", description: "Mot de passe mis à jour" });
       navigate("/");
-    } catch (err: any) {
-      toast({ title: "Erreur", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      toast({ title: "Erreur", description: getErrorMessage(err), variant: "destructive" });
     } finally {
       setLoading(false);
     }

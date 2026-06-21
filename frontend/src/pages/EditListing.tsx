@@ -176,7 +176,7 @@ const EditListing = () => {
 
       success("Annonce modifiee !", "Les changements ont ete enregistres.");
       navigate(`/annonce/${id}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       showError(err);
     } finally {
       setSubmitting(false);

@@ -1,3 +1,4 @@
+import { getErrorMessage } from "@/lib/supabaseErrors";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ const AuthPage = () => {
       if (result.redirected) return;
       success(t("auth.welcomeMsg"), t("auth.loginSuccess"));
       navigate("/");
-    } catch (err: any) {
+    } catch (err: unknown) {
       showError(err);
     } finally {
       setLoading(false);
@@ -55,7 +56,7 @@ const AuthPage = () => {
       if (result.redirected) return;
       success(t("auth.welcomeMsg"), t("auth.loginSuccess"));
       navigate("/");
-    } catch (err: any) {
+    } catch (err: unknown) {
       showError(err);
     } finally {
       setLoading(false);
@@ -91,7 +92,7 @@ const AuthPage = () => {
       if (error) throw error;
       success(t("auth.loginSuccess"), t("auth.welcomeMsg"));
       navigate("/");
-    } catch (err: any) {
+    } catch (err: unknown) {
       showError(err.message || t("auth.loginFailed"), t("auth.error"));
     } finally {
       setLoading(false);
@@ -125,7 +126,7 @@ const AuthPage = () => {
       if (error) throw error;
       success(t("auth.checkEmail"), t("auth.accountCreated"));
       setView("login-email");
-    } catch (err: any) {
+    } catch (err: unknown) {
       showError(err.message || t("auth.loginFailed"), t("auth.error"));
     } finally {
       setLoading(false);
@@ -144,7 +145,7 @@ const AuthPage = () => {
       });
       if (error) throw error;
       success(t("auth.checkInbox"), t("auth.emailSent"));
-    } catch (err: any) {
+    } catch (err: unknown) {
       showError(err.message || t("auth.loginFailed"), t("auth.error"));
     } finally {
       setLoading(false);

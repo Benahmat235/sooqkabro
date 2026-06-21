@@ -430,7 +430,7 @@ const PublishListing = () => {
 
       success("Annonce publiee !", "Votre annonce est maintenant visible.");
       navigate(`/annonce/${listing.id}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Use smart error parsing for technical errors
       showError(err);
     } finally {
