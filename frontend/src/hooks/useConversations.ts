@@ -179,7 +179,7 @@ export function useUnreadCount() {
 
       if (!convos?.length) return 0;
 
-      const ids = convos.map((c: any) => c.id);
+      const ids = convos.map((c: { id: string }) => c.id);
       const { count } = await supabase
         .from("messages")
         .select("id", { count: "exact", head: true })
