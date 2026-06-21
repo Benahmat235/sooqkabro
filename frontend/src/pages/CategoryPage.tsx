@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCategoryById } from "@/data/categories";
-import { useListings } from "@/hooks/useListings";
+import { useListings, type ListingWithImages } from "@/hooks/useListings";
 import { useInfiniteScroll, InfiniteScrollLoader, InfiniteScrollSentinel } from "@/hooks/useInfiniteScroll";
 import { useTranslation } from "@/i18n/useTranslation";
 import { usePriceStatsBatch } from "@/hooks/usePriceStats";

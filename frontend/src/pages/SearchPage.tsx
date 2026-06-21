@@ -8,7 +8,7 @@ import FilterPanel from "@/components/FilterPanel";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { useSearchListings } from "@/hooks/useListings";
+import { useSearchListings, type ListingWithImages } from "@/hooks/useListings";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/i18n/useTranslation";
 import { usePriceStatsBatch } from "@/hooks/usePriceStats";
