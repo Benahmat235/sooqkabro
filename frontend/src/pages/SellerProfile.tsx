@@ -49,7 +49,17 @@ import { useToast } from "@/hooks/use-toast";
 const SellerProfile = () => {
   const { sellerId } = useParams();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<{
+    id: string;
+    display_name: string | null;
+    username: string | null;
+    avatar_url: string | null;
+    is_verified: boolean | null;
+    last_seen: string | null;
+    bio: string | null;
+    created_at: string;
+    updated_at: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [starFilter, setStarFilter] = useState<number | null>(null);

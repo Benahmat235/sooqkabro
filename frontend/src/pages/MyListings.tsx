@@ -53,14 +53,20 @@ const MyListings = () => {
       .order("created_at", { ascending: false });
 
     const { data: phones } = await supabase.rpc("get_my_listings_phones");
-    const phoneMap = new Map<string, string>((phones || []).map((p: any) => [p.id, p.phone]));
+    const phoneMap = new Map<string, string>(
+      (phones || []).map((p: { id: string; phone: string }) => [p.id, p.phone])
+    );
 
+    type RawListing = Listing & { listing_images?: { image_url: string }[] };
     setListings(
-      (data || []).map((l: any) => ({
-        ...l,
-        phone: phoneMap.get(l.id) || "",
-        images: l.listing_images || [],
-      }))
+      (data || []).map((l) => {
+        const raw = l as RawListing;
+        return {
+          ...raw,
+          phone: phoneMap.get(raw.id) || "",
+          images: raw.listing_images || [],
+        };
+      })
     );
     setLoading(false);
   };

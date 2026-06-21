@@ -188,7 +188,10 @@ export function parseError(error: unknown): UserFriendlyError {
   } else if (typeof error === 'string') {
     errorMessage = error;
   } else if (error && typeof error === 'object') {
-    errorMessage = (error as any).message || (error as any).error || JSON.stringify(error);
+    const e = error as { message?: unknown; error?: unknown };
+    errorMessage = (typeof e.message === 'string' ? e.message : '') ||
+      (typeof e.error === 'string' ? e.error : '') ||
+      JSON.stringify(error);
   }
 
   // Try to match against known patterns
@@ -228,7 +231,7 @@ export function handleError(error: unknown, context?: string): UserFriendlyError
 /**
  * Create a safe error handler wrapper for async functions
  */
-export function withErrorHandling<T extends (...args: any[]) => Promise<any>>(
+export function withErrorHandling<T extends (...args: unknown[]) => Promise<unknown>>(
   fn: T,
   context?: string
 ): (...args: Parameters<T>) => Promise<{ data: Awaited<ReturnType<T>> | null; error: UserFriendlyError | null }> {

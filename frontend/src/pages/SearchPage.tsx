@@ -305,7 +305,7 @@ const SearchPage = () => {
   );
 };
 
-function PricedSearchGrid({ items }: { items: any[] }) {
+function PricedSearchGrid({ items }: { items: ListingWithImages[] }) {
   const { data: statsMap } = usePriceStatsBatch(
     items.map((l) => ({ category_id: l.category_id, subcategory_id: l.subcategory_id }))
   );

@@ -155,7 +155,7 @@ const CategoryPage = () => {
   );
 };
 
-function PricedGrid({ items }: { items: any[] }) {
+function PricedGrid({ items }: { items: ListingWithImages[] }) {
   const { data: statsMap } = usePriceStatsBatch(
     items.map((l) => ({ category_id: l.category_id, subcategory_id: l.subcategory_id }))
   );

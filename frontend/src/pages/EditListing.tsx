@@ -74,7 +74,9 @@ const EditListing = () => {
       setPrice(String(data.price || ""));
       setPhone((phoneVal || "").replace("+235", ""));
       setExistingImages(
-        (data.listing_images || []).sort((a: any, b: any) => a.position - b.position)
+        (data.listing_images || []).sort(
+          (a: { position: number }, b: { position: number }) => a.position - b.position
+        )
       );
       setLoading(false);
     };
