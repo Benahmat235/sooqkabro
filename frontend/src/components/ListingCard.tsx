@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { BadgeCheck, CalendarDays, Heart, ImageOff, MapPin, Zap, Crown, TrendingDown, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
-import { formatPrice } from "@/data/mockListings";
+import { formatPrice } from "@/lib/pricing";
 import { getCityById } from "@/data/cities";
 import type { ListingWithImages } from "@/hooks/useListings";
 import { useFavorites, useToggleFavorite } from "@/hooks/useFavorites";
@@ -72,14 +72,15 @@ const ListingCard = ({ listing, compact = false, priceLevel, variant = "default"
   };
 
   const badge = listing.badge;
-  const originalPrice = (listing as any).original_price as number | null;
+  const extra = listing as typeof listing & { original_price?: number | null; is_vip?: boolean; is_turbo?: boolean };
+  const originalPrice = extra.original_price ?? null;
   const hasDiscount = originalPrice && originalPrice > listing.price;
   const discountPercent = hasDiscount ? Math.round(((originalPrice - listing.price) / originalPrice) * 100) : 0;
   const showBadge = hasDiscount ? "discount" : badge === "urgent" ? "urgent" : badge === "premium" ? "premium" : null;
 
   // Premium statuses for demo
-  const isVIP = listing.id === "1" || (listing as any).is_vip;
-  const isTurbo = listing.id === "3" || (listing as any).is_turbo;
+  const isVIP = listing.id === "1" || extra.is_vip;
+  const isTurbo = listing.id === "3" || extra.is_turbo;
 
   if (variant === "square") {
     return (

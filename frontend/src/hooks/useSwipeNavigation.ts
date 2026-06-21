@@ -12,7 +12,7 @@ interface UseSwipeNavigationOptions {
 export const useSwipeNavigation = (options: UseSwipeNavigationOptions = {}): {
   handlers: SwipeableHandlers;
   swipeProgress: number;
-  isSwi ping: boolean;
+  isSwiping: boolean;
 } => {
   const {
     enabled = true,

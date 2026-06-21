@@ -8,7 +8,7 @@ import FilterPanel from "@/components/FilterPanel";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { useSearchListings } from "@/hooks/useListings";
+import { useSearchListings, type ListingWithImages } from "@/hooks/useListings";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation } from "@/i18n/useTranslation";
 import { usePriceStatsBatch } from "@/hooks/usePriceStats";
@@ -305,7 +305,7 @@ const SearchPage = () => {
   );
 };
 
-function PricedSearchGrid({ items }: { items: any[] }) {
+function PricedSearchGrid({ items }: { items: ListingWithImages[] }) {
   const { data: statsMap } = usePriceStatsBatch(
     items.map((l) => ({ category_id: l.category_id, subcategory_id: l.subcategory_id }))
   );

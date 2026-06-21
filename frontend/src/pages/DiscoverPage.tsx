@@ -134,7 +134,7 @@ const DiscoverPage = () => {
     (l) => l.badge === "premium" || l.badge === "urgent"
   );
   const deals = (listings || [])
-    .filter((l) => (l as any).original_price && (l as any).original_price > l.price)
+    .filter((l) => l.original_price != null && l.original_price > l.price)
     .slice(0, 12);
   const recent = (listings || [])
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())

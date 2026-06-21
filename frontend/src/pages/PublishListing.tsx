@@ -129,7 +129,7 @@ const categoryFields: Record<string, { label: string; type: string; options?: st
   ],
 };
 
-const categoryIcons: Record<string, any> = {
+const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   vehicules: Car,
   immobilier: Home,
   telephones: Smartphone,
@@ -430,7 +430,7 @@ const PublishListing = () => {
 
       success("Annonce publiee !", "Votre annonce est maintenant visible.");
       navigate(`/annonce/${listing.id}`);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Use smart error parsing for technical errors
       showError(err);
     } finally {
@@ -771,7 +771,7 @@ const PublishListing = () => {
               {/* Price */}
               <div className="space-y-3">
                 <Label className="font-semibold">Prix</Label>
-                <RadioGroup value={priceType} onValueChange={(v) => setPriceType(v as any)} className="flex gap-3">
+                <RadioGroup value={priceType} onValueChange={(v) => setPriceType(v as typeof priceType)} className="flex gap-3">
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="fixed" id="fixed" />
                     <Label htmlFor="fixed" className="font-normal cursor-pointer">Prix fixe</Label>

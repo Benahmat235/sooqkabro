@@ -11,7 +11,7 @@ export function useUpdateLastSeen() {
     const updateLastSeen = async () => {
       await supabase
         .from("profiles")
-        .update({ last_seen: new Date().toISOString() } as any)
+        .update({ last_seen: new Date().toISOString() })
         .eq("id", user.id);
     };
 

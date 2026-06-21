@@ -1,6 +1,7 @@
 import {
   Car, Home, Smartphone, Briefcase, Wrench, PawPrint,
-  Shirt, Sofa, Monitor, UtensilsCrossed
+  Shirt, Sofa, Monitor, UtensilsCrossed,
+  type LucideIcon
 } from "lucide-react";
 
 export interface SubCategory {
@@ -11,7 +12,7 @@ export interface SubCategory {
 export interface Category {
   id: string;
   name: string;
-  icon: any;
+  icon: LucideIcon;
   image: string;
   color: string;
   bgColor: string;

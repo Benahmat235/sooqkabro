@@ -1,43 +1,75 @@
-## Phase 3 — Refonte de la page d'accueil au style Shoppe
+# Plan — Nettoyage du code de base
 
-Après les Settings, Messages, Favoris et Rate dialog (phases précédentes), j'applique le langage Shoppe à la page d'accueil et au header, qui restent les écrans les plus visibles. Palette **SooqKabro** conservée (bleu Tchad, or, Cairo, FCFA, RTL).
+Passe complète sur `frontend/` couvrant les 4 axes demandés. Aucun changement fonctionnel, aucun changement de design.
 
-### Mapping Shoppe → SooqKabro Home
+## 1. Suppression des fichiers/code morts
 
-| Shoppe | SooqKabro |
-|---|---|
-| "Hello, {name}!" + avatar + bell (p.17, 21, 38) | Nouveau `HelloHeader` en haut du Home (remplace top-bar météo/prière) |
-| Search bar pill arrondie | Refonte search bar → `rounded-full h-12` pleine largeur |
-| Sections horizontales scrollables (p.17, 37) | Sections catégories → carrousel horizontal scroll-snap au lieu de grilles |
-| Cartes produit carrées arrondies (p.21) | `ListingCard` variant `square` : `rounded-3xl`, image carrée, infos compactes |
-| Section "Recently viewed" (p.37) | Carrousel "Vus récemment" basé sur `useCoViewedListings` |
-| Activity card gradient (p.17) | Carte stats utilisateur connecté (mes annonces / favoris / vues) |
+- **`frontend/src/data/mockListings.ts`** — fixtures plus utilisées en runtime, seul `formatPrice` est encore importé (par `ListingCard.tsx` et `ListingDetail.tsx`).
+  → Extraire `formatPrice` dans `frontend/src/lib/pricing.ts` (déjà le bon emplacement), supprimer le fichier `mockListings.ts`, mettre à jour les 2 imports.
+- Recherche systématique d'imports/exports/variables/fonctions orphelins via `ts-prune` (run ponctuel, pas d'ajout en dépendance) et nettoyage des occurrences confirmées non utilisées.
+- Supprimer les `console.log` de debug restants (garder `console.error` dans `errorHandler`).
 
-### Fichiers modifiés
+## 2. Nettoyage de la structure du projet
 
-| Fichier | Changement |
-|---|---|
-| `components/account/HelloHeader.tsx` *(nouveau)* | "Hello, {prénom}! 👋" + avatar `h-11 w-11 ring-2 ring-primary/20` + cloche notifications, padding `px-4 pt-5 pb-3` |
-| `components/Header.tsx` | Search bar : grid pill `rounded-full h-11`, ville → bouton pill compact, bouton search → cercle `bg-primary`. Suppression top-bar météo/prière (déjà cachée mobile). Logo recentré. |
-| `components/ListingCard.tsx` | Ajout prop `variant?: "default" \| "square"`. Variant `square` : `rounded-3xl`, ratio `aspect-square`, badges plus petits, cœur en haut-droite, prix sous l'image (pas overlay). |
-| `pages/Index.tsx` | Insérer `HelloHeader` (si user connecté) en haut. Convertir sections catégories en carrousels horizontaux `flex overflow-x-auto snap-x` avec `ListingCard variant="square"`. Garder "Pour vous / Récents" en grille 2-col mobile. Conserver `PublishCTA` et `CategoryGrid`. Retirer le widget Estimateur de Prix (hors design Shoppe, déjà signalé "hors périmètre"). |
-| `i18n/translations.ts` | Ajout : `home.hello`, `home.greetingMorning/Afternoon/Evening`, `home.recentlyViewed`, `home.discover` |
+Doublons à la racine du repo qui datent d'un ancien layout (le vrai code vit dans `frontend/`) :
 
-### Détails design
+- `src/integrations/supabase/` (racine) — doublon de `frontend/src/integrations/supabase/`. **Supprimer le dossier `src/` racine.**
+- `supabase/` (racine, contient `config.toml` + `migrations/`) — doublon de `frontend/supabase/`. **Supprimer le dossier `supabase/` racine.**
+- `backend/` (server.py FastAPI inutilisé : app 100% client + Edge Functions), `tests/` (vide sauf `__init__.py`), `test_reports/` (vide) — **supprimer**.
+- `package.json` racine s'il ne sert qu'à pointer vers `frontend/` — vérifier puis garder ou nettoyer selon contenu.
+- `memory/*.md` (5 fichiers de plans de phases passées) — **archiver** sous `memory/archive/` plutôt que supprimer, pour garder la trace.
 
-- **HelloHeader** : "Hello, Ahmed 👋" en `text-xl font-extrabold`, sous-titre "Que cherchez-vous aujourd'hui ?" `text-xs text-muted-foreground`. Avatar à droite, cliquable → `/compte`. Cloche avec badge unread.
-- **Search bar Shoppe** : input `rounded-full bg-muted h-11 pl-11`, icône loupe absolue à gauche, bouton ville pill compact `rounded-full h-9 px-3 bg-muted` au-dessus.
-- **ListingCard square** : `rounded-3xl overflow-hidden bg-card`, image `aspect-square`, cœur cercle blanc en overlay top-right, footer texte sous image avec titre 1 ligne + prix `font-extrabold text-primary`.
-- **Carrousel** : `flex gap-3 overflow-x-auto snap-x snap-mandatory no-scrollbar -mx-3 px-3`, chaque carte `w-[140px] shrink-0 snap-start`.
-- **Section header** : titre `text-base font-extrabold` + bouton "Voir tout →" pill `text-xs text-primary`.
+## 3. Correction des warnings ESLint / TS
 
-### Hors périmètre
+66 erreurs `@typescript-eslint/no-explicit-any` sur 13 fichiers. Remplacement par types appropriés :
 
-- Pas de modification de `CategoryGrid` (déjà cohérent avec design mobile-first).
-- Pas de changement de la logique de fetch (`useListings`, `useCoViewedListings`).
-- Pas de Listing Detail / Publish / Search redesign (peuvent suivre en phase 4 si demandé).
-- Le top-bar météo/prière desktop reste en place pour les écrans `sm:` ; seul l'affichage mobile change.
+- `errorHandler.ts` (4) → `unknown` + type guards.
+- Catches Supabase dans pages (`AuthPage`, `ResetPassword`, `EditListing`, `PublishListing`, `MyListings`, `SellerProfile`, `AdminPage`, `AccountPage`) → `unknown` avec narrowing `error instanceof Error`.
+- Listings / profils typés via `Database['public']['Tables'][...]['Row']` depuis `integrations/supabase/types.ts` (`CategoryPage`, `DiscoverPage`, `SearchPage`, `MyListings`, `AccountPage`).
+- `useUpdateLastSeen` → type d'event Supabase realtime.
 
-### Validation
+Objectif : `npx eslint src` → 0 erreur.
 
-Screenshot du `/` en viewport mobile (384×654) après implémentation pour comparer avec écrans Shoppe p.17, 21, 37.
+## 4. Refactor & déduplication
+
+Petits extraits seulement (pas de refonte) :
+
+- **`lib/formatters.ts`** *(nouveau)* — regrouper `formatPrice`, `formatDate`/`formatRelativeTime` répétés dans `MessagesPage`, `ListingDetail`, `MyListings`.
+- **`lib/supabaseErrors.ts`** *(nouveau)* — helper `getErrorMessage(err: unknown): string` utilisé partout après le passage à `unknown`.
+- **`hooks/useListingOwner.ts`** *(nouveau, optionnel)* — fetch profil vendeur réutilisé dans `ListingDetail` et `SellerProfile`.
+- Pas de découpe de gros composants (`PublishListing` 800+ lignes, `ListingDetail`) — hors scope nettoyage.
+
+## Détails techniques
+
+### Fichiers supprimés
+```
+src/                              (racine, doublon)
+supabase/                         (racine, doublon)
+backend/                          (FastAPI inutilisé)
+tests/                            (vide)
+test_reports/                     (vide)
+frontend/src/data/mockListings.ts
+```
+
+### Fichiers créés
+```
+frontend/src/lib/formatters.ts
+frontend/src/lib/supabaseErrors.ts
+memory/archive/*.md               (déplacement des 5 .md existants)
+```
+
+### Fichiers modifiés (imports + types)
+13 fichiers listés par ESLint + `ListingCard.tsx` + `ListingDetail.tsx` pour `formatPrice`.
+
+## Vérifications finales
+
+1. `npx eslint src` → 0 erreur.
+2. Build TS (auto via harness) passe.
+3. Smoke visuel : `/`, `/compte`, `/messages`, `/favoris`, `/publier`, détail d'une annonce — rien ne casse.
+
+## Hors scope
+
+- Refonte design (déjà couverte par phases 1-3).
+- Refactor des gros composants (`PublishListing`, `ListingDetail`).
+- Migration backend ou changement de schéma Supabase.
+- Ajout de tests.

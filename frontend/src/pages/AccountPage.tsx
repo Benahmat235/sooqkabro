@@ -82,7 +82,7 @@ const AccountPage = () => {
       supabase.rpc("get_my_profile_phone"),
     ]).then(([{ data }, { data: phoneVal }]) => {
       if (data) {
-        const d: any = { ...data, phone: phoneVal || "" };
+        const d = { ...data, phone: phoneVal || "" } as Profile;
         setProfile(d);
         setForm({ display_name: d.display_name || "", phone: d.phone || "", username: d.username || "", bio: d.bio || "" });
       }
@@ -91,7 +91,8 @@ const AccountPage = () => {
     const fetchStats = async () => {
       const { count: listingCount } = await supabase.from("listings").select("id", { count: "exact", head: true }).eq("user_id", user.id);
       const { data: userListings } = await supabase.from("listings").select("id, title, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(3);
-      const ids = (userListings || []).map((l: any) => l.id);
+      type MiniListing = { id: string; title: string; created_at: string };
+      const ids = (userListings || []).map((l: MiniListing) => l.id);
       let totalViews = 0, totalFavorites = 0;
       if (ids.length > 0) {
         const { count: viewCount } = await supabase.from("listing_views").select("id", { count: "exact", head: true }).in("listing_id", ids);
@@ -103,7 +104,7 @@ const AccountPage = () => {
 
       // Build recent activity
       const activities: RecentActivity[] = [];
-      (userListings || []).forEach((l: any) => {
+      (userListings || []).forEach((l: MiniListing) => {
         activities.push({ type: "listing", title: l.title, time: new Date(l.created_at), id: l.id });
       });
       setRecentActivity(activities.slice(0, 5));
@@ -132,7 +133,7 @@ const AccountPage = () => {
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
-    const { error } = await supabase.from("profiles").update({ display_name: form.display_name || null, phone: form.phone, username: form.username || null, bio: form.bio || null } as any).eq("id", user.id);
+    const { error } = await supabase.from("profiles").update({ display_name: form.display_name || null, phone: form.phone, username: form.username || null, bio: form.bio || null }).eq("id", user.id);
     if (error) { toast({ title: t("common.error"), description: error.message, variant: "destructive" }); }
     else { setProfile((prev) => prev ? { ...prev, display_name: form.display_name, phone: form.phone, username: form.username } : prev); setEditing(false); toast({ title: t("account.profileUpdated") }); }
     setSaving(false);

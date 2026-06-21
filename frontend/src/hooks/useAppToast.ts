@@ -23,7 +23,7 @@ export function useAppToast() {
     return toast({
       title,
       description,
-      variant: "success" as any,
+      variant: "success",
       duration: 4000,
     });
   };
@@ -35,7 +35,7 @@ export function useAppToast() {
     return toast({
       title,
       description,
-      variant: "info" as any,
+      variant: "info",
       duration: 5000,
     });
   };
@@ -47,7 +47,7 @@ export function useAppToast() {
     return toast({
       title,
       description,
-      variant: "warning" as any,
+      variant: "warning",
       duration: 6000,
     });
   };
@@ -88,7 +88,7 @@ export function useAppToast() {
     return toast({
       title: options.title,
       description: options.description,
-      variant: (options.variant || "default") as any,
+      variant: options.variant || "default",
       duration: options.duration || 5000,
     });
   };
