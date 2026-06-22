@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { ArrowLeft, BadgeCheck, SearchX, Search, SlidersHorizontal, X } from "lucide-react";
+import { ArrowLeft, BadgeCheck, SearchX, Search, SlidersHorizontal, X, BellPlus, Check } from "lucide-react";
 import Header from "@/components/Header";
 import BottomNav from "@/components/BottomNav";
 import ListingCard from "@/components/ListingCard";
@@ -14,6 +14,9 @@ import { useTranslation } from "@/i18n/useTranslation";
 import { usePriceStatsBatch } from "@/hooks/usePriceStats";
 import { classifyPrice } from "@/lib/pricing";
 import { getCityById } from "@/data/cities";
+import { useAuth } from "@/hooks/useAuth";
+import { useSaveSearch, useSavedSearches } from "@/hooks/useSavedSearches";
+import { useToast } from "@/hooks/use-toast";
 
 const defaultFilters = {
   city: "all",
@@ -44,8 +47,54 @@ const SearchPage = () => {
   const verifiedOnly = searchParams.get("verified") === "1";
   const dateFilter = searchParams.get("date") || defaultFilters.date;
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const saveSearch = useSaveSearch();
+  const { data: savedSearches = [] } = useSavedSearches();
 
   const { data: rawResults = [], isLoading } = useSearchListings(query, selectedCity);
+
+  const currentFilterPayload = useMemo(
+    () => ({
+      city: selectedCity,
+      sort: sortBy,
+      min: minPrice,
+      max: maxPrice,
+      quartier,
+      verified: verifiedOnly ? "1" : "0",
+      date: dateFilter,
+    }),
+    [selectedCity, sortBy, minPrice, maxPrice, quartier, verifiedOnly, dateFilter]
+  );
+
+  const alreadySaved = useMemo(() => {
+    const norm = (s: string | null | undefined) => (s ?? "").trim().toLowerCase();
+    return savedSearches.some(
+      (s) =>
+        norm(s.query) === norm(query) &&
+        JSON.stringify(s.filters || {}) === JSON.stringify(currentFilterPayload)
+    );
+  }, [savedSearches, query, currentFilterPayload]);
+
+  const handleSaveSearch = () => {
+    if (!user) {
+      toast({ title: "Connexion requise", description: "Connectez-vous pour sauvegarder vos recherches.", variant: "destructive" });
+      return;
+    }
+    if (!query && selectedCity === "all" && !minPrice && !maxPrice && quartier === "all" && !verifiedOnly && dateFilter === "all") {
+      toast({ title: "Recherche vide", description: "Ajoutez un mot-clé ou un filtre.", variant: "destructive" });
+      return;
+    }
+    const cityName = getCityById(selectedCity)?.name;
+    const label = query || cityName || "Recherche";
+    saveSearch.mutate(
+      { label, query, filters: currentFilterPayload },
+      {
+        onSuccess: () => toast({ title: "Recherche sauvegardée", description: "Retrouvez-la dans Mon compte." }),
+        onError: (e) => toast({ title: "Erreur", description: e instanceof Error ? e.message : "Sauvegarde impossible", variant: "destructive" }),
+      }
+    );
+  };
 
   const updateFilter = (key: string, value: string, defaultValue = "") => {
     setSearchParams((current) => {
