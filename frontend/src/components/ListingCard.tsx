@@ -173,7 +173,7 @@ const ListingCard = ({ listing, compact = false, priceLevel, variant = "default"
   }
 
   return (
-
+    <>
     <Link 
       to={`/annonce/${listing.id}`} 
       className={cn("group block h-full", isRTL && "rtl text-right")}
@@ -287,6 +287,19 @@ const ListingCard = ({ listing, compact = false, priceLevel, variant = "default"
             </motion.div>
           </motion.button>
 
+          <motion.button
+            className={cn(
+              "absolute top-11 bg-card/95 backdrop-blur-sm rounded-full p-1.5 shadow-lg ring-1 ring-border/50 hover:bg-card transition-colors z-10 opacity-0 group-hover:opacity-100 focus:opacity-100",
+              isRTL ? "left-2" : "right-2"
+            )}
+            onClick={handleQuickView}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            aria-label="Aperçu rapide"
+          >
+            <Eye className="h-4 w-4 text-foreground/70 hover:text-foreground" />
+          </motion.button>
+
           {priceLevel === "good" && (
             <motion.div
               initial={{ opacity: 0, y: -4 }}
@@ -347,6 +360,8 @@ const ListingCard = ({ listing, compact = false, priceLevel, variant = "default"
         <div className="absolute inset-0 border-2 border-primary/0 hover:border-primary/20 rounded-xl transition-colors duration-300 pointer-events-none" />
       </motion.div>
     </Link>
+    <QuickViewDialog listing={listing} open={quickOpen} onOpenChange={setQuickOpen} />
+    </>
   );
 };
 
