@@ -47,6 +47,7 @@ import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useToast } from "@/hooks/use-toast";
+import { pushRecentlyViewed } from "@/hooks/useRecentlyViewed";
 
 type DetailItem = {
   label: string;
@@ -173,6 +174,10 @@ const ListingDetail = () => {
   const listing = allListings.find((l) => l.id === id);
   const isFav = listing ? favoriteIds.includes(listing.id) : false;
   const images = listing && listing.images.length > 0 ? listing.images : ["/placeholder.svg"];
+
+  useEffect(() => {
+    if (id) pushRecentlyViewed(id);
+  }, [id]);
 
   const { data: reviews = [] } = useSellerReviews(listing?.user_id);
   const { avg: sellerAvg, count: reviewCount } = useSellerRating(listing?.user_id);

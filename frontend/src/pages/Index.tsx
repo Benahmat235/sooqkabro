@@ -8,6 +8,8 @@ import BottomNav from "@/components/BottomNav";
 import Footer from "@/components/Footer";
 import HelloHeader from "@/components/account/HelloHeader";
 import NotificationCenter from "@/components/NotificationCenter";
+import FeaturedCarousel from "@/components/home/FeaturedCarousel";
+import RecentlyViewedRow from "@/components/home/RecentlyViewedRow";
 import { useListings } from "@/hooks/useListings";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -69,6 +71,12 @@ const Index = () => {
         >
           <CategoryGrid />
         </motion.div>
+
+        {/* Featured carousel — "À la une" */}
+        <FeaturedCarousel listings={listings} isLoading={isLoading} />
+
+        {/* Recently viewed (localStorage) */}
+        <RecentlyViewedRow />
 
 
 
