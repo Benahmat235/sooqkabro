@@ -47,6 +47,7 @@ import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useTranslation } from "@/i18n/useTranslation";
 import { useToast } from "@/hooks/use-toast";
+import { pushRecentlyViewed } from "@/hooks/useRecentlyViewed";
 
 type DetailItem = {
   label: string;
