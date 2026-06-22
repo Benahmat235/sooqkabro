@@ -713,6 +713,19 @@ const AccountPage = () => {
         </SheetContent>
       </Sheet>
 
+      {/* Saved Searches Sheet */}
+      <Sheet open={openSheet === "savedSearches"} onOpenChange={(o) => !o && setOpenSheet(null)}>
+        <SheetContent side="bottom" className="rounded-t-2xl max-h-[80vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <BellRing className="h-5 w-5" /> Recherches sauvegardées
+            </SheetTitle>
+          </SheetHeader>
+          <SavedSearchesList onNavigate={() => setOpenSheet(null)} />
+        </SheetContent>
+      </Sheet>
+
+
       {/* Logout */}
       <div className="px-4 pb-4">
         <Button 
@@ -729,5 +742,65 @@ const AccountPage = () => {
     </div>
   );
 };
+
+function SavedSearchesList({ onNavigate }: { onNavigate: () => void }) {
+  const navigate = useNavigate();
+  const { data: searches = [], isLoading } = useSavedSearches();
+  const del = useDeleteSavedSearch();
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2 mt-4">
+        {[1, 2, 3].map((i) => <Skeleton key={i} className="h-14 rounded-xl" />)}
+      </div>
+    );
+  }
+
+  if (searches.length === 0) {
+    return (
+      <div className="text-center py-10">
+        <div className="w-14 h-14 rounded-2xl bg-muted mx-auto mb-3 flex items-center justify-center">
+          <Search className="h-6 w-6 text-muted-foreground" />
+        </div>
+        <p className="text-sm font-bold text-foreground">Aucune recherche sauvegardée</p>
+        <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
+          Lancez une recherche, puis touchez « Sauvegarder » pour la retrouver ici.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 mt-4">
+      {searches.map((s) => {
+        const params = filtersToSearchParams(s.query || "", s.filters || {});
+        const summaryParts: string[] = [];
+        if (s.filters?.city && s.filters.city !== "all") summaryParts.push(s.filters.city);
+        if (s.filters?.min || s.filters?.max) summaryParts.push(`${s.filters.min || "0"}–${s.filters.max || "∞"} FCFA`);
+        if (s.filters?.verified === "1") summaryParts.push("vérifié");
+        return (
+          <div key={s.id} className="flex items-center gap-2 p-3 bg-card rounded-xl border">
+            <button
+              onClick={() => { navigate(`/search?${params}`); onNavigate(); }}
+              className="flex-1 text-left min-w-0"
+            >
+              <p className="font-semibold text-sm text-foreground truncate">{s.label}</p>
+              {summaryParts.length > 0 && (
+                <p className="text-xs text-muted-foreground truncate">{summaryParts.join(" · ")}</p>
+              )}
+            </button>
+            <button
+              onClick={() => del.mutate(s.id)}
+              className="p-2 rounded-lg hover:bg-destructive/10 text-destructive"
+              aria-label="Supprimer"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default AccountPage;
