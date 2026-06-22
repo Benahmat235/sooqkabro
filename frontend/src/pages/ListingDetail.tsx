@@ -175,6 +175,10 @@ const ListingDetail = () => {
   const isFav = listing ? favoriteIds.includes(listing.id) : false;
   const images = listing && listing.images.length > 0 ? listing.images : ["/placeholder.svg"];
 
+  useEffect(() => {
+    if (id) pushRecentlyViewed(id);
+  }, [id]);
+
   const { data: reviews = [] } = useSellerReviews(listing?.user_id);
   const { avg: sellerAvg, count: reviewCount } = useSellerRating(listing?.user_id);
   const { data: sellerStats } = useSellerStats(listing?.user_id);
