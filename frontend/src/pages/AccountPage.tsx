@@ -17,8 +17,10 @@ import { SectionList, SectionRow } from "@/components/ui/section-list";
 import { 
   User, LogOut, Phone, ChevronRight, Eye, FileText, Heart, Pencil, Check, X, Camera, 
   ShieldCheck, BadgeCheck, Star, MapPin, Calendar, Share2, Settings, Bell, Globe, 
-  Lock, HelpCircle, MessageSquare, Clock, TrendingUp, Users, Package, Loader2
+  Lock, HelpCircle, MessageSquare, Clock, TrendingUp, Users, Package, Loader2,
+  BellRing, Trash2, Search
 } from "lucide-react";
+import { useSavedSearches, useDeleteSavedSearch, filtersToSearchParams } from "@/hooks/useSavedSearches";
 import BottomNav from "@/components/BottomNav";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/i18n/useTranslation";
@@ -62,7 +64,7 @@ const AccountPage = () => {
   const [uploading, setUploading] = useState(false);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [activeTab, setActiveTab] = useState<"overview" | "settings">("overview");
-  const [openSheet, setOpenSheet] = useState<"notifications" | "langue" | "securite" | "aide" | null>(null);
+  const [openSheet, setOpenSheet] = useState<"notifications" | "langue" | "securite" | "aide" | "savedSearches" | null>(null);
   const [notifPrefs, setNotifPrefs] = useState(() => {
     try { return JSON.parse(localStorage.getItem("sooq_notif_prefs") || "{}"); } catch { return {}; }
   });
