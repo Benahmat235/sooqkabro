@@ -1,75 +1,86 @@
-# Plan — Nettoyage du code de base
+## Objectif
 
-Passe complète sur `frontend/` couvrant les 4 axes demandés. Aucun changement fonctionnel, aucun changement de design.
+Implémenter les recommandations du rapport pour augmenter le temps de session, en priorisant les éléments **à fort impact / faible-moyenne complexité** et **manquants** dans la base actuelle.
 
-## 1. Suppression des fichiers/code morts
+## État actuel (déjà présent, à ne pas refaire)
 
-- **`frontend/src/data/mockListings.ts`** — fixtures plus utilisées en runtime, seul `formatPrice` est encore importé (par `ListingCard.tsx` et `ListingDetail.tsx`).
-  → Extraire `formatPrice` dans `frontend/src/lib/pricing.ts` (déjà le bon emplacement), supprimer le fichier `mockListings.ts`, mettre à jour les 2 imports.
-- Recherche systématique d'imports/exports/variables/fonctions orphelins via `ts-prune` (run ponctuel, pas d'ajout en dépendance) et nettoyage des occurrences confirmées non utilisées.
-- Supprimer les `console.log` de debug restants (garder `console.error` dans `errorHandler`).
+- Feed personnalisé (`usePersonalizedFeed`), favoris, badges vendeur vérifié, notes/avis, indicateur de temps de réponse, lazy loading images, skeletons, filtres, recherches récentes, alertes via follow vendeur.
 
-## 2. Nettoyage de la structure du projet
+## Manquant / à améliorer (scope du plan)
 
-Doublons à la racine du repo qui datent d'un ancien layout (le vrai code vit dans `frontend/`) :
+### 1. Carrousel « À la Une » en haut de la page d'accueil (Impact élevé / Complexité faible)
+- Nouveau composant `FeaturedCarousel.tsx` au-dessus de la grille `Index.tsx`.
+- Source : 5–8 annonces les plus récentes avec photo + boost (ou simplement `is_featured` / score popularité existant dans le feed perso).
+- Auto-scroll toutes les 5s (pause au hover/touch), pagination dots, swipe mobile (réutiliser `embla-carousel` déjà installé via shadcn).
+- Card large : image pleine largeur, titre, prix FCFA, ville, badge « À la une ».
 
-- `src/integrations/supabase/` (racine) — doublon de `frontend/src/integrations/supabase/`. **Supprimer le dossier `src/` racine.**
-- `supabase/` (racine, contient `config.toml` + `migrations/`) — doublon de `frontend/supabase/`. **Supprimer le dossier `supabase/` racine.**
-- `backend/` (server.py FastAPI inutilisé : app 100% client + Edge Functions), `tests/` (vide sauf `__init__.py`), `test_reports/` (vide) — **supprimer**.
-- `package.json` racine s'il ne sert qu'à pointer vers `frontend/` — vérifier puis garder ou nettoyer selon contenu.
-- `memory/*.md` (5 fichiers de plans de phases passées) — **archiver** sous `memory/archive/` plutôt que supprimer, pour garder la trace.
+### 2. Quick View modal sur les cartes (Impact très élevé / Complexité moyenne)
+- Bouton icône « œil » en overlay sur `ListingCard` (visible au hover desktop, toujours visible mobile en coin).
+- Ouvre un `Dialog` (shadcn) avec : carrousel photos, titre, prix, ville, description tronquée, bouton « Voir l'annonce complète », bouton favoris, bouton contact.
+- Évite la navigation → l'utilisateur enchaîne plusieurs annonces sans quitter la liste.
+- Composant : `QuickViewDialog.tsx`, intégré dans `ListingCard.tsx` via state local.
 
-## 3. Correction des warnings ESLint / TS
+### 3. Sauvegarder une recherche + alerte (Impact élevé / Complexité moyenne)
+- Bouton « 🔔 Sauvegarder cette recherche » dans `SearchPage` (à côté des filtres).
+- Stockage : nouvelle table `saved_searches` (user_id, query, filters jsonb, created_at) avec RLS user-only, GRANT authenticated.
+- Liste accessible depuis `AccountPage` → « Mes recherches sauvegardées ».
+- (Notifications réelles = phase ultérieure ; ici on stocke et on affiche les résultats correspondants à l'ouverture.)
 
-66 erreurs `@typescript-eslint/no-explicit-any` sur 13 fichiers. Remplacement par types appropriés :
+### 4. Section « Vus récemment » sur la home (Impact élevé / Complexité faible)
+- Stockage localStorage : tableau `recently_viewed_ids` (max 12, dédupliqué, push à l'ouverture de `ListingDetail`).
+- Composant `RecentlyViewedRow.tsx` : carrousel horizontal compact (réutilise `ListingCard` en taille réduite).
+- Affiché sur `Index.tsx` sous le carrousel À la une, seulement si ≥ 3 items.
 
-- `errorHandler.ts` (4) → `unknown` + type guards.
-- Catches Supabase dans pages (`AuthPage`, `ResetPassword`, `EditListing`, `PublishListing`, `MyListings`, `SellerProfile`, `AdminPage`, `AccountPage`) → `unknown` avec narrowing `error instanceof Error`.
-- Listings / profils typés via `Database['public']['Tables'][...]['Row']` depuis `integrations/supabase/types.ts` (`CategoryPage`, `DiscoverPage`, `SearchPage`, `MyListings`, `AccountPage`).
-- `useUpdateLastSeen` → type d'event Supabase realtime.
-
-Objectif : `npx eslint src` → 0 erreur.
-
-## 4. Refactor & déduplication
-
-Petits extraits seulement (pas de refonte) :
-
-- **`lib/formatters.ts`** *(nouveau)* — regrouper `formatPrice`, `formatDate`/`formatRelativeTime` répétés dans `MessagesPage`, `ListingDetail`, `MyListings`.
-- **`lib/supabaseErrors.ts`** *(nouveau)* — helper `getErrorMessage(err: unknown): string` utilisé partout après le passage à `unknown`.
-- **`hooks/useListingOwner.ts`** *(nouveau, optionnel)* — fetch profil vendeur réutilisé dans `ListingDetail` et `SellerProfile`.
-- Pas de découpe de gros composants (`PublishListing` 800+ lignes, `ListingDetail`) — hors scope nettoyage.
-
-## Détails techniques
-
-### Fichiers supprimés
-```
-src/                              (racine, doublon)
-supabase/                         (racine, doublon)
-backend/                          (FastAPI inutilisé)
-tests/                            (vide)
-test_reports/                     (vide)
-frontend/src/data/mockListings.ts
-```
-
-### Fichiers créés
-```
-frontend/src/lib/formatters.ts
-frontend/src/lib/supabaseErrors.ts
-memory/archive/*.md               (déplacement des 5 .md existants)
-```
-
-### Fichiers modifiés (imports + types)
-13 fichiers listés par ESLint + `ListingCard.tsx` + `ListingDetail.tsx` pour `formatPrice`.
-
-## Vérifications finales
-
-1. `npx eslint src` → 0 erreur.
-2. Build TS (auto via harness) passe.
-3. Smoke visuel : `/`, `/compte`, `/messages`, `/favoris`, `/publier`, détail d'une annonce — rien ne casse.
+### 5. Micro-animations & polish (Impact moyen / Complexité faible)
+- Animation cœur favori : scale + couleur (Tailwind `transition-transform active:scale-125`, ajout d'un keyframe `heart-pop`).
+- Transition douce hover sur les cards (déjà partiellement présent, à harmoniser).
+- Skeleton du carrousel À la une.
 
 ## Hors scope
 
-- Refonte design (déjà couverte par phases 1-3).
-- Refactor des gros composants (`PublishListing`, `ListingDetail`).
-- Migration backend ou changement de schéma Supabase.
-- Ajout de tests.
+- Gamification (badges de succès, barre profil) — moyen impact, à voir plus tard.
+- Notifications push réelles pour recherches sauvegardées (nécessite Web Push + edge function dédiée).
+- Refonte masonry de la grille (la grille 3-col actuelle est volontaire, voir mémoire `style/design-system`).
+- Modifications backend hors `saved_searches`.
+
+## Détails techniques
+
+**Fichiers créés**
+- `frontend/src/components/home/FeaturedCarousel.tsx`
+- `frontend/src/components/listing/QuickViewDialog.tsx`
+- `frontend/src/components/home/RecentlyViewedRow.tsx`
+- `frontend/src/hooks/useRecentlyViewed.ts`
+- `frontend/src/hooks/useSavedSearches.ts`
+- `frontend/supabase/migrations/<timestamp>_add_saved_searches.sql`
+
+**Fichiers modifiés**
+- `frontend/src/pages/Index.tsx` — insère FeaturedCarousel + RecentlyViewedRow.
+- `frontend/src/components/ListingCard.tsx` — bouton Quick View + animation cœur.
+- `frontend/src/pages/ListingDetail.tsx` — push dans `useRecentlyViewed`.
+- `frontend/src/pages/SearchPage.tsx` — bouton sauvegarder recherche.
+- `frontend/src/pages/AccountPage.tsx` — entrée « Recherches sauvegardées ».
+- `frontend/src/index.css` — keyframe `heart-pop`.
+
+**Migration SQL** (avec GRANTs obligatoires)
+```sql
+CREATE TABLE public.saved_searches (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  label text NOT NULL,
+  query text,
+  filters jsonb NOT NULL DEFAULT '{}'::jsonb,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.saved_searches TO authenticated;
+GRANT ALL ON public.saved_searches TO service_role;
+ALTER TABLE public.saved_searches ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "own searches" ON public.saved_searches
+  FOR ALL TO authenticated
+  USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+```
+
+## Ordre d'implémentation
+
+1. Carrousel À la une + Vus récemment (visible immédiatement sur la home).
+2. Quick View modal + animation cœur (impact sur toute la grille).
+3. Migration `saved_searches` + UI sauvegarde/consultation.
