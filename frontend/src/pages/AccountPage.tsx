@@ -491,6 +491,11 @@ const AccountPage = () => {
               label="Ma boutique"
               onClick={() => navigate(`/vendeur/${user?.id}`)}
             />
+            <SectionRow
+              icon={<BellRing className="h-4 w-4" />}
+              label="Recherches sauvegardées"
+              onClick={() => setOpenSheet("savedSearches")}
+            />
           </SectionList>
 
           {/* Account */}
