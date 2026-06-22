@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { BadgeCheck, CalendarDays, Heart, ImageOff, MapPin, Zap, Crown, TrendingDown, TrendingUp } from "lucide-react";
+import { BadgeCheck, CalendarDays, Eye, Heart, ImageOff, MapPin, Zap, Crown, TrendingDown, TrendingUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { formatPrice } from "@/lib/pricing";
 import { getCityById } from "@/data/cities";
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { cardHoverVariants, heartVariants } from "@/lib/animations";
 import type { PriceLevel } from "@/lib/pricing";
 import { useTranslation } from "@/i18n/useTranslation";
+import QuickViewDialog from "@/components/listing/QuickViewDialog";
 
 function optimizeImage(url: string, width: number): string {
   if (!url) return url;
@@ -55,6 +56,7 @@ const ListingCard = ({ listing, compact = false, priceLevel, variant = "default"
   const [heartAnim, setHeartAnim] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [quickOpen, setQuickOpen] = useState(false);
   const { locale: language } = useTranslation();
   const isRTL = language === 'ar';
 
@@ -69,6 +71,12 @@ const ListingCard = ({ listing, compact = false, priceLevel, variant = "default"
     setHeartAnim(true);
     setTimeout(() => setHeartAnim(false), 300);
     toggleFav.mutate({ listingId: listing.id, isFav });
+  };
+
+  const handleQuickView = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setQuickOpen(true);
   };
 
   const badge = listing.badge;
