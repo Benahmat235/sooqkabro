@@ -225,6 +225,17 @@ const SearchPage = () => {
             </p>
             <div className="flex items-center gap-2">
               <Button
+                variant={alreadySaved ? "secondary" : "outline"}
+                size="sm"
+                className="rounded-full text-xs gap-1.5 border-border/50"
+                onClick={handleSaveSearch}
+                disabled={alreadySaved || saveSearch.isPending}
+                title={alreadySaved ? "Déjà sauvegardée" : "Sauvegarder cette recherche"}
+              >
+                {alreadySaved ? <Check className="h-3.5 w-3.5" /> : <BellPlus className="h-3.5 w-3.5" />}
+                <span className="hidden sm:inline">{alreadySaved ? "Sauvegardée" : "Sauvegarder"}</span>
+              </Button>
+              <Button
                 variant="outline"
                 size="sm"
                 className="hidden rounded-full text-xs gap-1.5 border-border/50 sm:inline-flex"
