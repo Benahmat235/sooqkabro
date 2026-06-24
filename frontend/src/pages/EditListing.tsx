@@ -208,26 +208,41 @@ const EditListing = () => {
           <div className="space-y-2">
             <Label className="font-semibold">Photos (jusqu'à {MAX_PHOTOS})</Label>
             <div className="flex gap-2 flex-wrap">
-              {existingImages.map((img) => (
-                <div key={img.id} className="relative w-20 h-20 rounded-lg overflow-hidden border">
-                  <img src={img.image_url} alt="" className="w-full h-full object-cover" />
-                  <button type="button" onClick={() => removeExistingImage(img)} className="absolute top-0.5 right-0.5 bg-black/60 rounded-full p-0.5">
+              {existingImages.map((img, i) => (
+                <div key={img.id} className="relative w-20 h-20 rounded-xl overflow-hidden border">
+                  <img src={img.image_url} alt={`Photo existante ${i + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeExistingImage(img)}
+                    className="absolute top-1 right-1 bg-black/60 hover:bg-black/80 rounded-full p-0.5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 transition-colors"
+                    aria-label={`Supprimer la photo existante ${i + 1}`}
+                  >
                     <X className="h-3 w-3 text-white" />
                   </button>
                 </div>
               ))}
               {newPreviews.map((src, i) => (
-                <div key={`new-${i}`} className="relative w-20 h-20 rounded-lg overflow-hidden border">
-                  <img src={src} alt="" className="w-full h-full object-cover" />
-                  <button type="button" onClick={() => removeNewPhoto(i)} className="absolute top-0.5 right-0.5 bg-black/60 rounded-full p-0.5">
+                <div key={`new-${i}`} className="relative w-20 h-20 rounded-xl overflow-hidden border">
+                  <img src={src} alt={`Nouvelle photo ${i + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removeNewPhoto(i)}
+                    className="absolute top-1 right-1 bg-black/60 hover:bg-black/80 rounded-full p-0.5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 transition-colors"
+                    aria-label={`Supprimer la nouvelle photo ${i + 1}`}
+                  >
                     <X className="h-3 w-3 text-white" />
                   </button>
                 </div>
               ))}
               {totalImages < MAX_PHOTOS && (
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="w-20 h-20 border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-muted-foreground bg-card">
-                  <ImagePlus className="h-5 w-5 opacity-40" />
-                  <span className="text-[10px] mt-1">Ajouter</span>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-20 h-20 border-2 border-dashed border-primary/30 rounded-xl flex flex-col items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                  aria-label="Ajouter une photo"
+                >
+                  <ImagePlus className="h-6 w-6" aria-hidden="true" />
+                  <span className="text-[10px] mt-1 font-medium">Ajouter</span>
                 </button>
               )}
             </div>

@@ -626,7 +626,7 @@ const PublishListing = () => {
                 <div className="flex gap-2 flex-wrap">
                   {previews.map((src, i) => (
                     <div key={i} className="relative w-20 h-20 rounded-xl overflow-hidden border-2 border-border">
-                      <img src={src} alt="" className="w-full h-full object-cover" />
+                      <img src={src} alt={`Aperçu de la photo ${i + 1}`} className="w-full h-full object-cover" />
                       {i === 0 && (
                         <span className="absolute bottom-0 left-0 right-0 bg-primary text-primary-foreground text-[8px] text-center py-0.5 font-bold">
                           PRINCIPALE
@@ -635,7 +635,8 @@ const PublishListing = () => {
                       <button
                         type="button"
                         onClick={() => removePhoto(i)}
-                        className="absolute top-1 right-1 bg-black/60 rounded-full p-0.5"
+                        className="absolute top-1 right-1 bg-black/60 hover:bg-black/80 rounded-full p-0.5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 transition-colors"
+                        aria-label={`Supprimer la photo ${i + 1}`}
                       >
                         <X className="h-3 w-3 text-white" />
                       </button>
@@ -645,9 +646,10 @@ const PublishListing = () => {
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-20 h-20 border-2 border-dashed border-primary/30 rounded-xl flex flex-col items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 transition-colors"
+                      className="w-20 h-20 border-2 border-dashed border-primary/30 rounded-xl flex flex-col items-center justify-center text-primary bg-primary/5 hover:bg-primary/10 transition-colors focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                      aria-label="Ajouter une photo"
                     >
-                      <ImagePlus className="h-6 w-6" />
+                      <ImagePlus className="h-6 w-6" aria-hidden="true" />
                       <span className="text-[10px] mt-1 font-medium">Ajouter</span>
                     </button>
                   )}
