@@ -111,7 +111,7 @@ const SellerProfile = () => {
         await navigator.share({ title: text, url }); 
       } catch (error) {
         // User cancelled share or share failed - fallback to clipboard
-        console.log("Share cancelled or failed:", error);
+        console.error("Share cancelled or failed:", error);
         try {
           await navigator.clipboard.writeText(url);
           toast({ title: "Lien copié!", description: "Le lien du profil a été copié." });

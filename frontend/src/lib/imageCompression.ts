@@ -38,7 +38,7 @@ export async function compressImage(
       });
     }
 
-    console.log(`Image compressed: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
+    console.info(`Image compressed: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(compressedFile.size / 1024 / 1024).toFixed(2)}MB`);
     return compressedFile;
   } catch (error) {
     console.error('Error compressing image:', error);
