@@ -265,6 +265,9 @@ const Index = () => {
             })}
           </>
         )}
+
+        {/* Why SooqKabro — trust pillars */}
+        <WhySooqKabro />
       </main>
 
       <Footer />
