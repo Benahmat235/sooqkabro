@@ -10,6 +10,8 @@ import HelloHeader from "@/components/account/HelloHeader";
 import NotificationCenter from "@/components/NotificationCenter";
 import FeaturedCarousel from "@/components/home/FeaturedCarousel";
 import RecentlyViewedRow from "@/components/home/RecentlyViewedRow";
+import HomeHero from "@/components/home/HomeHero";
+import WhySooqKabro from "@/components/home/WhySooqKabro";
 import { useListings } from "@/hooks/useListings";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -62,6 +64,9 @@ const Index = () => {
       <main className="container mx-auto px-3">
         {isLoggedIn && <HelloHeader onBellClick={() => setShowNotifications(true)} />}
         <NotificationCenter isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
+
+        {/* Vibrant Hero — Sahara market vibes */}
+        <HomeHero />
 
         {/* Category Grid with animation */}
         <motion.div
@@ -159,17 +164,23 @@ const Index = () => {
                   <h2 className="text-sm font-extrabold text-foreground">
                     {isLoggedIn ? t("listings.forYou") : t("listings.recent")}
                   </h2>
-                  {isLoggedIn && (
-                    <motion.span
-                      className="text-[9px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full"
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.3 }}
-                    >
-                      Personnalisé
-                    </motion.span>
-                  )}
+                  <motion.span
+                    className="text-[9px] font-extrabold text-white px-2 py-0.5 rounded-full shadow-sm"
+                    style={{ background: "linear-gradient(135deg,#F97316,#B91C1C)" }}
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    {isLoggedIn ? "PERSONNALISÉ" : "NOUVEAU"}
+                  </motion.span>
                 </div>
+                <Link
+                  to="/decouvrir"
+                  className="text-xs font-bold text-white px-3 py-1.5 rounded-full shadow-sm hover:shadow-md transition-all active:scale-95"
+                  style={{ background: "linear-gradient(135deg,#F97316,#EA580C)" }}
+                >
+                  Voir toutes
+                </Link>
               </motion.div>
               
               <motion.div 
@@ -254,6 +265,9 @@ const Index = () => {
             })}
           </>
         )}
+
+        {/* Why SooqKabro — trust pillars */}
+        <WhySooqKabro />
       </main>
 
       <Footer />
