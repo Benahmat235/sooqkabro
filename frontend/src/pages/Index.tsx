@@ -65,6 +65,9 @@ const Index = () => {
         {isLoggedIn && <HelloHeader onBellClick={() => setShowNotifications(true)} />}
         <NotificationCenter isOpen={showNotifications} onClose={() => setShowNotifications(false)} />
 
+        {/* Vibrant Hero — Sahara market vibes */}
+        <HomeHero />
+
         {/* Category Grid with animation */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
