@@ -164,17 +164,23 @@ const Index = () => {
                   <h2 className="text-sm font-extrabold text-foreground">
                     {isLoggedIn ? t("listings.forYou") : t("listings.recent")}
                   </h2>
-                  {isLoggedIn && (
-                    <motion.span
-                      className="text-[9px] font-semibold text-primary bg-primary/10 px-2 py-0.5 rounded-full"
-                      initial={{ opacity: 0, scale: 0 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.3 }}
-                    >
-                      Personnalisé
-                    </motion.span>
-                  )}
+                  <motion.span
+                    className="text-[9px] font-extrabold text-white px-2 py-0.5 rounded-full shadow-sm"
+                    style={{ background: "linear-gradient(135deg,#F97316,#B91C1C)" }}
+                    initial={{ opacity: 0, scale: 0 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    {isLoggedIn ? "PERSONNALISÉ" : "NOUVEAU"}
+                  </motion.span>
                 </div>
+                <Link
+                  to="/decouvrir"
+                  className="text-xs font-bold text-white px-3 py-1.5 rounded-full shadow-sm hover:shadow-md transition-all active:scale-95"
+                  style={{ background: "linear-gradient(135deg,#F97316,#EA580C)" }}
+                >
+                  Voir toutes
+                </Link>
               </motion.div>
               
               <motion.div 
