@@ -10,6 +10,8 @@ import HelloHeader from "@/components/account/HelloHeader";
 import NotificationCenter from "@/components/NotificationCenter";
 import FeaturedCarousel from "@/components/home/FeaturedCarousel";
 import RecentlyViewedRow from "@/components/home/RecentlyViewedRow";
+import HomeHero from "@/components/home/HomeHero";
+import WhySooqKabro from "@/components/home/WhySooqKabro";
 import { useListings } from "@/hooks/useListings";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
